@@ -21,6 +21,8 @@ interface RoutineExerciseRow {
   target_reps: number;
   min_reps: number | null;
   max_reps: number | null;
+  rest_seconds: number | null;
+  superset_group: number | null;
 }
 
 function mapRowToRoutineExercise(row: RoutineExerciseRow): RoutineExercise {
@@ -31,6 +33,8 @@ function mapRowToRoutineExercise(row: RoutineExerciseRow): RoutineExercise {
     targetSets: row.target_sets,
     minReps: row.min_reps ?? row.target_reps,
     maxReps: row.max_reps ?? row.target_reps + 4,
+    restSeconds: row.rest_seconds,
+    supersetGroup: row.superset_group,
   };
 }
 
@@ -101,17 +105,19 @@ export class SQLiteRoutineRepository implements RoutineRepository {
         // Insert exercises
         for (const exercise of routine.exercises) {
           await this.db.runAsync(
-            `INSERT INTO routine_exercises (id, routine_id, exercise_id, order_index, target_sets, target_reps, min_reps, max_reps)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO routine_exercises (id, routine_id, exercise_id, order_index, target_sets, target_reps, min_reps, max_reps, rest_seconds, superset_group)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               exercise.id || generateId(),
               routine.id,
               exercise.exerciseId,
               exercise.orderIndex,
               exercise.targetSets,
-              exercise.maxReps,
+              exercise.maxReps, // target_reps fallback
               exercise.minReps,
               exercise.maxReps,
+              exercise.restSeconds,
+              exercise.supersetGroup,
             ],
           );
         }

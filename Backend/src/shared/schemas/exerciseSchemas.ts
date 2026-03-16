@@ -30,6 +30,8 @@ export const RoutineExerciseSchema = z.object({
   targetSets: z.number().int().positive('targetSets debe ser positivo'),
   minReps: z.number().int().positive('minReps debe ser positivo'),
   maxReps: z.number().int().positive('maxReps debe ser positivo'),
+  restSeconds: z.number().int().min(0).nullable().default(null),
+  supersetGroup: z.number().int().nullable().default(null),
 }).refine(data => data.minReps <= data.maxReps, {
   message: 'minReps no puede ser mayor que maxReps',
   path: ['minReps'],

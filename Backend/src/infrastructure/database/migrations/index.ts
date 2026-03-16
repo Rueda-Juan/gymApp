@@ -13,6 +13,13 @@ import * as m010 from './010_daily_stats';
 import * as m011 from './011_add_rir_and_rep_range';
 import * as m012 from './012_add_anatomical_svg_to_exercises';
 import * as m013 from './013_seed_wger_exercises';
+import * as m014 from './014_add_set_type';
+import * as m015 from './015_add_workout_exercise_notes';
+import * as m016 from './016_add_rest_seconds';
+import * as m017 from './017_user_preferences';
+import * as m018 from './018_body_weight_log';
+import * as m019 from './019_superset_groups';
+import * as m020 from './020_add_max_reps';
 
 interface Migration {
   version: number;
@@ -26,7 +33,8 @@ interface Migration {
 const migrations: Migration[] = [
   m001, m002, m003, m004, m005,
   m006, m007, m008, m009, m010,
-  m011, m012, m013
+  m011, m012, m013, m014, m015,
+  m016, m017, m018, m019
 ];
 
 /**

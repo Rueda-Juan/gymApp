@@ -31,7 +31,7 @@ El sistema de base de datos debe permitir:
 
 **SQLite** — Motor seleccionado.
 
-| Razón                                           | Detalle                          |
+| Razón                                            | Detalle                          |
 | ------------------------------------------------ | -------------------------------- |
 | Offline nativo                                   | Sin necesidad de servidor        |
 | Integrado en Android                             | Disponible out-of-the-box        |
@@ -43,7 +43,7 @@ El sistema de base de datos debe permitir:
 
 En React Native / Expo:
 
-```
+```text
 expo-sqlite
 ```
 
@@ -115,6 +115,8 @@ erDiagram
     exercises ||--o| exercise_stats : "estadísticas"
     exercises ||--o{ personal_records : "récords"
     sets ||--o{ personal_records : "origen"
+    user_preferences ||--o| user_preferences : "config"
+    body_weight_log ||--o| body_weight_log : "peso"
 
     exercises {
         text id PK
@@ -141,6 +143,8 @@ erDiagram
         integer order_index
         integer target_sets
         integer target_reps
+        integer rest_seconds
+        integer superset_group
     }
 
     workouts {
@@ -157,6 +161,8 @@ erDiagram
         text exercise_id FK
         integer order_index
         boolean skipped
+        text notes
+        integer superset_group
     }
 
     sets {
@@ -166,7 +172,9 @@ erDiagram
         integer set_number
         real weight
         integer reps
+        text set_type
         integer rir
+        integer rest_seconds
         integer duration_seconds
         boolean completed
         boolean skipped
@@ -177,6 +185,7 @@ erDiagram
         text exercise_id PK
         real max_weight
         real max_volume
+        real max_reps
         real estimated_1rm
         integer total_sets
         integer total_reps
@@ -201,6 +210,20 @@ erDiagram
         integer total_reps
         integer workout_count
         integer total_duration
+    }
+
+    user_preferences {
+        text key PK
+        text value
+        datetime updated_at
+    }
+
+    body_weight_log {
+        text id PK
+        real weight
+        datetime date
+        text notes
+        datetime created_at
     }
 ```
 
@@ -267,6 +290,8 @@ CREATE TABLE routine_exercises (
     order_index  INTEGER NOT NULL DEFAULT 0,
     target_sets  INTEGER,
     target_reps  INTEGER,
+    rest_seconds   INTEGER DEFAULT 90,
+    superset_group INTEGER,
 
     FOREIGN KEY (routine_id)  REFERENCES routines(id)  ON DELETE CASCADE,
     FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
@@ -317,6 +342,8 @@ CREATE TABLE workout_exercises (
     exercise_id TEXT NOT NULL,
     order_index INTEGER NOT NULL DEFAULT 0,
     skipped     BOOLEAN DEFAULT 0,
+    notes       TEXT,
+    superset_group INTEGER,
 
     FOREIGN KEY (workout_id)  REFERENCES workouts(id)  ON DELETE CASCADE,
     FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
@@ -344,7 +371,9 @@ CREATE TABLE sets (
     set_number       INTEGER NOT NULL,
     weight           REAL DEFAULT 0 CHECK (weight >= 0),
     reps             INTEGER DEFAULT 0 CHECK (reps >= 0),
+    set_type         TEXT DEFAULT 'normal' CHECK (set_type IN ('normal','warmup','dropset','failure')),
     rir              INTEGER CHECK (rir >= 0 AND rir <= 10),
+    rest_seconds     INTEGER,
     duration_seconds INTEGER DEFAULT 0,   -- para ejercicios por tiempo
     completed        BOOLEAN DEFAULT 0,
     skipped          BOOLEAN DEFAULT 0,
@@ -378,6 +407,7 @@ CREATE TABLE exercise_stats (
     exercise_id    TEXT PRIMARY KEY,
     max_weight     REAL DEFAULT 0,
     max_volume     REAL DEFAULT 0,       -- max(weight * reps) en un solo set
+    max_reps       INTEGER DEFAULT 0,
     estimated_1rm  REAL DEFAULT 0,
     total_sets     INTEGER DEFAULT 0,
     total_reps     INTEGER DEFAULT 0,
@@ -437,11 +467,48 @@ CREATE TABLE daily_stats (
 
 ---
 
+### 6.4 `user_preferences`
+
+Configuraciones del usuario en formato llave-valor.
+
+- **Propósito**: Guardar preferencias globales
+- **Filas estimadas**: < 10
+
+```sql
+CREATE TABLE user_preferences (
+    key          TEXT PRIMARY KEY,
+    value        TEXT NOT NULL,
+    updated_at   DATETIME DEFAULT (datetime('now'))
+);
+```
+
+---
+
+### 6.5 `body_weight_log`
+
+Historial de peso corporal del usuario.
+
+- **Propósito**: Seguir el progreso de ganancia/pérdida de peso
+
+```sql
+CREATE TABLE body_weight_log (
+    id           TEXT PRIMARY KEY,
+    weight       REAL NOT NULL,
+    date         DATE NOT NULL,
+    notes        TEXT,
+    created_at   DATETIME DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_body_weight_date ON body_weight_log(date);
+```
+
+---
+
 ## 7. Estrategia de índices
 
 Los índices están diseñados para optimizar las consultas más frecuentes:
 
-| Índice                             | Tabla               | Columna(s)      | Justificación                           |
+| Índice                             | Tabla                | Columna(s)      | Justificación                           |
 | ---------------------------------- | -------------------- | --------------- | --------------------------------------- |
 | `idx_sets_exercise`                | `sets`               | `exercise_id`   | Consultas de historial por ejercicio    |
 | `idx_sets_workout`                 | `sets`               | `workout_id`    | Carga de sets de un workout             |
@@ -628,7 +695,7 @@ CREATE TABLE monthly_stats (
 
 ## 14. Almacenamiento de animaciones
 
-```
+```text
 assets/
 └── exercises/
     └── animations/

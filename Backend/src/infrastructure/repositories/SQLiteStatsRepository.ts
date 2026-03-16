@@ -13,6 +13,7 @@ interface ExerciseStatsRow {
   exercise_id: string;
   max_weight: number;
   max_volume: number;
+  max_reps: number;
   estimated_1rm: number;
   total_sets: number;
   total_reps: number;
@@ -46,6 +47,7 @@ function mapStatsRow(row: ExerciseStatsRow): ExerciseStats {
     exerciseId: row.exercise_id,
     maxWeight: row.max_weight,
     maxVolume: row.max_volume,
+    maxReps: row.max_reps ?? 0,
     estimated1RM: row.estimated_1rm,
     totalSets: row.total_sets,
     totalReps: row.total_reps,
@@ -102,12 +104,13 @@ export class SQLiteStatsRepository implements StatsRepository {
     try {
       await this.db.runAsync(
         `INSERT OR REPLACE INTO exercise_stats
-         (exercise_id, max_weight, max_volume, estimated_1rm, total_sets, total_reps, total_volume, last_performed, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (exercise_id, max_weight, max_volume, max_reps, estimated_1rm, total_sets, total_reps, total_volume, last_performed, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           stats.exerciseId,
           stats.maxWeight,
           stats.maxVolume,
+          stats.maxReps,
           stats.estimated1RM,
           stats.totalSets,
           stats.totalReps,
@@ -118,6 +121,77 @@ export class SQLiteStatsRepository implements StatsRepository {
       );
     } catch (error) {
       throw new DatabaseError('Error al actualizar estadísticas de ejercicio', error);
+    }
+  }
+
+  async deleteExerciseStats(exerciseId: string): Promise<void> {
+    try {
+      await this.db.runAsync('DELETE FROM exercise_stats WHERE exercise_id = ?', [exerciseId]);
+    } catch (error) {
+      throw new DatabaseError(`Error al eliminar stats del ejercicio ${exerciseId}`, error);
+    }
+  }
+
+  async recalculateExerciseStats(exerciseId: string, transactionDb?: SQLite.SQLiteDatabase): Promise<ExerciseStats | null> {
+    try {
+      const execDb = transactionDb ?? this.db;
+      
+      const result = await execDb.getFirstAsync<{
+        max_weight: number;
+        max_volume: number;
+        max_reps: number;
+        total_sets: number;
+        total_reps: number;
+        total_volume: number;
+        last_performed: string | null;
+      }>(`
+        SELECT
+          MAX(weight) as max_weight,
+          MAX(weight * reps) as max_volume,
+          MAX(reps) as max_reps,
+          COUNT(*) as total_sets,
+          SUM(reps) as total_reps,
+          SUM(weight * reps) as total_volume,
+          MAX(created_at) as last_performed
+        FROM sets
+        WHERE exercise_id = ? AND completed = 1 AND skipped = 0
+      `, [exerciseId]);
+
+      if (!result || result.total_sets === 0) {
+        await this.deleteExerciseStats(exerciseId);
+        return null;
+      }
+
+      // Calculate estimated1RM (we need to find the specific set that gives the highest 1RM)
+      // Epley formula: Weight * (1 + Reps/30)
+      const epleyRows = await execDb.getAllAsync<{ weight: number; reps: number }>(
+        'SELECT weight, reps FROM sets WHERE exercise_id = ? AND completed = 1 AND skipped = 0',
+        [exerciseId]
+      );
+      
+      let max1RM = 0;
+      for (const row of epleyRows) {
+        const epley = row.reps === 1 ? row.weight : row.weight * (1 + row.reps / 30);
+        if (epley > max1RM) max1RM = epley;
+      }
+
+      const stats: ExerciseStats = {
+        exerciseId,
+        maxWeight: result.max_weight ?? 0,
+        maxVolume: result.max_volume ?? 0,
+        maxReps: result.max_reps ?? 0,
+        estimated1RM: max1RM,
+        totalSets: result.total_sets,
+        totalReps: result.total_reps ?? 0,
+        totalVolume: result.total_volume ?? 0,
+        lastPerformed: result.last_performed ? fromSQLiteDateTime(result.last_performed) : null,
+        updatedAt: new Date(),
+      };
+
+      await this.updateExerciseStats(stats);
+      return stats;
+    } catch (error) {
+      throw new DatabaseError(`Error al recalcular stats del ejercicio ${exerciseId}`, error);
     }
   }
 
@@ -146,6 +220,61 @@ export class SQLiteStatsRepository implements StatsRepository {
       return rows.map(mapDailyStatsRow);
     } catch (error) {
       throw new DatabaseError('Error al obtener rango de estadísticas diarias', error);
+    }
+  }
+
+  async getWeeklyStats(startDate: string, endDate: string): Promise<DailyStats[]> {
+    return this.getDailyStatsRange(startDate, endDate);
+  }
+
+  async deleteDailyStats(date: string): Promise<void> {
+    try {
+      await this.db.runAsync('DELETE FROM daily_stats WHERE date = ?', [date]);
+    } catch (error) {
+      throw new DatabaseError(`Error al eliminar estadísticas diarias de ${date}`, error);
+    }
+  }
+
+  async recalculateDailyStats(date: string, transactionDb?: SQLite.SQLiteDatabase): Promise<DailyStats | null> {
+    try {
+      const execDb = transactionDb ?? this.db;
+      
+      // Calculate workout count & total duration for the day
+      const workoutAggr = await execDb.getFirstAsync<{ count: number; total_duration: number }>(`
+        SELECT COUNT(*) as count, SUM(duration_seconds) as total_duration
+        FROM workouts
+        WHERE date(date) = date(?)
+      `, [date]);
+
+      // Calculate sets, reps, volume
+      const setsAggr = await execDb.getFirstAsync<{ total_sets: number; total_reps: number; total_volume: number }>(`
+        SELECT
+          COUNT(*) as total_sets,
+          SUM(s.reps) as total_reps,
+          SUM(s.weight * s.reps) as total_volume
+        FROM sets s
+        JOIN workouts w ON s.workout_id = w.id
+        WHERE date(w.date) = date(?) AND s.completed = 1 AND s.skipped = 0
+      `, [date]);
+
+      if ((!workoutAggr || workoutAggr.count === 0) && (!setsAggr || setsAggr.total_sets === 0)) {
+        await this.deleteDailyStats(date);
+        return null;
+      }
+
+      const stats: DailyStats = {
+        date,
+        totalVolume: setsAggr?.total_volume ?? 0,
+        totalSets: setsAggr?.total_sets ?? 0,
+        totalReps: setsAggr?.total_reps ?? 0,
+        workoutCount: workoutAggr?.count ?? 0,
+        totalDuration: workoutAggr?.total_duration ?? 0,
+      };
+
+      await this.upsertDailyStats(stats);
+      return stats;
+    } catch (error) {
+      throw new DatabaseError(`Error al recalcular estadísticas diarias de ${date}`, error);
     }
   }
 
@@ -226,6 +355,32 @@ export class SQLiteStatsRepository implements StatsRepository {
       );
     } catch (error) {
       throw new DatabaseError('Error al guardar récord personal', error);
+    }
+  }
+
+  // =========================================
+  // Muscle Balance
+  // =========================================
+
+  async getMuscleVolumeDistribution(startDate: string, endDate: string): Promise<{ muscle: string; volume: number; sets: number }[]> {
+    try {
+      const rows = await this.db.getAllAsync<{ muscle: string; volume: number; sets: number }>(`
+        SELECT
+          e.primary_muscle as muscle,
+          SUM(s.weight * s.reps) as volume,
+          COUNT(s.id) as sets
+        FROM sets s
+        JOIN workouts w ON s.workout_id = w.id
+        JOIN exercises e ON s.exercise_id = e.id
+        WHERE date(w.date) BETWEEN date(?) AND date(?)
+          AND s.completed = 1 AND s.skipped = 0
+        GROUP BY e.primary_muscle
+        ORDER BY volume DESC
+      `, [startDate, endDate]);
+      
+      return rows;
+    } catch (error) {
+      throw new DatabaseError('Error al obtener distribución de volumen muscular', error);
     }
   }
 }

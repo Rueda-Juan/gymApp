@@ -1,6 +1,7 @@
 import type * as SQLite from 'expo-sqlite';
 import type { Workout, WorkoutExercise } from '../../domain/entities/Workout';
 import type { WorkoutSet } from '../../domain/entities/WorkoutSet';
+import type { SetType } from '../../domain/valueObjects/SetType';
 import type { WorkoutRepository } from '../../domain/repositories/WorkoutRepository';
 import { DatabaseError } from '../../shared/errors';
 import { fromSQLiteDateTime, toSQLiteDateTime } from '../../shared/utils/dateUtils';
@@ -23,6 +24,8 @@ interface WorkoutExerciseRow {
   exercise_id: string;
   order_index: number;
   skipped: number;
+  notes: string | null;
+  superset_group: number | null;
 }
 
 interface SetRow {
@@ -33,6 +36,8 @@ interface SetRow {
   weight: number;
   reps: number;
   rir: number | null;
+  set_type: string;
+  rest_seconds: number | null;
   duration_seconds: number;
   completed: number;
   skipped: number;
@@ -49,6 +54,8 @@ interface JoinedExerciseSetRow {
   we_exercise_id: string;
   we_order_index: number;
   we_skipped: number;
+  we_notes: string | null;
+  we_superset_group: number | null;
   // sets columns (nullable due to LEFT JOIN)
   s_id: string | null;
   s_exercise_id: string | null;
@@ -56,6 +63,8 @@ interface JoinedExerciseSetRow {
   s_weight: number | null;
   s_reps: number | null;
   s_rir: number | null;
+  s_set_type: string | null;
+  s_rest_seconds: number | null;
   s_duration_seconds: number | null;
   s_completed: number | null;
   s_skipped: number | null;
@@ -70,6 +79,8 @@ function mapSetRow(row: SetRow): WorkoutSet {
     weight: row.weight,
     reps: row.reps,
     rir: row.rir ?? null,
+    setType: row.set_type as SetType,
+    restSeconds: row.rest_seconds,
     durationSeconds: row.duration_seconds,
     completed: Boolean(row.completed),
     skipped: Boolean(row.skipped),
@@ -99,7 +110,7 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
         'SELECT * FROM workouts WHERE date BETWEEN ? AND ? ORDER BY date DESC',
         [toSQLiteDateTime(start), toSQLiteDateTime(end)],
       );
-      return Promise.all(rows.map((r) => this.buildWorkout(r)));
+      return Promise.all(rows.map((r: WorkoutRow) => this.buildWorkout(r)));
     } catch (error) {
       throw new DatabaseError('Error al obtener workouts por rango', error);
     }
@@ -139,22 +150,24 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
 
         for (const exercise of workout.exercises) {
           await this.db.runAsync(
-            `INSERT INTO workout_exercises (id, workout_id, exercise_id, order_index, skipped)
-             VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO workout_exercises (id, workout_id, exercise_id, order_index, skipped, notes, superset_group)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
               exercise.id || generateId(),
               workout.id,
               exercise.exerciseId,
               exercise.orderIndex,
               exercise.skipped ? 1 : 0,
+              exercise.notes,
+              exercise.supersetGroup,
             ],
           );
 
           for (const set of exercise.sets) {
             await this.db.runAsync(
               `INSERT OR REPLACE INTO sets
-               (id, workout_id, exercise_id, set_number, weight, reps, rir, duration_seconds, completed, skipped, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+               (id, workout_id, exercise_id, set_number, weight, reps, rir, set_type, rest_seconds, duration_seconds, completed, skipped, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
                 set.id,
                 workout.id,
@@ -163,6 +176,8 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
                 set.weight,
                 set.reps,
                 set.rir,
+                set.setType,
+                set.restSeconds,
                 set.durationSeconds,
                 set.completed ? 1 : 0,
                 set.skipped ? 1 : 0,
@@ -187,20 +202,22 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
     }
   }
 
-  async addSet(workoutId: string, set: WorkoutSet): Promise<void> {
+  async addSet(workoutId: string, exerciseId: string, set: WorkoutSet): Promise<void> {
     try {
       await this.db.runAsync(
         `INSERT INTO sets
-         (id, workout_id, exercise_id, set_number, weight, reps, rir, duration_seconds, completed, skipped, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, workout_id, exercise_id, set_number, weight, reps, rir, set_type, rest_seconds, duration_seconds, completed, skipped, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           set.id,
           workoutId,
-          set.exerciseId,
+          exerciseId,
           set.setNumber,
           set.weight,
           set.reps,
           set.rir,
+          set.setType,
+          set.restSeconds,
           set.durationSeconds,
           set.completed ? 1 : 0,
           set.skipped ? 1 : 0,
@@ -212,12 +229,94 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
     }
   }
 
-  async markExerciseSkipped(workoutId: string, exerciseId: string): Promise<void> {
+  async updateSet(workoutId: string, set: WorkoutSet): Promise<void> {
     try {
       await this.db.runAsync(
-        `UPDATE workout_exercises SET skipped = 1
+        `UPDATE sets
+         SET weight = ?, reps = ?, rir = ?, set_type = ?, rest_seconds = ?, duration_seconds = ?, completed = ?, skipped = ?
+         WHERE id = ? AND workout_id = ?`,
+        [
+          set.weight,
+          set.reps,
+          set.rir,
+          set.setType,
+          set.restSeconds,
+          set.durationSeconds,
+          set.completed ? 1 : 0,
+          set.skipped ? 1 : 0,
+          set.id,
+          workoutId,
+        ],
+      );
+    } catch (error) {
+      throw new DatabaseError(`Error al actualizar set ${set.id}`, error);
+    }
+  }
+
+  async deleteSet(workoutId: string, setId: string): Promise<void> {
+    try {
+      await this.db.runAsync(
+        'DELETE FROM sets WHERE id = ? AND workout_id = ?',
+        [setId, workoutId],
+      );
+    } catch (error) {
+      throw new DatabaseError(`Error al eliminar set ${setId}`, error);
+    }
+  }
+
+  async addExercise(workoutId: string, exercise: WorkoutExercise): Promise<void> {
+    try {
+      await this.db.runAsync(
+        `INSERT INTO workout_exercises (id, workout_id, exercise_id, order_index, skipped, notes, superset_group)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          exercise.id,
+          workoutId,
+          exercise.exerciseId,
+          exercise.orderIndex,
+          exercise.skipped ? 1 : 0,
+          exercise.notes,
+          exercise.supersetGroup,
+        ],
+      );
+    } catch (error) {
+      throw new DatabaseError('Error al agregar ejercicio al workout', error);
+    }
+  }
+
+  async reorderExercises(workoutId: string, exerciseIds: string[]): Promise<void> {
+    try {
+      await this.db.withTransactionAsync(async () => {
+        for (let i = 0; i < exerciseIds.length; i++) {
+          await this.db.runAsync(
+            'UPDATE workout_exercises SET order_index = ? WHERE id = ? AND workout_id = ?',
+            [i, exerciseIds[i]!, workoutId],
+          );
+        }
+      });
+    } catch (error) {
+      throw new DatabaseError('Error al reordenar ejercicios', error);
+    }
+  }
+
+  async getExerciseHistory(exerciseId: string, limit: number = 20): Promise<WorkoutSet[]> {
+    try {
+      const rows = await this.db.getAllAsync<SetRow>(
+        'SELECT * FROM sets WHERE exercise_id = ? ORDER BY created_at DESC LIMIT ?',
+        [exerciseId, limit],
+      );
+      return rows.map(mapSetRow);
+    } catch (error) {
+      throw new DatabaseError('Error al obtener historial de sets', error);
+    }
+  }
+
+  async markExerciseSkipped(workoutId: string, exerciseId: string, skipped: boolean): Promise<void> {
+    try {
+      await this.db.runAsync(
+        `UPDATE workout_exercises SET skipped = ?
          WHERE workout_id = ? AND exercise_id = ?`,
-        [workoutId, exerciseId],
+        [skipped ? 1 : 0, workoutId, exerciseId],
       );
     } catch (error) {
       throw new DatabaseError('Error al marcar ejercicio como saltado', error);
@@ -237,11 +336,16 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
          we.exercise_id AS we_exercise_id,
          we.order_index AS we_order_index,
          we.skipped     AS we_skipped,
+         we.notes       AS we_notes,
+         we.superset_group AS we_superset_group,
          s.id               AS s_id,
          s.exercise_id      AS s_exercise_id,
          s.set_number       AS s_set_number,
          s.weight           AS s_weight,
          s.reps             AS s_reps,
+         s.rir              AS s_rir,
+         s.set_type         AS s_set_type,
+         s.rest_seconds     AS s_rest_seconds,
          s.duration_seconds AS s_duration_seconds,
          s.completed        AS s_completed,
          s.skipped          AS s_skipped,
@@ -265,6 +369,8 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
           exerciseId: jr.we_exercise_id,
           orderIndex: jr.we_order_index,
           skipped: Boolean(jr.we_skipped),
+          notes: jr.we_notes,
+          supersetGroup: jr.we_superset_group,
           sets: [],
         };
         exerciseMap.set(jr.we_id, exercise);
@@ -279,6 +385,8 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
           weight: jr.s_weight!,
           reps: jr.s_reps!,
           rir: jr.s_rir ?? null,
+          setType: jr.s_set_type as SetType,
+          restSeconds: jr.s_rest_seconds,
           durationSeconds: jr.s_duration_seconds!,
           completed: Boolean(jr.s_completed),
           skipped: Boolean(jr.s_skipped),

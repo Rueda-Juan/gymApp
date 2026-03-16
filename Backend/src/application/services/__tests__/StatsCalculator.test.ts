@@ -57,6 +57,8 @@ describe('StatsCalculator', () => {
       weight: 100,
       reps: 8,
       rir: null,
+      restSeconds: null,
+      setType: 'normal',
       durationSeconds: 0,
       completed: true,
       skipped: false,
@@ -69,6 +71,7 @@ describe('StatsCalculator', () => {
       expect(result.exerciseId).toBe('ex-1');
       expect(result.maxWeight).toBe(100);
       expect(result.maxVolume).toBe(800);
+      expect(result.maxReps).toBe(8);
       expect(result.totalSets).toBe(1);
       expect(result.totalReps).toBe(8);
       expect(result.totalVolume).toBe(800);
@@ -79,6 +82,7 @@ describe('StatsCalculator', () => {
         exerciseId: 'ex-1',
         maxWeight: 80,
         maxVolume: 640,
+        maxReps: 12,
         estimated1RM: 100,
         totalSets: 5,
         totalReps: 40,
@@ -91,6 +95,7 @@ describe('StatsCalculator', () => {
 
       expect(result.maxWeight).toBe(100); // New max
       expect(result.maxVolume).toBe(800); // New max
+      expect(result.maxReps).toBe(12); // Kept existing
       expect(result.totalSets).toBe(6);
       expect(result.totalReps).toBe(48);
       expect(result.totalVolume).toBe(4000);
@@ -101,6 +106,7 @@ describe('StatsCalculator', () => {
         exerciseId: 'ex-1',
         maxWeight: 120,
         maxVolume: 1200,
+        maxReps: 15,
         estimated1RM: 150,
         totalSets: 10,
         totalReps: 80,
@@ -113,6 +119,7 @@ describe('StatsCalculator', () => {
 
       expect(result.maxWeight).toBe(120); // Kept existing
       expect(result.maxVolume).toBe(1200); // Kept existing
+      expect(result.maxReps).toBe(15); // Kept existing
     });
   });
 
@@ -126,6 +133,8 @@ describe('StatsCalculator', () => {
       weight: 100,
       reps: 8,
       rir: null,
+      restSeconds: null,
+      setType: 'normal',
       durationSeconds: 0,
       completed: true,
       skipped: false,
@@ -135,9 +144,10 @@ describe('StatsCalculator', () => {
     it('should detect all records when no previous stats', () => {
       const broken = detectBrokenRecords(null, set);
 
-      expect(broken.length).toBe(3);
+      expect(broken.length).toBe(4);
       expect(broken.map((r) => r.recordType)).toContain('max_weight');
       expect(broken.map((r) => r.recordType)).toContain('max_volume');
+      expect(broken.map((r) => r.recordType)).toContain('max_reps');
       expect(broken.map((r) => r.recordType)).toContain('estimated_1rm');
     });
 
@@ -146,6 +156,7 @@ describe('StatsCalculator', () => {
         exerciseId: 'ex-1',
         maxWeight: 80,
         maxVolume: 900,
+        maxReps: 10,
         estimated1RM: 130,
         totalSets: 10,
         totalReps: 80,
@@ -166,6 +177,7 @@ describe('StatsCalculator', () => {
         exerciseId: 'ex-1',
         maxWeight: 150,
         maxVolume: 2000,
+        maxReps: 20,
         estimated1RM: 200,
         totalSets: 100,
         totalReps: 800,

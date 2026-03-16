@@ -216,6 +216,8 @@ interface RoutineExercise {
   orderIndex: number;
   targetSets: number;
   targetReps: number;
+  restSeconds: number;
+  supersetGroup: number | null;
 }
 ```
 
@@ -238,6 +240,8 @@ interface WorkoutExercise {
   exerciseId: string;
   orderIndex: number;
   skipped: boolean;
+  notes: string | null;
+  supersetGroup: number | null;
   sets: WorkoutSet[];
 }
 ```
@@ -253,10 +257,37 @@ interface WorkoutSet {
   setNumber: number;
   weight: number;
   reps: number;
+  setType: 'normal' | 'warmup' | 'dropset' | 'failure';
   rir: number | null;
+  restSeconds: number | null;
   durationSeconds: number;  // para ejercicios por tiempo
   completed: boolean;
   skipped: boolean;
+  createdAt: Date;
+}
+
+---
+
+### `UserPreferences`
+
+```typescript
+interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  weightUnit: 'kg' | 'lbs';
+  defaultRestSeconds: number;
+}
+```
+
+---
+
+### `BodyWeightEntry`
+
+```typescript
+interface BodyWeightEntry {
+  readonly id: string;
+  weight: number;
+  date: Date;
+  notes: string | null;
   createdAt: Date;
 }
 ```
@@ -596,15 +627,24 @@ class StatsService {
 // interface/services/BackupService.ts
 class BackupService {
   constructor(
-    private workoutRepo: WorkoutRepository,
-    private exerciseRepo: ExerciseRepository,
-    private statsRepo: StatsRepository,
-    private driveService: DriveBackupService,
+    private createBackupUseCase: CreateBackupUseCase,
+    private restoreBackupUseCase: RestoreBackupUseCase,
+    private exportCSVUseCase: ExportCSVUseCase
   ) {}
 
-  async createBackup(): Promise<BackupData> { /* ... */ }
-  async restoreBackup(data: BackupData): Promise<void> { /* ... */ }
-  async uploadBackup(): Promise<void> { /* ... */ }
+  async createBackup(): Promise<string> { /* ... */ }
+  async restoreBackup(data: string): Promise<void> { /* ... */ }
+  async exportCSV(): Promise<string> { /* ... */ }
+}
+
+// interface/services/PreferencesService.ts
+class PreferencesService {
+  // Methods to get/update UserPreferences
+}
+
+// interface/services/BodyWeightService.ts
+class BodyWeightService {
+  // Methods to log and retrieve body weight history
 }
 ```
 

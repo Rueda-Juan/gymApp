@@ -86,6 +86,24 @@ export class SQLiteExerciseRepository implements ExerciseRepository {
     }
   }
 
+  async isInUse(id: string): Promise<boolean> {
+    try {
+      const routineResult = await this.db.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM routine_exercises WHERE exercise_id = ?',
+        [id],
+      );
+      
+      const workoutResult = await this.db.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM workout_exercises WHERE exercise_id = ?',
+        [id],
+      );
+      
+      return (routineResult?.count ?? 0) > 0 || (workoutResult?.count ?? 0) > 0;
+    } catch (error) {
+      throw new DatabaseError(`Error al verificar uso del ejercicio ${id}`, error);
+    }
+  }
+
   async save(exercise: Exercise): Promise<void> {
     try {
       await this.db.runAsync(

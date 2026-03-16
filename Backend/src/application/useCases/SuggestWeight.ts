@@ -5,7 +5,7 @@ import { createLogger } from '../../shared/utils/Logger';
 
 const log = createLogger('SuggestWeight');
 
-interface WeightSuggestion {
+export interface WeightSuggestion {
   suggestedWeight: number;
   basis: 'progressive_overload' | 'last_set' | 'deload' | 'failure_recovery' | 'default';
   lastWeight: number | null;
@@ -31,7 +31,7 @@ export class SuggestWeightUseCase {
     private readonly exerciseRepo: ExerciseRepository,
   ) {}
 
-  async execute(exerciseId: string, minReps: number, maxReps: number): Promise<WeightSuggestion> {
+  async execute(exerciseId: string, minReps: number = 8, maxReps: number = 12): Promise<WeightSuggestion> {
     const defaultSuggestion: WeightSuggestion = {
       suggestedWeight: 0,
       basis: 'default',

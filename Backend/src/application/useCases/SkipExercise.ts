@@ -14,6 +14,6 @@ export class SkipExerciseUseCase {
    * @param exerciseId - ID of the exercise to skip.
    */
   async execute(workoutId: string, exerciseId: string): Promise<void> {
-    await this.workoutRepo.markExerciseSkipped(workoutId, exerciseId);
+    await this.workoutRepo.markExerciseSkipped(workoutId, exerciseId, true);
   }
 }

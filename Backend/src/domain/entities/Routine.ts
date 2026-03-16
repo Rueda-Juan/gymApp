@@ -23,4 +23,8 @@ export interface RoutineExercise {
   minReps: number;
   /** Top of the rep range (e.g. 12 in "8-12"). Also used as targetReps. */
   maxReps: number;
+  /** Default rest time in seconds for this exercise. Null = use global default. */
+  restSeconds: number | null;
+  /** Group ID for supersets/circuits. Exercises with same ID are grouped. Null = standalone. */
+  supersetGroup: number | null;
 }

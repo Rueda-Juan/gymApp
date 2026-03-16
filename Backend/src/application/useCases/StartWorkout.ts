@@ -14,15 +14,27 @@ export class StartWorkoutUseCase {
   ) {}
 
   /**
-   * Creates a new workout from an existing routine.
-   * @param routineId - ID of the routine to base the workout on.
+   * Creates a new workout from an existing routine or empty.
+   * @param routineId - ID of the routine to base the workout on, or null for empty.
    * @returns The newly created Workout.
-   * @throws NotFoundError if the routine doesn't exist.
    */
-  async execute(routineId: string): Promise<Workout> {
-    const routine = await this.routineRepo.getById(routineId);
-    if (!routine) {
-      throw new NotFoundError(`Routine ${routineId} no encontrada`);
+  async execute(routineId: string | null): Promise<Workout> {
+    let exercises: any[] = [];
+    
+    if (routineId) {
+      const routine = await this.routineRepo.getById(routineId);
+      if (!routine) {
+        throw new NotFoundError(`Routine ${routineId} no encontrada`);
+      }
+      exercises = routine.exercises.map((re) => ({
+        id: generateId(),
+        exerciseId: re.exerciseId,
+        orderIndex: re.orderIndex,
+        skipped: false,
+        notes: null,
+        supersetGroup: re.supersetGroup ?? null,
+        sets: [],
+      }));
     }
 
     const workout: Workout = {
@@ -31,13 +43,7 @@ export class StartWorkoutUseCase {
       date: new Date(),
       durationSeconds: 0,
       notes: null,
-      exercises: routine.exercises.map((re) => ({
-        id: generateId(),
-        exerciseId: re.exerciseId,
-        orderIndex: re.orderIndex,
-        skipped: false,
-        sets: [],
-      })),
+      exercises,
     };
 
     await this.workoutRepo.save(workout);

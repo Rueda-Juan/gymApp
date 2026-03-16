@@ -9,6 +9,9 @@ export interface ExerciseRepository {
   getById(id: string): Promise<Exercise | null>;
   search(query: string): Promise<Exercise[]>;
   getByMuscleGroup(muscle: string): Promise<Exercise[]>;
+  
+  /** Checks if the exercise is used in any routine or workout */
+  isInUse(id: string): Promise<boolean>;
   save(exercise: Exercise): Promise<void>;
   delete(id: string): Promise<void>;
 }

@@ -31,25 +31,26 @@ El frontend es responsable de:
 
 ## 2. Stack tecnológico
 
-| Tecnología                         | Uso                                      |
-| ---------------------------------- | ---------------------------------------- |
-| **React Native + Expo**            | Framework principal                      |
-| **TypeScript**                     | Lenguaje (modo `strict`)                 |
-| **Expo Router**                    | Navegación file-based                    |
-| **Zustand**                        | Estado global                            |
-| **Tamagui / NativeWind**           | **NUEVO:** Sistema de UI y estilos (Plantillas/Componentes gratis y de alto rendimiento) |
-| **@gorhom/bottom-sheet**           | **NUEVO:** Bottom sheets nativos a 60fps (Buscador, Ajustes) |
-| **React Native Reanimated**        | Animaciones UI thread                    |
-| **lottie-react-native**            | **NUEVO:** Animaciones complejas (celebración de PRs, onboarding) |
-| **FlashList**                      | Listas de alto rendimiento               |
-| **Victory Native**                 | Gráficos de estadísticas                 |
-| **Lucide React Native**            | Sistema de iconos (SVG consistente)      |
-| **expo-haptics**                   | Feedback háptico                         |
-| **expo-image**                     | Imágenes optimizadas + WebP animado      |
-| **react-native-toast-message**     | Notificaciones toast                     |
+| Tecnología                         | Uso                                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| **React Native + Expo**            | Framework principal                                                                        |
+| **TypeScript**                     | Lenguaje (modo `strict`)                                                                   |
+| **Expo Router**                    | Navegación file-based                                                                      |
+| **Zustand**                        | Estado global                                                                              |
+| **Tamagui / NativeWind**           | **NUEVO:** Sistema de UI y estilos (Plantillas/Componentes gratis y de alto rendimiento)   |
+| **@gorhom/bottom-sheet**           | **NUEVO:** Bottom sheets nativos a 60fps (Buscador, Ajustes)                               |
+| **React Native Reanimated**        | Animaciones UI thread                                                                      |
+| **lottie-react-native**            | **NUEVO:** Animaciones complejas (celebración de PRs, onboarding)                          |
+| **FlashList**                      | Listas de alto rendimiento                                                                 |
+| **Victory Native**                 | Gráficos de estadísticas                                                                   |
+| **Lucide React Native**            | Sistema de iconos (SVG consistente)                                                        |
+| **expo-haptics**                   | Feedback háptico                                                                           |
+| **expo-image**                     | Imágenes optimizadas + WebP animado                                                        |
+| **react-native-toast-message**     | Notificaciones toast                                                                       |
 
 > [!NOTE]
 > **Preferencias de librería** según skill `building-native-ui`:
+>
 > - `expo-image` en lugar de `<Image>` nativo
 > - `Pressable` en lugar de `TouchableOpacity`
 > - `process.env.EXPO_OS` en lugar de `Platform.OS`
@@ -62,40 +63,48 @@ El frontend es responsable de:
 Para evitar redundancias y mantener un desarrollo limpio, aquí se detalla el uso exclusivo de cada librería a lo largo de la app:
 
 ### Sistema Base y Estructura
+
 - **`expo` / `react-native`**: Motor base y acceso a APIs del sistema operativo (teclado, portapapeles, dimensiones).
 - **`expo-router`**: Gestiona **toda la navegación**, incluyendo las Tabs del menú inferior y el Stack (pila) de pantallas superpuestas (ej: ir de Home a Workout Screen). Todo vive bajo la carpeta `app/`.
 - **`zustand`**: Gestión del **estado global sincrónico prestablecido** como el temporizador de descanso, el entrenamiento activo (`workoutStore`), o los filtros seleccionados (`exerciseStore`). *No usar para estados locales UI (ej. abrir/cerrar un popup).*
 
 ### UI y Estilos (Look and Feel)
+
 - **`tamagui` & `@tamagui/core`**: Sistema de diseño principal. Construcción de componentes atómicos (Buttons, Inputs, Cards). Utiliza tokens de diseño definidos (colores, espaciado `8dp`) para compilar estilos nativos eficientes en lugar del viejo `StyleSheet.create`.
 - **`lucide-react-native`**: **Única fuente de íconos**. Utilizada en botones, menús y Tabs. *Prohibido usar emojis estructurales o mezclar librerías de íconos.*
 - **`expo-font`**: Utilizada para cargar fuentes modernas (Inter, Roboto) y crucial para aplicar la regla `fontVariant: ['tabular-nums']` en textos numéricos fluctuantes (pesos, cronómetros).
 
 ### Listas de Rendimiento Crítico
+
 - **`@shopify/flash-list`**: Obligatorio para **todas las listas largas o dinámicas** por su superioridad técnica (reemplaza a FlatList).
   - *Uso obligatorio en:* Pantalla de *Routines*, *History*, buscador del *Exercise Browser*, y la lista de Sets (`SetRow`) en la *Workout Screen*.
 
 ### Interfaz Avanzada y Navegación Overlay
+
 - **`@gorhom/bottom-sheet`**: Exclusivo para modales que emergen desde la base a 60fps.
   - *Casos:* **Exercise Browser** (el modal para buscar/agregar ejercicios), selectores rápidos u opciones contextuales (long-press en History).
 - **`react-native-safe-area-context`**: Fundamental para evitar que los elementos de UI queden bloqueados por el "Notch/Isla Dinámica" en iOS o las barras de navegación en Android.
 
 ### Interacción y Sensaciones Físicas (Feedback)
+
 - **`expo-haptics`**: Feedback físico al usuario en momentos clave (vibración).
   - *Casos:* `Medium` al completar un Set (check ✔). `Notification` al finalizar el temporizador. `Heavy` al romper un récord personal (PR).
 - **`react-native-toast-message`**: Feedback visual rápido y no bloqueante (Ej: "Rutina guardada con éxito" o alertas de error de formulario).
 
 ### Animaciones
+
 - **`react-native-reanimated`**: Animaciones fluidas atadas al hilo de la UI. Microinteracciones.
   - *Casos:* El efecto de presionado del check en `SetRow`, transiciones de Drag & Drop, o el desplazamiento de sliders/barras de progreso.
 - **`lottie-react-native`**: Animaciones vectoriales pre-renderizadas no atadas al estado interactivo.
   - *Casos:* Celebraciones grandes de PRs, onboarding, o `EmptyChartState` súper visuales.
 
 ### Ejercicios y Visualización de Datos
+
 - **`expo-image`**: Utilizada para cargar los assets de imágenes y, lo más importante, las **animaciones WebP de los ejercicios** (ej. mostrar un press banca en loop dentro del *Exercise Detail* y el *Workout Screen*) gracias a su carga bajo demanda (lazy load).
 - **`victory-native`**: Exclusivo para el tab de **Stats**. Renderiza los gráficos de progreso (torta de balance muscular, barras del volumen levantado, o línea de estimación 1RM).
 
 ### Utilidades y Lógica Liviana
+
 - **`date-fns`**: Parseo y formato de fechas limpios para toda la app (Ej: Formatear tiempos "Ayer a las 18:00", duraciones, etc.).
 - **`zod`**: Validación robusta de formularios antes de hablar con los Services/Stores (Ej: Validar que el peso insertado es > 0, o que el nombre de rutina existe).
 - **`expo-crypto`**: Empleado para **generar UUIDs ultrarrápidos** localmente, vital a la hora de asignar IDs temporales a nuevos sets o rutinas generados en pantalla antes de mandarlos a la base de datos backend.
@@ -179,7 +188,7 @@ flowchart TD
 
 ### Implementación con Expo Router
 
-```
+```text
 app/
 ├── _layout.tsx                    ← NativeTabs / Bottom Tabs
 ├── (home,routines,history,stats,settings)/
@@ -208,7 +217,7 @@ app/
 
 | Componente                  | Descripción                          |
 | --------------------------- | ------------------------------------ |
-| Botón "Start Workout"      | CTA primario, prominente             |
+| Botón "Start Workout"       | CTA primario, prominente             |
 | Último entrenamiento        | Resumen del workout más reciente     |
 | Rutinas recientes           | Lista horizontal, acceso rápido      |
 
@@ -221,7 +230,7 @@ app/
 | Componente                  | Descripción                          |
 | --------------------------- | ------------------------------------ |
 | Lista de rutinas            | FlatList con `ExerciseCard`          |
-| Botón "Crear rutina"       | FAB o header button                  |
+| Botón "Crear rutina"        | FAB o header button                  |
 | Swipe actions               | Editar / Eliminar con confirmación   |
 
 ---
@@ -232,7 +241,7 @@ app/
 
 | Componente                  | Descripción                          |
 | --------------------------- | ------------------------------------ |
-| Lista de ejercicios         | Drag & drop para reordenar          |
+| Lista de ejercicios         | Drag & drop para reordenar           |
 | Buscador de ejercicios      | Modal con filtros por músculo/equipo |
 | Inputs por ejercicio        | Target sets + target reps            |
 
@@ -242,26 +251,28 @@ app/
 
 **Pantalla más importante** — diseñada para uso en el gimnasio con manos ocupadas.
 
-```
+```text
 ┌─────────────────────────────────┐
-│  ← Back          Timer: 01:23  │
+│  ← Back          Timer: 01:23   │
 ├─────────────────────────────────┤
 │                                 │
 │       [Animación WebP]          │
 │        Bench Press              │
 │                                 │
-│  Peso anterior: 80 kg          │
-│  Peso sugerido: 82.5 kg        │
+│  Peso anterior: 80 kg           │
+│  Peso sugerido: 82.5 kg         │
 │                                 │
 ├─────────────────────────────────┤
-│  Set 1  [82.5 kg] [10 reps] ✔  │
-│  Set 2  [82.5 kg] [10 reps] ☐  │
-│  Set 3  [82.5 kg] [  reps] ☐  │
+│  Set 1  [82.5 kg] [10 reps] [Normal] ⏱90s ✔  │
+│  Set 2  [82.5 kg] [10 reps] [Dropset]☐  │
+│  Set 3  [82.5 kg] [  reps] [Failure]☐  │
 │                                 │
 │     [+ Agregar Set]             │
 │                                 │
 ├─────────────────────────────────┤
-│  [Siguiente Ejercicio →]       │
+│  [Siguiente Ejercicio →]        │
+│  [Reordenar Ejercicios]         │
+│  [+ Añadir Ejercicio]           │
 └─────────────────────────────────┘
 ```
 
@@ -271,7 +282,10 @@ app/
 - Feedback háptico al completar set (`expo-haptics`)
 - Animación de check al marcar ✔ (Reanimated, 150-300ms)
 - Alerta con animación especial al romper un PR
-- Temporizador de descanso persistente entre sets
+- Temporizador de descanso persistente entre sets, basado en la preferencia global o el valor específico del set/ejercicio.
+- Soporte visual para agrupar ejercicios en **Superseries (Supersets)** (ej. 1A, 1B).
+- Selector del **tipo de set** (Normal, Warmup, Dropset, Failure).
+- Acciones de Workout: **Reordenar ejercicios** en pleno entrenamiento y **Añadir ejercicios extras** al workout activo.
 - `fontVariant: 'tabular-nums'` en peso, reps y timer
 
 ---
@@ -284,7 +298,7 @@ app/
 | --------------------------- | --------------------------------------- |
 | Search bar                  | `headerSearchBarOptions` en Stack       |
 | Filtros                     | Por músculo, equipo (chips/segmented)   |
-| Lista                       | FlashList con animación WebP + metadatos |
+| Lista                       | FlashList con animación WebP + metadatos|
 
 ---
 
@@ -324,11 +338,12 @@ app/
 
 **Función**: Configuración y datos.
 
-| Opción                      | Descripción                          |
-| --------------------------- | ------------------------------------ |
-| Backup                      | Crear / restaurar desde Google Drive |
-| Exportar CSV                | Exportar historial                   |
-| Preferencias                | Unidades (kg/lbs), tema, descanso    |
+| Opción                      | Descripción                                                      |
+| --------------------------- | ---------------------------------------------------------------- |
+| Backup                      | Crear / restaurar desde JSON local / Google Drive                |
+| Exportar CSV                | Exportar historial a archivo CSV                                 |
+| Preferencias                | Unidades (kg/lbs), tema, tiempo de descanso predeterminado       |
+| Registro de Peso Corporal   | Grilla/Gráfico para ver historial de peso y registrar nuevo peso |
 
 ---
 
@@ -348,8 +363,11 @@ flowchart TD
     H -- Sí --> E
     H -- No --> I{"¿Más ejercicios?"}
 
-    I -- Sí --> J["Siguiente ejercicio\n(animación slide)"]
-    J --> D
+    I -- Sí --> J{"¿Es Superset?"}
+    J -- Sí --> M["Intercalar con el siguiente\nejercicio del grupo (1A -> 1B)"]
+    J -- No --> N["Siguiente ejercicio\n(animación slide)"]
+    M --> D
+    N --> D
 
     I -- No --> K["WorkoutService.finish()"]
     K --> L["Resumen del workout\ncon PRs nuevos"]
@@ -413,6 +431,7 @@ interface StatsState {
 
 > [!TIP]
 > **Rendimiento con Zustand** (skill `vercel-react-native-skills`):
+>
 > - Usar selectores específicos: `useWorkoutStore(s => s.activeWorkout)`
 > - Minimizar state subscriptions
 > - Usar `dispatcher pattern` para callbacks estables en listas
@@ -423,16 +442,17 @@ interface StatsState {
 
 ### Design System y Librería Base
 
-Para acelerar el desarrollo sin sacrificar rendimiento, no es necesario construir componentes atómicos (`Button`, `Input`) desde cero. Se recomienda utilizar una librería _headless_ o un _UI Kit_ moderno y envolverlo en nuestros propios componentes. 
+Para acelerar el desarrollo sin sacrificar rendimiento, no es necesario construir componentes atómicos (`Button`, `Input`) desde cero. Se recomienda utilizar una librería *headless* o un *UI Kit* moderno y envolverlo en nuestros propios componentes.
 
 > [!TIP]
 > **Recomendación de Librerías (Gratis):**
+>
 > - **[Tamagui](https://tamagui.dev/)**: Considerada la librería UI más rápida para React Native hoy en día. Su compilador extrae estilos estáticos, lo cual es ideal para apps como Hevy que necesitan mucho rendimiento. Incluye componentes interactivos gratuitos.
-> - **[Gluestack UI](https://gluestack.io/)**: Componentes accesibles y sin estilo (_headless_) ideales si quieres crear un diseño visual propio muy customizado mediante tokens.
+> - **[Gluestack UI](https://gluestack.io/)**: Componentes accesibles y sin estilo (*headless*) ideales si quieres crear un diseño visual propio muy customizado mediante tokens.
 > - **[NativeWind](https://www.nativewind.dev/)**: Si prefieres usar clases de Tailwind CSS en React Native. Ideal combinado con componentes base custom.
 > - **Componentes Modales**: Usar sí o sí **`@gorhom/bottom-sheet`** para todos los selectores de rutinas, buscadores (Exercise Browser) y paneles de configuración contextuales emergentes.
 
-```
+```text
 src/
 ├── components/
 │   ├── ui/                        ← Wrappers sobre Tamagui / Gluestack
@@ -470,10 +490,12 @@ interface SetRowProps {
   setNumber: number;
   weight: number;
   reps: number;
+  setType: 'normal' | 'warmup' | 'dropset' | 'failure';
   completed: boolean;
   onComplete: () => void;
   onWeightChange: (value: number) => void;
   onRepsChange: (value: number) => void;
+  onTypeChange: (type: string) => void;
 }
 
 export function SetRow({
@@ -577,14 +599,14 @@ import { Image } from 'expo-image';
 
 ## 11. Feedback al usuario
 
-| Evento                    | Feedback                                  | Timing       |
-| ------------------------- | ----------------------------------------- | ------------ |
-| Completar set             | Haptic `Medium` + animación ✔             | < 100ms      |
-| Nuevo PR                  | Haptic `Heavy` + animación especial + toast | 150-300ms   |
-| Error de validación       | Toast error con mensaje claro             | 3-5s auto    |
-| Borrar workout            | Diálogo de confirmación destructivo       | Requiere tap |
-| Timer finalizado          | Haptic `Notification` + sonido sutil      | Inmediato    |
-| Guardar rutina            | Toast success + animación                 | 3s auto      |
+| Evento                    | Feedback                                    | Timing       |
+| ------------------------- | ------------------------------------------- | ------------ |
+| Completar set             | Haptic `Medium` + animación ✔               | < 100ms      |
+| Nuevo PR                  | Haptic `Heavy` + animación especial + toast | 150-300ms    |
+| Error de validación       | Toast error con mensaje claro               | 3-5s auto    |
+| Borrar workout            | Diálogo de confirmación destructivo         | Requiere tap |
+| Timer finalizado          | Haptic `Notification` + sonido sutil        | Inmediato    |
+| Guardar rutina            | Toast success + animación                   | 3s auto      |
 
 > [!NOTE]
 > Feedback háptico solo en iOS (`process.env.EXPO_OS === 'ios'`). En Android usar ripple effect nativo.
@@ -595,15 +617,15 @@ import { Image } from 'expo-image';
 
 ### Reglas críticas (skill `vercel-react-native-skills`)
 
-| Prioridad  | Regla                             | Implementación                         |
-| ---------- | --------------------------------- | -------------------------------------- |
-| 🔴 CRITICAL| Virtualizar listas               | FlashList para todas las listas        |
-| 🔴 CRITICAL| Memoizar items de lista          | `React.memo` en `SetRow`, `ExerciseCard` |
-| 🔴 CRITICAL| Estabilizar callbacks            | `useCallback` en handlers de listas    |
-| 🟠 HIGH    | Animar solo transform/opacity    | Nunca animar width/height/top/left     |
-| 🟠 HIGH    | Usar Pressable                   | Nunca `TouchableOpacity`               |
-| 🟡 MEDIUM  | Minimizar state subscriptions    | Selectores específicos en Zustand      |
-| 🟡 MEDIUM  | `useWindowDimensions`            | Nunca `Dimensions.get()`              |
+| Prioridad  | Regla                             | Implementación                           |
+| ---------- | --------------------------------- | ---------------------------------------- |
+| 🔴 CRITICAL| Virtualizar listas                | FlashList para todas las listas          |
+| 🔴 CRITICAL| Memoizar items de lista           | `React.memo` en `SetRow`, `ExerciseCard` |
+| 🔴 CRITICAL| Estabilizar callbacks             | `useCallback` en handlers de listas      |
+| 🟠 HIGH    | Animar solo transform/opacity     | Nunca animar width/height/top/left       |
+| 🟠 HIGH    | Usar Pressable                    | Nunca `TouchableOpacity`                 |
+| 🟡 MEDIUM  | Minimizar state subscriptions     | Selectores específicos en Zustand        |
+| 🟡 MEDIUM  | `useWindowDimensions`             | Nunca `Dimensions.get()`                 |
 
 ### Estrategia de carga inicial
 
@@ -636,7 +658,7 @@ flowchart LR
 
 ## 14. Arquitectura de carpetas completa
 
-```
+```text
 src/
 ├── app/                           ← Expo Router (solo rutas)
 │   ├── _layout.tsx
@@ -695,24 +717,28 @@ src/
 Antes de entregar, verificar según skills `ui-ux-pro-max` y `building-native-ui`:
 
 ### Visual
+
 - [ ] Sin emojis como íconos estructurales (usar Lucide)
 - [ ] Tokens semánticos de color consistentes (no hex hardcoded)
 - [ ] `borderCurve: 'continuous'` en todos los bordes redondeados
 - [ ] `boxShadow` en lugar de legacy shadow/elevation
 
 ### Interacción
+
 - [ ] Feedback háptico en acciones importantes
 - [ ] Animaciones 150-300ms con easing spring/ease-out
 - [ ] Disabled states claros y no interactivos
 - [ ] Pressed states con scale sutil (0.95-1.05)
 
 ### Layout
+
 - [ ] Safe areas respetadas (header, tab bar, bottom)
 - [ ] Espaciado 8dp consistente
 - [ ] `contentInsetAdjustmentBehavior="automatic"` en ScrollView/FlatList
 - [ ] Verificado en teléfono pequeño (375px) + landscape
 
 ### Dark Mode
+
 - [ ] Contraste primario ≥ 4.5:1
 - [ ] Contraste secundario ≥ 3:1
 - [ ] Bordes/divisores visibles en ambos temas

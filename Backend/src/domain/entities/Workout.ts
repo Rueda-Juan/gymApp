@@ -22,5 +22,7 @@ export interface WorkoutExercise {
   exerciseId: string;
   orderIndex: number;
   skipped: boolean;
+  notes: string | null;
+  supersetGroup: number | null;
   sets: WorkoutSet[];
 }

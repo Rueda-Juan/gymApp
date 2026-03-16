@@ -6,6 +6,7 @@ export interface ExerciseStats {
   exerciseId: string;
   maxWeight: number;
   maxVolume: number;
+  maxReps: number;
   estimated1RM: number;
   totalSets: number;
   totalReps: number;

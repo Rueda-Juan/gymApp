@@ -40,6 +40,7 @@ export function computeUpdatedExerciseStats(
       exerciseId,
       maxWeight: set.weight,
       maxVolume: setVolume,
+      maxReps: set.reps,
       estimated1RM,
       totalSets: 1,
       totalReps: set.reps,
@@ -53,6 +54,7 @@ export function computeUpdatedExerciseStats(
     exerciseId,
     maxWeight: Math.max(current.maxWeight, set.weight),
     maxVolume: Math.max(current.maxVolume, setVolume),
+    maxReps: Math.max(current.maxReps, set.reps),
     estimated1RM: Math.max(current.estimated1RM, estimated1RM),
     totalSets: current.totalSets + 1,
     totalReps: current.totalReps + set.reps,
@@ -76,10 +78,14 @@ export function detectBrokenRecords(
 
   const prevMaxWeight = currentStats?.maxWeight ?? 0;
   const prevMaxVolume = currentStats?.maxVolume ?? 0;
+  const prevMaxReps = currentStats?.maxReps ?? 0;
   const prev1RM = currentStats?.estimated1RM ?? 0;
 
   if (set.weight > prevMaxWeight) {
     broken.push({ recordType: 'max_weight', value: set.weight });
+  }
+  if (set.reps > prevMaxReps) {
+    broken.push({ recordType: 'max_reps', value: set.reps });
   }
   if (setVolume > prevMaxVolume) {
     broken.push({ recordType: 'max_volume', value: setVolume });

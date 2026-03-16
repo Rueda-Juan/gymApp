@@ -59,7 +59,7 @@ export class RecordSetUseCase {
       log.info('Recording set', { workoutId, exerciseId: set.exerciseId, weight: set.weight, reps: set.reps });
 
       // 3a. Save set to workout
-      await this.workoutRepo.addSet(workoutId, set);
+      await this.workoutRepo.addSet(workoutId, set.exerciseId, set);
 
       // 3b. Update exercise stats
       const currentStats = await this.statsRepo.getExerciseStats(set.exerciseId);
