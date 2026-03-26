@@ -1,7 +1,9 @@
-import type { CreateRoutineUseCase } from '../../application/useCases/CreateRoutineUseCase';
-import type { UpdateRoutineUseCase } from '../../application/useCases/UpdateRoutineUseCase';
-import type { DeleteRoutineUseCase } from '../../application/useCases/DeleteRoutineUseCase';
-import type { DuplicateRoutineUseCase } from '../../application/useCases/DuplicateRoutineUseCase';
+import type { CreateRoutineUseCase } from '../../application/useCases/routines/CreateRoutineUseCase';
+import type { UpdateRoutineUseCase } from '../../application/useCases/routines/UpdateRoutineUseCase';
+import type { DeleteRoutineUseCase } from '../../application/useCases/routines/DeleteRoutineUseCase';
+import type { DuplicateRoutineUseCase } from '../../application/useCases/routines/DuplicateRoutineUseCase';
+import type { GetRoutinesUseCase } from '../../application/useCases/routines/GetRoutinesUseCase';
+import type { GetRoutineByIdUseCase } from '../../application/useCases/routines/GetRoutineByIdUseCase';
 import type { Routine } from '../../domain/entities/Routine';
 
 export class RoutineService {
@@ -10,7 +12,17 @@ export class RoutineService {
     private readonly _updateRoutine: UpdateRoutineUseCase,
     private readonly _deleteRoutine: DeleteRoutineUseCase,
     private readonly _duplicateRoutine: DuplicateRoutineUseCase,
+    private readonly _getRoutines: GetRoutinesUseCase,
+    private readonly _getRoutineById: GetRoutineByIdUseCase,
   ) {}
+
+  async getAll() {
+    return this._getRoutines.execute();
+  }
+
+  async getById(id: string) {
+    return this._getRoutineById.execute(id);
+  }
 
   async createRoutine(params: Omit<Routine, 'id' | 'createdAt'>) {
     return this._createRoutine.execute(params);

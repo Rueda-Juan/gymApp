@@ -209,168 +209,657 @@ app/
 
 ---
 
-## 5. Pantallas principales
+## 5. Pantallas del sistema — Descripción exhaustiva
 
-### 5.1 Home
+### 5.1 🏠 Home (Tab Principal)
 
-**Función**: Acceso rápido al entrenamiento.
+**Función**: Dashboard principal — acceso rápido a entrenar y resumen del estado actual.
 
-| Componente                  | Descripción                          |
-| --------------------------- | ------------------------------------ |
-| Botón "Start Workout"       | CTA primario, prominente             |
-| Último entrenamiento        | Resumen del workout más reciente     |
-| Rutinas recientes           | Lista horizontal, acceso rápido      |
+**Layout**: ScrollView vertical con `contentInsetAdjustmentBehavior="automatic"`.
 
----
+#### Componentes de la pantalla
 
-### 5.2 Routines
+| # | Componente | Descripción detallada | Datos |
+| - | - | - | - |
+| 1 | **Header nativo** | Título "GymApp" con large title. Sin botones adicionales. | Stack header |
+| 2 | **CTA "Empezar Entrenamiento"** | Botón principal prominente, ancho completo (`width: 100%`), altura ≥56pt, gradiente `primary → primary-dark`, ícono `Play` (Lucide). Efecto pressed: `scale(0.97)` + haptic `Medium`. | — |
+| 3 | **Resumen rápido semanal** | Card compacto con 3 métricas inline: 🏋️ Entrenamientos esta semana, ⏱ Tiempo total, 📊 Volumen total. Usa `fontVariant: 'tabular-nums'`. | `StatsService.getWeeklyStats()` |
+| 4 | **Último entrenamiento** | `WorkoutCard` con: fecha relativa ("Ayer", "Hace 2 días"), nombre rutina, duración, nº ejercicios, volumen. Tap → **Workout Detail**. | `WorkoutService` (último) |
+| 5 | **Rutinas recientes** | ScrollView horizontal con `RoutineCard` (máx 5). Cada card: nombre, nº ejercicios, badge "Última vez: hace X días". Tap → inicia workout con esa rutina. | `RoutineService.getAll()` |
+| 6 | **Streak / Racha** | Indicador visual de días consecutivos entrenando. Ícono `Flame` (Lucide) con contador. Se oculta si streak = 0. | `StatsService.getTrainingFrequency()` |
 
-**Función**: CRUD de rutinas.
+#### Empty States
 
-| Componente                  | Descripción                          |
-| --------------------------- | ------------------------------------ |
-| Lista de rutinas            | FlatList con `ExerciseCard`          |
-| Botón "Crear rutina"        | FAB o header button                  |
-| Swipe actions               | Editar / Eliminar con confirmación   |
+| Estado | Contenido |
+| - | - |
+| Sin entrenamientos | Ilustración Lottie + "¡Comienza tu primer entrenamiento!" + botón CTA |
+| Sin rutinas | "Crea tu primera rutina para entrenar más rápido" + link a tab Routines |
 
----
-
-### 5.3 Routine Editor
-
-**Función**: Crear/editar rutina.
-
-| Componente                  | Descripción                          |
-| --------------------------- | ------------------------------------ |
-| Lista de ejercicios         | Drag & drop para reordenar           |
-| Buscador de ejercicios      | Modal con filtros por músculo/equipo |
-| Inputs por ejercicio        | Target sets + target reps            |
-
----
-
-### 5.4 Workout Screen ⭐
-
-**Pantalla más importante** — diseñada para uso en el gimnasio con manos ocupadas.
-
-```text
-┌─────────────────────────────────┐
-│  ← Back          Timer: 01:23   │
-├─────────────────────────────────┤
-│                                 │
-│       [Animación WebP]          │
-│        Bench Press              │
-│                                 │
-│  Peso anterior: 80 kg           │
-│  Peso sugerido: 82.5 kg         │
-│                                 │
-├─────────────────────────────────┤
-│  Set 1  [82.5 kg] [10 reps] [Normal] ⏱90s ✔  │
-│  Set 2  [82.5 kg] [10 reps] [Dropset]☐  │
-│  Set 3  [82.5 kg] [  reps] [Failure]☐  │
-│                                 │
-│     [+ Agregar Set]             │
-│                                 │
-├─────────────────────────────────┤
-│  [Siguiente Ejercicio →]        │
-│  [Reordenar Ejercicios]         │
-│  [+ Añadir Ejercicio]           │
-└─────────────────────────────────┘
-```
-
-**Requisitos UX**:
-
-- Touch targets ≥ 44pt para inputs de peso/reps
-- Feedback háptico al completar set (`expo-haptics`)
-- Animación de check al marcar ✔ (Reanimated, 150-300ms)
-- Alerta con animación especial al romper un PR
-- Temporizador de descanso persistente entre sets, basado en la preferencia global o el valor específico del set/ejercicio.
-- Soporte visual para agrupar ejercicios en **Superseries (Supersets)** (ej. 1A, 1B).
-- Selector del **tipo de set** (Normal, Warmup, Dropset, Failure).
-- Acciones de Workout: **Reordenar ejercicios** en pleno entrenamiento y **Añadir ejercicios extras** al workout activo.
-- `fontVariant: 'tabular-nums'` en peso, reps y timer
-
----
-
-### 5.5 Exercise Browser
-
-**Función**: Buscar y filtrar ejercicios.
-
-| Componente                  | Descripción                             |
-| --------------------------- | --------------------------------------- |
-| Search bar                  | `headerSearchBarOptions` en Stack       |
-| Filtros                     | Por músculo, equipo (chips/segmented)   |
-| Lista                       | FlashList con animación WebP + metadatos|
-
----
-
-### 5.6 History
-
-**Función**: Historial de entrenamientos.
-
-| Componente                  | Descripción                          |
-| --------------------------- | ------------------------------------ |
-| Lista cronológica           | FlashList agrupada por fecha         |
-| Card por workout            | Fecha, duración, volumen total       |
-| Detalle                     | Stack push → resumen completo        |
-
----
-
-### 5.7 Stats
-
-**Función**: Visualización de progreso.
-
-| Componente                  | Librería                             |
-| --------------------------- | ------------------------------------ |
-| Progreso por ejercicio      | Victory Native (Line Chart)          |
-| Volumen semanal             | Victory Native (Bar Chart)           |
-| PRs                         | Lista con badges/iconos              |
-
-**Reglas de gráficos** (skill `ui-ux-pro-max`):
-
-- Leyendas visibles junto al gráfico
-- Tooltips en tap con valores exactos
-- Empty state con mensaje "Sin datos aún"
-- Colores accesibles (no solo rojo/verde)
-- `fontVariant: 'tabular-nums'` en ejes numéricos
-
----
-
-### 5.8 Settings
-
-**Función**: Configuración y datos.
-
-| Opción                      | Descripción                                                      |
-| --------------------------- | ---------------------------------------------------------------- |
-| Backup                      | Crear / restaurar desde JSON local / Google Drive                |
-| Exportar CSV                | Exportar historial a archivo CSV                                 |
-| Preferencias                | Unidades (kg/lbs), tema, tiempo de descanso predeterminado       |
-| Registro de Peso Corporal   | Grilla/Gráfico para ver historial de peso y registrar nuevo peso |
-
----
-
-## 6. Flujo de entrenamiento
+#### Flujos de navegación desde Home
 
 ```mermaid
 flowchart TD
-    A["Usuario toca\n'Start Workout'"] --> B["Seleccionar rutina"]
-    B --> C["WorkoutService.start(routineId)"]
+    H["🏠 Home"] -->|"Tap 'Empezar Entrenamiento'"| SEL["Selector de Rutina\n(Bottom Sheet)"]
+    SEL -->|"Elige rutina"| WS["⭐ Workout Screen"]
+    SEL -->|"'Entrenamiento vacío'"| WS
+    H -->|"Tap WorkoutCard"| WD["📋 Workout Detail"]
+    H -->|"Tap RoutineCard"| WS
+    H -->|"Long press RoutineCard"| CM["Context Menu:\n• Editar rutina\n• Duplicar\n• Eliminar"]
+    CM -->|"Editar"| RE["✏️ Routine Editor"]
+```
+
+---
+
+### 5.2 📋 Routines (Tab)
+
+**Función**: CRUD completo de rutinas (plantillas de entrenamiento).
+
+**Layout**: FlashList vertical de `RoutineCard`.
+
+#### Componentes de la pantalla Routines
+
+| # | Componente | Descripción detallada |
+| - | - | - |
+| 1 | **Header nativo** | Título "Rutinas" (large title). Botón derecho: ícono `Plus` (Lucide) → **Routine Editor (crear)** |
+| 2 | **Search bar** | `headerSearchBarOptions` nativo en el Stack. Filtra rutinas por nombre en tiempo real con debounce 300ms. |
+| 3 | **Lista de rutinas** | FlashList con `RoutineCard`. Cada card muestra: nombre, nº ejercicios, músculos objetivo (badges), fecha de última vez usada. |
+| 4 | **Swipe actions** | Swipe izquierda sobre cada card: **Editar** (azul) y **Eliminar** (rojo, con confirmación). |
+| 5 | **Long press context menu** | Opciones: Entrenar, Editar, Duplicar, Eliminar. Usa `<Link.Menu>` de Expo Router. |
+| 6 | **FAB (alternativo)** | En la esquina inferior derecha, `Plus` flotante. Solo visible si hay ≥ 1 rutina (si no, empty state tiene CTA). |
+
+#### Detalle de `RoutineCard`
+
+```text
+┌──────────────────────────────────────────┐
+│  🏋️  Push Day                           │
+│  5 ejercicios · Pecho, Tríceps, Hombros  │
+│  Última vez: hace 3 días                 │
+│                                    [▶]   │
+└──────────────────────────────────────────┘
+```
+
+- **Tap card** → abre **Routine Detail / Editor** (modo vista).
+- **Tap ▶** → inicia workout con esa rutina directamente.
+- **Long press** → context menu.
+
+#### Empty State
+
+Ilustración Lottie (persona pensando) + "Aún no tenés rutinas" + botón "Crear mi primera rutina".
+
+#### Flujos desde Routines
+
+```mermaid
+flowchart TD
+    R["📋 Routines"] -->|"Tap '+' header"| RE_N["✏️ Routine Editor\n(modo crear)"]
+    R -->|"Tap RoutineCard"| RE_V["👁️ Routine Detail\n(modo ver)"]
+    R -->|"Tap '▶' en card"| WS["⭐ Workout Screen"]
+    R -->|"Swipe → Editar"| RE_E["✏️ Routine Editor\n(modo editar)"]
+    R -->|"Swipe → Eliminar"| CONF["⚠️ Diálogo de\nconfirmación"]
+    CONF -->|"Confirmar"| R
+    R -->|"Long press → Duplicar"| R
+```
+
+---
+
+### 5.3 ✏️ Routine Editor (Stack Push)
+
+**Función**: Crear o editar una rutina con sus ejercicios, sets objetivo y configuración.
+
+**Layout**: ScrollView con KeyboardAwareScrollView para inputs.
+
+#### Componentes de la pantalla Routine Editor
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Header** | Título "Nueva Rutina" / "Editar Rutina". Botón izq: `X` (cancelar con confirmación si hay cambios). Botón der: "Guardar" (disabled si form inválido). |
+| 2 | **Input nombre** | TextInput con label visible "Nombre de la rutina". Validación: requerido, min 2 chars. Error debajo del campo. |
+| 3 | **Input notas** | TextInput multiline, label "Notas (opcional)". Placeholder: "Descripción, objetivo, etc." |
+| 4 | **Lista de ejercicios** | Drag & drop (Reanimated + GestureHandler). Cada item es un `RoutineExerciseRow`. |
+| 5 | **Botón "+ Agregar Ejercicio"** | Outlined button al final de la lista. Tap → abre **Exercise Browser** (modal/bottom sheet). |
+| 6 | **Sección por ejercicio** | Ver `RoutineExerciseRow` abajo. |
+
+#### Detalle de `RoutineExerciseRow`
+
+```text
+┌────────────────────────────────────────────┐
+│  ≡  Bench Press (compound)           [🗑]  │
+│     Pecho, Tríceps                          │
+│                                             │
+│     Series objetivo:  [3]  ▲▼               │
+│     Rango de reps:    [8] - [12]            │
+│     Descanso (seg):   [90]   (o global)     │
+│     Superset grupo:   [Ninguno ▼]           │
+│                                             │
+│     ☰ Arrastrar para reordenar              │
+└────────────────────────────────────────────┘
+```
+
+- **≡** → Drag handle para reordenar (Reanimated layout animation).
+- **🗑** → Eliminar ejercicio con confirmación si tiene datos.
+- **Inputs numéricos** → Steppers (`+` / `-`) con touch target ≥ 44pt.
+- **Superset grupo** → Dropdown/Picker: "Ninguno", "Grupo A", "Grupo B", etc.
+
+#### Flujos desde Routine Editor
+
+```mermaid
+flowchart TD
+    RE["✏️ Routine Editor"] -->|"Tap '+ Agregar Ejercicio'"| EB["🔍 Exercise Browser\n(Bottom Sheet Modal)"]
+    EB -->|"Selecciona ejercicio(s)"| RE
+    RE -->|"Tap 'Guardar'"| R["📋 Routines\n(pop con toast success)"]
+    RE -->|"Tap 'X'"| CONF{"¿Cambios sin guardar?"}
+    CONF -->|"Descartar"| R
+    CONF -->|"Seguir editando"| RE
+    RE -->|"Tap ejercicio existente"| ED["📄 Exercise Detail\n(ver info)"]
+```
+
+---
+
+### 5.4 ⭐ Workout Screen (Stack Push — Pantalla Principal)
+
+**Pantalla más importante** — diseñada para uso en gimnasio con manos sudadas.
+
+**Layout**: ScrollView vertical. Header sticky con timer. Bottom bar sticky con acciones.
+
+#### Componentes de la pantalla Workout Screen
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Header sticky** | Botón `←` (back con confirmación). Centro: Timer general del workout (`MM:SS`, `fontVariant: 'tabular-nums'`). Botón der: `•••` (menú overflow). |
+| 2 | **Progress indicator** | Barra de progreso horizontal: ejercicio actual / total ejercicios. Color `primary`. |
+| 3 | **Exercise Section** | Sección por cada ejercicio (ver detalle abajo). El ejercicio actual está expandido, los demás colapsados. |
+| 4 | **Bottom bar sticky** | 3 botones: "Anterior" ← , "Siguiente" → , "Finalizar" (solo visible en último ejercicio). |
+| 5 | **Rest Timer overlay** | Timer de descanso entre sets. Aparece como overlay/bottom sheet con: countdown circular, botones `+15s`, `-15s`, `Skip`. Haptic `Notification` al terminar. |
+| 6 | **PR Alert** | Overlay animado (Lottie confetti) cuando se rompe un record personal. Haptic `Heavy`. Auto-dismiss 3s. |
+
+#### Detalle de `ExerciseSection`
+
+```text
+┌─────────────────────────────────────────────┐
+│  ┌──────────────┐                            │
+│  │  [WebP anim] │  Bench Press               │
+│  │   120x120    │  Pecho · Compound           │
+│  └──────────────┘  Peso anterior: 80 kg       │
+│                    💡 Sugerido: 82.5 kg        │
+│                                               │
+│  ┌─ Calentamiento sugerido ──────────────┐   │
+│  │  🔥 Frío → 3 series de calentamiento   │   │
+│  │    40% (32.5kg) × 12  ·  60% × 8  ·   │   │
+│  │    80% × 4                              │   │
+│  │  [Usar calentamiento] [Saltar]          │   │
+│  └────────────────────────────────────────┘   │
+│                                               │
+│  ─── Sets ───────────────────────────────    │
+│  #   PESO      REPS    TIPO      RIR    ✔   │
+│  1   [82.5]    [10]    Normal    [2]    ☑   │
+│  2   [82.5]    [10]    Normal    [1]    ☑   │
+│  3   [82.5]    [ _]    Normal    [ ]    ☐   │
+│                                               │
+│  [+ Agregar Set]                              │
+│                                               │
+│  Notas del ejercicio: [________________]      │
+├─────────────────────────────────────────────┤
+│  [Skip ejercicio]                             │
+└─────────────────────────────────────────────┘
+```
+
+##### Detalle de `SetRow`
+
+| Elemento | Comportamiento |
+| - | - |
+| **#** | Número de set (auto-incrementa) |
+| **PESO** | Input numérico, teclado decimal. Pre-rellenado con peso sugerido. Stepper ±2.5kg. `fontVariant: 'tabular-nums'` |
+| **REPS** | Input numérico, teclado entero. Pre-rellenado con target reps de la rutina |
+| **TIPO** | Chip selector: `Normal` · `Warmup` · `Dropset` · `Failure`. Tap → cicla entre tipos. Color-coded. |
+| **RIR** | Input numérico 0-10. Tooltip "Reps In Reserve". Opcional |
+| **✔** | Checkbox. Tap → marcar set completado. Animación: scale 0.95→1 (150ms spring). Haptic `Medium`. Inicia rest timer |
+
+##### Superset visual
+
+Cuando un ejercicio pertenece a un superset group, el indicador visual es:
+
+```text
+│  🔗 Superset A                                │
+│  ┌──────────────────────────────────────────┐ │
+│  │ 1A  Bench Press       Set 1: ☑  Set 2: ☐│ │
+│  │ 1B  Incline Fly       Set 1: ☑  Set 2: ☐│ │
+│  └──────────────────────────────────────────┘ │
+```
+
+#### Menú overflow (•••)
+
+| Opción | Acción |
+| - | - |
+| Reordenar ejercicios | Abre modo drag & drop para cambiar orden |
+| Añadir ejercicio | Abre **Exercise Browser** |
+| Añadir notas al workout | Abre input de notas |
+| Cancelar entrenamiento | Confirmación destructiva → descarta workout |
+
+#### Flujos desde Workout Screen
+
+```mermaid
+flowchart TD
+    WS["⭐ Workout Screen"] -->|"Tap '+' agregar set"| WS_SET["Nuevo SetRow\n(pre-rellenado)"]
+    WS -->|"Tap ✔ en set"| RT["⏱ Rest Timer\n(overlay/bottom sheet)"]
+    RT -->|"Timer termina o Skip"| WS
+    WS -->|"Tap 'Siguiente →'"| WS_NEXT["Scroll al siguiente\nejercicio (slide anim)"]
+    WS -->|"Tap 'Finalizar'"| WS_FINISH["📊 Workout Summary\n(modal)"]
+    WS -->|"••• → Añadir ejercicio"| EB["🔍 Exercise Browser"]
+    EB -->|"Selecciona"| WS
+    WS -->|"••• → Reordenar"| WS_DRAG["Modo Drag & Drop"]
+    WS_DRAG -->|"Soltar/Confirmar"| WS
+    WS -->|"Tap '←' back"| CONF{"¿Guardar progreso?"}
+    CONF -->|"Guardar (en background)"| HOME["🏠 Home"]
+    CONF -->|"Descartar"| HOME
+    WS -->|"PR detectado!"| PR_ALERT["🎉 PR Alert\n(Lottie + confetti)"]
+    PR_ALERT -->|"Auto-dismiss 3s"| WS
+```
+
+---
+
+### 5.5 📊 Workout Summary (Modal — Post-workout)
+
+**Función**: Resumen al finalizar un entrenamiento.
+
+**Layout**: Modal `presentation: "formSheet"` con `sheetAllowedDetents: [0.75, 1.0]`.
+
+#### Componentes
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Header** | "¡Entrenamiento Completado!" + ícono `CheckCircle` (success color). Animación Lottie de celebración (sutil, 1s). |
+| 2 | **Métricas principales** | Grid 2×2: Duración (`HH:MM:SS`), Volumen total (kg), Sets completados, Ejercicios realizados. |
+| 3 | **Records personales** | Lista de PRs rotos en esta sesión. Cada PR: ícono `Trophy`, tipo (max weight/max reps/1RM), valor, ejercicio. Color `success`. |
+| 4 | **Ejercicios realizados** | Lista colapsable: nombre + sets × reps × peso. Ejercicios skipped en gris. |
+| 5 | **Input notas** | "¿Cómo fue el entrenamiento?" TextInput multiline. |
+| 6 | **Botón "Cerrar"** | CTA primario. Pop modal → Home con toast "Entrenamiento guardado". |
+
+#### Flujos desde Workout Summary
+
+```mermaid
+flowchart TD
+    WS_SUM["📊 Workout Summary"] -->|"Tap 'Cerrar'"| HOME["🏠 Home\n(toast success)"]
+    WS_SUM -->|"Tap un ejercicio"| ED["📄 Exercise Detail"]
+    WS_SUM -->|"Tap un PR"| ED_PR["📄 Exercise Detail\n(scroll a PRs)"]
+```
+
+---
+
+### 5.6 🔍 Exercise Browser (Bottom Sheet Modal)
+
+**Función**: Buscar, filtrar y seleccionar ejercicios del catálogo.
+
+**Layout**: `@gorhom/bottom-sheet` con `snapPoints: ['75%', '100%']`. Sticky search bar arriba.
+
+#### Componentes Exercise Browser
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Search bar** | Input con ícono `Search` (Lucide). Placeholder: "Buscar ejercicios...". Debounce 300ms. Clear button. |
+| 2 | **Filtros rápidos** | ScrollView horizontal de chips: **por músculo** (Pecho, Espalda... ) y **por equipo** (Barra, Máquina...). Multi-select. Al Sustituir, el filtro muscular se pre-inyecta automáticamente. |
+| 3 | **Lista de ejercicios** | FlashList de `ExerciseListItem`. Al ubicar reemplazos, se divide en **✨ Alternativas Sugeridas** (mismo músculo, distinto equipo) y **Todos los ejercicios**. Cada item: animación WebP, metadata y badges. |
+| 4 | **Botón "+ Crear Ejercicio"** | Al final de la lista (o si búsqueda no tiene resultados). Abre **Exercise Creator** (form modal). |
+| 5 | **Header de sección** | Agrupación por músculo principal si no hay filtro activo. |
+
+#### Detalle de `ExerciseListItem`
+
+```text
+┌──────────────────────────────────────────┐
+│  [WebP]  Bench Press                      │
+│  40×40   Pecho · Barra · Compound         │
+│          ▸ Tap para seleccionar           │
+└──────────────────────────────────────────┘
+```
+
+- **Tap** → selecciona/deselecciona (checkmark animado). Si viene de Routine Editor: selección múltiple. Si viene de Workout: inserción directa.
+- **Long press** → abre **Exercise Detail** en preview sin cerrar el browser.
+
+#### Empty State (búsqueda sin resultados)
+
+"No se encontraron ejercicios" + "¿Querés crear uno personalizado?" + botón CTA.
+
+#### Flujos desde Exercise Browser
+
+```mermaid
+flowchart TD
+    EB["🔍 Exercise Browser"] -->|"Tap ExerciseListItem"| SELECT["Selecciona ejercicio(s)"]
+    SELECT -->|"Si viene de Routine Editor"| RE["✏️ Routine Editor\n(añade ejercicio/s)"]
+    SELECT -->|"Si viene de Workout"| WS["⭐ Workout Screen\n(añade ejercicio)"]
+    EB -->|"Long press item"| ED["📄 Exercise Detail\n(preview)"]
+    EB -->|"Tap '+ Crear Ejercicio'"| EC["📝 Exercise Creator"]
+    EC -->|"Guardar"| EB
+```
+
+---
+
+### 5.7 📝 Exercise Creator / Editor (Modal)
+
+**Función**: Crear o editar un ejercicio personalizado.
+
+**Layout**: Modal `presentation: "formSheet"`.
+
+#### Componentes Exercise Creator
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Header** | "Nuevo Ejercicio" / "Editar Ejercicio". Botón izq: Cancelar. Botón der: Guardar. |
+| 2 | **Input nombre** | TextInput con label "Nombre del ejercicio *". Validación: requerido, min 2 chars. |
+| 3 | **Selector músculos primarios** | Multi-select chips de `MuscleGroup`. Al menos 1 requerido. |
+| 4 | **Selector músculos secundarios** | Multi-select chips de `MuscleGroup`. Opcional. |
+| 5 | **Selector equipo** | Single-select segmented control: Barra, Mancuernas, Máquina, Cable, Peso Corporal, Banda, Otro. |
+| 6 | **Tipo de ejercicio** | Segmented: Compound / Aislamiento. |
+| 7 | **Incremento de peso** | Input numérico con stepper. Default: 2.5 kg. Label: "Incremento mínimo de peso". |
+| 8 | **Descripción** | TextInput multiline, label "Descripción (opcional)". |
+
+---
+
+### 5.8 📄 Exercise Detail (Stack Push)
+
+**Función**: Ver información completa de un ejercicio y su historial.
+
+**Layout**: ScrollView con header transparente y animación parallax en la imagen.
+
+#### Componentes Exercise Detail
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Animación WebP hero** | Imagen/animación del ejercicio a 200×200 con parallax al scroll. Si no hay animación: placeholder SVG anatómico. |
+| 2 | **Nombre y metadata** | Nombre ejercicio (H1), tipo (badge compound/isolation), equipo (badge). |
+| 3 | **Músculos** | Primarios (badges `primary` color) + Secundarios (badges `secondary` color). |
+| 4 | **Descripción** | Texto expandible si es largo (> 3 líneas). |
+| 5 | **Estadísticas** | Card con: Max Peso, Max Reps, 1RM Estimado, Volumen Total, Total Sets. Datos de `ExerciseStats`. Empty state si no hay datos. |
+| 6 | **Records Personales** | Lista de PRs por tipo (max_weight, max_reps, max_volume, estimated_1rm) con fecha y valor. Ícono `Trophy`. |
+| 7 | **Historial de sets** | FlashList de sets recientes, agrupados por fecha de workout. Cada set: peso × reps, tipo, RIR. |
+| 8 | **Gráfico de progreso** | Victory Line Chart: peso máximo por sesión a lo largo del tiempo. Toggle: peso / volumen / 1RM. |
+
+#### Flujos desde Exercise Detail
+
+```mermaid
+flowchart TD
+    ED["📄 Exercise Detail"] -->|"Tap 'Editar'"| EC["📝 Exercise Editor"]
+    ED -->|"Tap set en historial"| WD["📋 Workout Detail\nde esa sesión"]
+    ED -->|"←  Back"| PREV["Pantalla anterior"]
+```
+
+---
+
+### 5.9 📜 History (Tab)
+
+**Función**: Historial cronológico de todos los entrenamientos.
+
+**Layout**: FlashList con sección headers por mes/semana.
+
+#### Componentes History
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Header nativo** | Título "Historial" (large title). |
+| 2 | **Filtros de período** | Segmented control (arriba): "Semana" / "Mes" / "Todo". Cambia la agrupación. |
+| 3 | **Section headers** | "Marzo 2026" / "Semana del 10 Mar" según filtro. |
+| 4 | **WorkoutCard por entry** | Card con: fecha y hora (formateada: "Lun 15 Mar · 18:30"), nombre rutina (o "Libre"), duración, nº ejercicios, volumen total, badges de músculos trabajados. |
+| 5 | **Swipe actions** | Swipe izquierda: Eliminar (con confirmación destructiva). |
+| 6 | **Long press context menu** | "Ver detalle", "Repetir entrenamiento", "Eliminar". |
+
+#### Detalle de `WorkoutCard` en History
+
+```text
+┌──────────────────────────────────────────┐
+│  Lun 15 Mar · 18:30                      │
+│  Push Day                                 │
+│  ⏱ 1h 12min  ·  📊 15,200 kg  ·  5 ej. │
+│  [Pecho] [Tríceps] [Hombros]             │
+│                                    🏆×2  │
+└──────────────────────────────────────────┘
+```
+
+`🏆×2` = indica que se rompieron 2 PRs en ese workout.
+
+#### Empty State
+
+Lottie animation (calendario vacío) + "Todavía no hay entrenamientos" + botón "Empezar Ahora".
+
+#### Flujos desde History
+
+```mermaid
+flowchart TD
+    HI["📜 History"] -->|"Tap WorkoutCard"| WD["📋 Workout Detail"]
+    HI -->|"Long press → Repetir"| WS["⭐ Workout Screen\n(carga mismos ejercicios)"]
+    HI -->|"Swipe → Eliminar"| CONF["⚠️ Confirmación"]
+    CONF -->|"Confirmar"| HI_UPD["📜 History\n(actualizada)"]
+```
+
+---
+
+### 5.10 📋 Workout Detail (Stack Push)
+
+**Función**: Ver el detalle completo de un entrenamiento pasado (solo lectura).
+
+**Layout**: ScrollView.
+
+#### Componentes Workout Detail
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Header** | Fecha completa ("Lunes 15 de Marzo, 2026"). Botón der: `•••` (opciones). |
+| 2 | **Métricas principales** | Grid 2×2: Duración, Volumen total, Sets totales, Ejercicios. Mismo estilo que Workout Summary. |
+| 3 | **Notas del workout** | Si existen, card con texto del usuario. |
+| 4 | **PRs obtenidos** | Cards de PRs (si los hubo): tipo, valor, ejercicio. Color `success`. |
+| 5 | **Lista de ejercicios** | Colapsable por ejercicio. Cada ejercicio: nombre, sets (tabla: #, peso, reps, tipo, RIR). Ejercicios skipped en gris con `Skipped` badge. |
+
+#### Menú overflow (•••)
+
+| Opción | Acción |
+| - | - |
+| Repetir este entrenamiento | Inicia workout nuevo con mismos ejercicios |
+| Eliminar | Confirmación destructiva → pop + toast |
+
+---
+
+### 5.11 📊 Stats (Tab)
+
+**Función**: Visualización de progreso y estadísticas.
+
+**Layout**: ScrollView con secciones seleccionables.
+
+#### Componentes Stats
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Header nativo** | Título "Estadísticas" (large title). |
+| 2 | **Period selector** | Segmented control: "7 días" / "30 días" / "90 días" / "Todo". Afecta todos los gráficos. |
+| 3 | **Resumen numérico** | Card horizontal con métricas del período: Total workouts, Total volumen, Tiempo total, PRs obtenidos. |
+| 4 | **Volumen semanal** | Victory Bar Chart. Eje X: días/semanas. Eje Y: volumen (kg). Colores accesibles. Tooltip on tap. |
+| 5 | **Balance muscular** | Victory Pie/Donut Chart. Distribución de volumen por músculo. Máx 8 segmentos (agrupar "Otros"). Leyenda interactiva. Tap segmento → highlight + tooltip. |
+| 6 | **Frecuencia de entrenamiento** | Heatmap estilo GitHub contributions. Cuadraditos por día, color = intensidad. Tooltip on tap: "3 Mar: 2 entrenamientos, 12,000 kg". |
+| 7 | **Top ejercicios** | FlashList (máx 10). Ranking por volumen total. Cada item: nombre, volumen, sets, 1RM. Tap → **Exercise Detail**. |
+| 8 | **Records Personales recientes** | Lista de los últimos 10 PRs. Cada PR: ejercicio, tipo, valor, fecha. Ícono `Trophy`. |
+
+#### Reglas de gráficos (skills `ui-ux-pro-max`)
+
+- Leyendas visibles junto al gráfico, no debajo del scroll
+- Tooltips en tap con valores exactos
+- Empty state por gráfico con mensaje "Sin datos aún" + guidance
+- Colores accesibles (no depender solo de rojo/verde)
+- `fontVariant: 'tabular-nums'` en ejes numéricos
+- Grid lines sutiles (`--border` con baja opacidad)
+- Loading state: skeleton shimmer (nunca eje vacío)
+- Máx 5 categorías en pie chart (agrupar resto como "Otros")
+
+#### Flujos desde Stats
+
+```mermaid
+flowchart TD
+    ST["📊 Stats"] -->|"Tap ejercicio en Top"| ED["📄 Exercise Detail"]
+    ST -->|"Tap PR en lista"| ED_PR["📄 Exercise Detail\n(scroll a PRs)"]
+    ST -->|"Tap día en heatmap"| HI["📜 History\n(filtrada a ese día)"]
+```
+
+---
+
+### 5.12 ⚙️ Settings (Tab)
+
+**Función**: Configuración general, datos y preferencias.
+
+**Layout**: ScrollView con secciones agrupadas (estilo iOS Settings).
+
+#### Secciones y componentes
+
+**Sección: Preferencias e Inventario**
+
+| # | Componente | Comportamiento |
+| - | - | - |
+| 1 | **Unidad de peso** | Switch/Segmented: `kg` / `lbs`. Cambio inmediato con toast "Unidad cambiada a lbs". |
+| 2 | **Tema** | Segmented: Claro / Oscuro / Sistema. Cambio en tiempo real. |
+| 3 | **Descanso predeterminado** | Stepper con label: "Tiempo de descanso entre sets". Default 90s. Rango 30–300s en pasos de 15s. |
+| 4 | **Inventario de Discos** | Multi-select chips: 1.25, 2.5, 5, 10, 15, 20, 25 kg. Activa/desactiva los discos disponibles. Impacta en Plate Math. |
+| 5 | **Peso de Barra Base** | Segmented/Tabs: 10kg, 15kg, 20kg. Define peso por defecto sustraído en Plate Math. |
+
+**Sección: Peso Corporal**
+
+| # | Componente | Comportamiento |
+| - | - | - |
+| 4 | **Último peso registrado** | Card: "72.5 kg · hace 3 días". Si no hay registro: "Sin registros aún". |
+| 5 | **Botón "Registrar Peso"** | Abre form sheet con input numérico + date picker + notas. Guardar → toast success. |
+| 6 | **Gráfico de peso** | Victory Line Chart (últimos 90 días). Y-axis: peso. Tooltip on tap. |
+| 7 | **Historial** | Lista colapsable de entradas: fecha, peso, notas. Swipe para eliminar. |
+
+**Sección: Backup & Exportación**
+
+| # | Componente | Comportamiento |
+| - | - | - |
+| 8 | **Crear backup** | Botón → progress indicator → success toast con tamaño del archivo. Exporta JSON. |
+| 9 | **Restaurar backup** | Botón → file picker (JSON) → confirmación destructiva ("Esto reemplazará TODOS los datos") → progress → success/error. |
+| 10 | **Exportar CSV** | Botón → genera CSV → share sheet nativa del OS. |
+| 11 | **Google Drive (futuro)** | Botón gris/disabled con texto "Próximamente". |
+
+**Sección: Información**
+
+| # | Componente | Comportamiento |
+| - | - | - |
+| 12 | **Versión de la app** | Texto: "GymApp v1.0.0". |
+| 13 | **Datos almacenados** | Texto: "X entrenamientos · Y ejercicios · Z sets". |
+
+#### Flujos desde Settings
+
+```mermaid
+flowchart TD
+    SE["⚙️ Settings"] -->|"Tap 'Registrar Peso'"| BW_FORM["📝 Body Weight Form\n(Form Sheet)"]
+    BW_FORM -->|"Guardar"| SE
+    SE -->|"Tap 'Crear backup'"| BK_PROG["⏳ Progress...\n→ ✅ Toast success"]
+    SE -->|"Tap 'Restaurar backup'"| BK_FILE["📂 File Picker"]
+    BK_FILE -->|"Selecciona JSON"| BK_CONF["⚠️ Confirmación\ndestructiva"]
+    BK_CONF -->|"Confirmar"| BK_RESTORE["⏳ Restaurando...\n→ ✅/❌ Toast"]
+    SE -->|"Tap 'Exportar CSV'"| CSV["📤 Share Sheet\n(nativa)"]
+```
+
+---
+
+### 5.13 ⏱ Rest Timer (Overlay)
+
+**Función**: Temporizador de descanso entre sets.
+
+**Layout**: Bottom sheet o overlay centrado.
+
+#### Componentes Rest Timer
+
+| # | Componente | Descripción |
+| - | - | - |
+| 1 | **Countdown circular** | Animación circular que se vacía. Números grandes centrales: `1:30`. `fontVariant: 'tabular-nums'`. |
+| 2 | **Botones de ajuste** | `-15s` y `+15s` a los lados del timer. Touch target ≥ 44pt. |
+| 3 | **Botón Skip** | "Saltar descanso" debajo del timer. |
+| 4 | **Próximo set info** | Texto sutil: "Próximo: Set 3 · 82.5 kg". |
+
+**Comportamiento**:
+
+- Se activa automáticamente al marcar set como completado (✔).
+- Tiempo: usa `restSeconds` del ejercicio en la rutina, o `defaultRestSeconds` de UserPreferences.
+- Al terminar: haptic `Notification` + sonido sutil + auto-dismiss.
+- Es interruptible: tocar cualquier input del workout lo minimiza.
+
+---
+
+## 6. Mapa de Navegación Completo
+
+### 6.1 Árbol de navegación
+
+```mermaid
+flowchart TD
+    SPLASH["💧 Splash Screen\n(init BD + migraciones)"] --> TABS["📱 Tab Navigator"]
+
+    TABS --> HOME["🏠 Home"]
+    TABS --> ROUT["📋 Routines"]
+    TABS --> HIST["📜 History"]
+    TABS --> STAT["📊 Stats"]
+    TABS --> SETT["⚙️ Settings"]
+
+    HOME -->|"'Empezar Entrenamiento'"| RS["Selector de Rutina\n(Bottom Sheet)"]
+    RS -->|"Elige rutina"| WS["⭐ Workout Screen"]
+    RS -->|"'Vacío'"| WS
+    HOME -->|"Tap WorkoutCard"| WD["📋 Workout Detail"]
+
+    ROUT -->|"'+' crear"| RE["✏️ Routine Editor"]
+    ROUT -->|"Tap card"| RE_V["👁️ Routine Detail"]
+    ROUT -->|"Tap ▶"| WS
+    RE -->|"'+ Ejercicio'"| EB["🔍 Exercise Browser"]
+
+    HIST -->|"Tap card"| WD
+    HIST -->|"Long press → Repetir"| WS
+
+    STAT -->|"Tap ejercicio"| ED["📄 Exercise Detail"]
+
+    SETT -->|"'Registrar Peso'"| BWF["📝 Body Weight Form"]
+    SETT -->|"'Restaurar backup'"| BK["📂 File Picker → Confirm"]
+
+    WS -->|"Finalizar"| WSUM["📊 Workout Summary"]
+    WS -->|"'+ Ejercicio'"| EB
+    WS -->|"PR detectado"| PR["🎉 PR Alert"]
+
+    EB -->|"Long press"| ED
+    EB -->|"'+ Crear'"| EC["📝 Exercise Creator"]
+
+    ED -->|"'Editar'"| EC
+    WD -->|"'Repetir'"| WS
+
+    WSUM -->|"Cerrar"| HOME
+```
+
+### 6.2 Flujo completo de entrenamiento
+
+```mermaid
+flowchart TD
+    A["Usuario toca\n'Empezar Entrenamiento'"] --> B["Bottom Sheet:\nSeleccionar rutina"]
+    B -->|"Elige rutina"| C["WorkoutService.startWorkout(routineId)"]
+    B -->|"'Entrenamiento vacío'"| C2["WorkoutService.startWorkout(null)"]
     C --> D["Mostrar primer ejercicio\ncon animación + peso sugerido"]
+    C2 -->|"Abre Exercise Browser"| EB["Seleccionar ejercicios"]
+    EB --> D
 
-    D --> E["Usuario registra set\n(peso, reps)"]
-    E --> F["Feedback háptico\n+ animación ✔"]
-    F --> G["Iniciar timer\nde descanso"]
-    G --> H{"¿Más sets?"}
+    D --> WARM{"¿Calentamiento\nsugerido?"}
+    WARM -->|"Sí + Acepta"| WARM_SETS["Ejecutar sets\nde calentamiento"]
+    WARM -->|"No / Saltar"| E
+    WARM_SETS --> E
 
-    H -- Sí --> E
-    H -- No --> I{"¿Más ejercicios?"}
+    E["Usuario rellena set\n(peso + reps + tipo + RIR)"]
+    E --> F["Tap ✔ → Completar set"]
+    F --> HAP["Haptic Medium\n+ animación check"]
+    HAP --> PR_CHECK{"¿Nuevo PR?"}
+    PR_CHECK -->|"Sí"| PR["🎉 PR Alert\n(Lottie + Haptic Heavy)"]
+    PR_CHECK -->|"No"| SAVE["RecordSet → actualizar stats"]
+    PR --> SAVE
+    SAVE --> REST["⏱ Rest Timer\n(automático)"]
+    REST -->|"Timer termina\no Skip"| MORE_SETS{"¿Más sets\nen este ejercicio?"}
 
-    I -- Sí --> J{"¿Es Superset?"}
-    J -- Sí --> M["Intercalar con el siguiente\nejercicio del grupo (1A -> 1B)"]
-    J -- No --> N["Siguiente ejercicio\n(animación slide)"]
-    M --> D
-    N --> D
+    MORE_SETS -->|"Sí"| E
+    MORE_SETS -->|"No"| MORE_EX{"¿Más ejercicios?"}
 
-    I -- No --> K["WorkoutService.finish()"]
-    K --> L["Resumen del workout\ncon PRs nuevos"]
+    MORE_EX -->|"Sí"| SS_CHECK{"¿Es Superset?"}
+    SS_CHECK -->|"Sí"| SS["Intercalar con\nejercicio del grupo\n(1A → 1B → 1A...)"]
+    SS_CHECK -->|"No"| NEXT["Siguiente ejercicio\n(slide animation)"]
+    SS --> D
+    NEXT --> D
+
+    MORE_EX -->|"No"| FINISH["WorkoutService.finishWorkout()"]
+    FINISH --> SUM["📊 Workout Summary\n(modal con PRs + métricas)"]
+    SUM -->|"Cerrar"| HOME["🏠 Home\n(toast 'Entrenamiento guardado')"]
 ```
 
 ---
@@ -662,6 +1151,11 @@ flowchart LR
 src/
 ├── app/                           ← Expo Router (solo rutas)
 │   ├── _layout.tsx
+│   ├── (workouts)/
+│   ├── exercise/
+│   ├── history/
+│   ├── routine/
+│   ├── stats/
 │   └── (tabs)/
 │       ├── _layout.tsx
 │       ├── index.tsx              ← Home
@@ -672,6 +1166,7 @@ src/
 │
 ├── components/
 │   ├── ui/                        ← Design system base
+│   ├── feedback/
 │   ├── cards/                     ← Cards reutilizables
 │   ├── workout/                   ← Componentes de workout
 │   └── charts/                    ← Gráficos Victory

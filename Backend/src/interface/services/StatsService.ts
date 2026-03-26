@@ -1,6 +1,6 @@
-import type { GetWeeklyStatsUseCase } from '../../application/useCases/GetWeeklyStatsUseCase';
-import type { GetMuscleBalanceUseCase } from '../../application/useCases/GetMuscleBalanceUseCase';
-import type { GetTrainingFrequencyUseCase } from '../../application/useCases/GetTrainingFrequencyUseCase';
+import type { GetWeeklyStatsUseCase } from '../../application/useCases/stats/GetWeeklyStatsUseCase';
+import type { GetMuscleBalanceUseCase } from '../../application/useCases/stats/GetMuscleBalanceUseCase';
+import type { GetTrainingFrequencyUseCase } from '../../application/useCases/stats/GetTrainingFrequencyUseCase';
 
 export class StatsService {
   constructor(

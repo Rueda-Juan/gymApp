@@ -20,6 +20,12 @@ import * as m017 from './017_user_preferences';
 import * as m018 from './018_body_weight_log';
 import * as m019 from './019_superset_groups';
 import * as m020 from './020_add_max_reps';
+import * as m021 from './021_primary_muscles_array';
+import * as m022 from './022_fix_exercise_muscles';
+import * as m023 from './023_fix_more_exercise_muscles';
+import * as m024 from './024_fix_exercise_muscles_batch3';
+import * as m025 from './025_fix_exercise_muscles_batch4';
+import * as m026 from './026_add_name_es_column';
 
 interface Migration {
   version: number;
@@ -34,7 +40,9 @@ const migrations: Migration[] = [
   m001, m002, m003, m004, m005,
   m006, m007, m008, m009, m010,
   m011, m012, m013, m014, m015,
-  m016, m017, m018, m019
+  m016, m017, m018, m019, m020,
+  m021, m022, m023, m024, m025,
+  m026
 ];
 
 /**

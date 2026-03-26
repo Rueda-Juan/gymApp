@@ -1,6 +1,6 @@
-import type { CreateBackupUseCase } from '../../application/useCases/CreateBackupUseCase';
-import type { RestoreBackupUseCase } from '../../application/useCases/RestoreBackupUseCase';
-import type { ExportCSVUseCase } from '../../application/useCases/ExportCSVUseCase';
+import type { CreateBackupUseCase } from '../../application/useCases/backup/CreateBackupUseCase';
+import type { RestoreBackupUseCase } from '../../application/useCases/backup/RestoreBackupUseCase';
+import type { ExportCSVUseCase } from '../../application/useCases/backup/ExportCSVUseCase';
 
 export class BackupService {
   constructor(

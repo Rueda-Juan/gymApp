@@ -23,5 +23,9 @@ module.exports = {
     '^@application/(.*)$': '<rootDir>/src/application/$1',
     '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^expo-file-system/legacy$': '<rootDir>/src/__mocks__/expo-file-system-legacy.ts',
+    '^expo-file-system$': '<rootDir>/src/__mocks__/expo-file-system.ts',
+    '^expo-sqlite$': '<rootDir>/src/__mocks__/expo-sqlite.ts',
+    '^expo-crypto$': '<rootDir>/src/__mocks__/expo-crypto.ts',
   },
 };

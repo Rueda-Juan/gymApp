@@ -22,14 +22,14 @@ El backend de la aplicación será una **capa lógica local embebida** encargada
 
 ## 2. Filosofía de diseño
 
-| Principio                              | Descripción                                             |
-| -------------------------------------- | ------------------------------------------------------- |
-| **Offline-first**                      | Funcionalidad completa sin conexión a internet          |
-| **Alta cohesión**                      | Cada módulo tiene una responsabilidad bien definida     |
-| **Bajo acoplamiento**                  | Las capas se comunican solo mediante interfaces         |
-| **Separación lógica/UI**              | La lógica de negocio **nunca** vive en el frontend      |
-| **Facilidad de testeo**               | Toda la lógica es testeable de forma aislada           |
-| **Type-first development**            | Los tipos definen el contrato antes de la implementación |
+| Principio | Descripción |
+| --- | --- |
+| **Offline-first** | Funcionalidad completa sin conexión a internet |
+| **Alta cohesión** | Cada módulo tiene una responsabilidad bien definida |
+| **Bajo acoplamiento** | Las capas se comunican solo mediante interfaces |
+| **Separación lógica/UI** | La lógica de negocio **nunca** vive en el frontend |
+| **Facilidad de testeo** | Toda la lógica es testeable de forma aislada |
+| **Type-first development** | Los tipos definen el contrato antes de la implementación |
 
 ---
 
@@ -37,12 +37,12 @@ El backend de la aplicación será una **capa lógica local embebida** encargada
 
 **TypeScript** — ejecutado dentro del entorno de React Native / Expo.
 
-| Ventaja                             | Impacto                                  |
-| ----------------------------------- | ---------------------------------------- |
-| Tipado fuerte                       | Menos errores en tiempo de ejecución     |
-| Mejor mantenibilidad                | Refactoring seguro con soporte del IDE   |
-| Discriminated unions                | Estados ilegales irrepresentables        |
-| Integración con frontend            | Mismo lenguaje en toda la aplicación     |
+| Ventaja | Impacto |
+| --- | --- |
+| Tipado fuerte | Menos errores en tiempo de ejecución |
+| Mejor mantenibilidad | Refactoring seguro con soporte del IDE |
+| Discriminated unions | Estados ilegales irrepresentables |
+| Integración con frontend | Mismo lenguaje en toda la aplicación |
 
 ### Modo estricto obligatorio
 
@@ -103,7 +103,7 @@ graph TD
 
 ```mermaid
 flowchart LR
-    A["Frontend\n(React Native)"] --> B["Interface Layer\n(Services / Hooks)"]
+    A["Frontend\n(React Native)"] --> B["Interface Layer\n(Hooks / Services)"]
     B --> C["Application Layer\n(Use Cases)"]
     C --> D["Domain Layer\n(Entities / Rules)"]
     C --> E["Infrastructure Layer\n(Repositories)"]
@@ -127,6 +127,7 @@ Contiene:
 - **Value Objects**: objetos inmutables sin identidad
 - **Repository Interfaces**: contratos de acceso a datos
 - **Business Rules**: validaciones y reglas de dominio
+- **Domain Services**: utilidades del dominio (Logger)
 
 ---
 
@@ -136,8 +137,8 @@ Orquesta los casos de uso del sistema.
 
 Contiene:
 
-- **Use Cases**: acciones concretas del usuario
-- **Application Services**: lógica de coordinación entre repositorios
+- **Use Cases**: acciones concretas del usuario (29 use cases)
+- **Application Services**: lógica de coordinación (StatsCalculator)
 
 ---
 
@@ -147,9 +148,12 @@ Implementaciones concretas de las interfaces del dominio.
 
 Contiene:
 
-- **SQLite Repositories**: acceso a la base de datos
-- **Filesystem**: acceso al sistema de archivos
-- **Google Drive Integration**: servicio de backups
+- **SQLite Repositories**: 7 repositorios de acceso a datos
+- **Database**: conexión, migraciones (22) y seeds
+- **Backup**: Google Drive integration (stub, futuro)
+- **DI Container**: fábrica de dependencias
+- **Scripts**: importación y mapeo de datos wger
+- **Services**: ConsoleLogger
 
 ---
 
@@ -159,8 +163,8 @@ Puente entre el frontend y la lógica de negocio.
 
 Contiene:
 
-- **Services expuestos**: API del backend para el frontend
-- **Hooks de acceso**: React hooks que consumen los services
+- **Services**: 7 facades que agrupan use cases por dominio
+- **Hooks**: 8 React hooks que consumen los services via contexto
 
 ---
 
@@ -169,32 +173,23 @@ Contiene:
 ### `Exercise`
 
 ```typescript
+import type { MuscleGroup } from '../valueObjects/MuscleGroup';
+import type { Equipment } from '../valueObjects/Equipment';
+
+type ExerciseType = 'compound' | 'isolation';
+
 interface Exercise {
   readonly id: string;
   name: string;
-  primaryMuscle: MuscleGroup;
+  primaryMuscles: MuscleGroup[];
   secondaryMuscles: MuscleGroup[];
   equipment: Equipment;
+  exerciseType: ExerciseType;
   weightIncrement: number;
   animationPath: string | null;
   description: string | null;
+  anatomicalRepresentationSvg: string | null;
 }
-
-// Discriminated union para grupos musculares
-const MUSCLE_GROUPS = [
-  'chest', 'back', 'shoulders', 'biceps', 'triceps',
-  'forearms', 'quadriceps', 'hamstrings', 'glutes',
-  'calves', 'abs', 'traps'
-] as const;
-
-type MuscleGroup = typeof MUSCLE_GROUPS[number];
-
-const EQUIPMENT = [
-  'barbell', 'dumbbell', 'machine', 'cable',
-  'bodyweight', 'band', 'other'
-] as const;
-
-type Equipment = typeof EQUIPMENT[number];
 ```
 
 ---
@@ -215,8 +210,9 @@ interface RoutineExercise {
   exerciseId: string;
   orderIndex: number;
   targetSets: number;
-  targetReps: number;
-  restSeconds: number;
+  minReps: number;          // Bottom of the rep range (e.g. 8 in "8-12")
+  maxReps: number;          // Top of the rep range (e.g. 12 in "8-12")
+  restSeconds: number | null;
   supersetGroup: number | null;
 }
 ```
@@ -251,20 +247,72 @@ interface WorkoutExercise {
 ### `WorkoutSet`
 
 ```typescript
+import type { SetType } from '../valueObjects/SetType';
+
 interface WorkoutSet {
   readonly id: string;
   exerciseId: string;
   setNumber: number;
   weight: number;
   reps: number;
-  setType: 'normal' | 'warmup' | 'dropset' | 'failure';
   rir: number | null;
+  setType: SetType;           // 'normal' | 'warmup' | 'dropset' | 'failure'
   restSeconds: number | null;
-  durationSeconds: number;  // para ejercicios por tiempo
+  durationSeconds: number;
   completed: boolean;
   skipped: boolean;
   createdAt: Date;
 }
+```
+
+---
+
+### `ExerciseStats`
+
+```typescript
+interface ExerciseStats {
+  exerciseId: string;
+  maxWeight: number;
+  maxVolume: number;
+  maxReps: number;
+  estimated1RM: number;
+  totalSets: number;
+  totalReps: number;
+  totalVolume: number;
+  lastPerformed: Date | null;
+  updatedAt: Date;
+}
+```
+
+---
+
+### `PersonalRecord`
+
+```typescript
+interface PersonalRecord {
+  readonly id: string;
+  exerciseId: string;
+  recordType: RecordType;     // 'max_weight' | 'max_reps' | 'max_volume' | 'estimated_1rm'
+  value: number;
+  setId: string | null;
+  date: Date;
+}
+```
+
+---
+
+### `DailyStats`
+
+```typescript
+interface DailyStats {
+  date: string;               // 'YYYY-MM-DD'
+  totalVolume: number;
+  totalSets: number;
+  totalReps: number;
+  workoutCount: number;
+  totalDuration: number;      // in seconds
+}
+```
 
 ---
 
@@ -272,8 +320,8 @@ interface WorkoutSet {
 
 ```typescript
 interface UserPreferences {
-  theme: 'light' | 'dark' | 'system';
   weightUnit: 'kg' | 'lbs';
+  theme: 'light' | 'dark' | 'system';
   defaultRestSeconds: number;
 }
 ```
@@ -294,14 +342,73 @@ interface BodyWeightEntry {
 
 ---
 
-## 7. Validación con Zod
+## 7. Value Objects
+
+### `MuscleGroup`
+
+```typescript
+const MUSCLE_GROUPS = [
+  'chest', 'back', 'shoulders', 'biceps', 'triceps',
+  'forearms', 'quadriceps', 'hamstrings', 'glutes',
+  'calves', 'abs', 'traps',
+] as const;
+
+type MuscleGroup = typeof MUSCLE_GROUPS[number];
+```
+
+### `Equipment`
+
+```typescript
+const EQUIPMENT = [
+  'barbell', 'dumbbell', 'machine', 'cable',
+  'bodyweight', 'band', 'other',
+] as const;
+
+type Equipment = typeof EQUIPMENT[number];
+```
+
+### `SetType`
+
+```typescript
+const SET_TYPES = ['normal', 'warmup', 'dropset', 'failure'] as const;
+
+type SetType = typeof SET_TYPES[number];
+```
+
+### `SessionContext`
+
+```typescript
+type ActivationLevel = 'hot' | 'warm' | 'cold';
+
+class SessionContext {
+  markAsPrimary(muscles: MuscleGroup[]): void;
+  markAsSecondary(muscles: MuscleGroup[]): void;
+  getState(muscle: MuscleGroup): ActivationLevel;
+  getColdestState(muscles: MuscleGroup[]): ActivationLevel;
+  getAllStates(): Record<string, ActivationLevel>;
+  reset(): void;
+}
+```
+
+---
+
+## 8. Validación con Zod
 
 Los esquemas de Zod son **la fuente de verdad** para validación en tiempo de ejecución.
 
-```typescript
-import { z } from 'zod';
+### Schemas disponibles
 
-// --- Schemas ---
+| Archivo | Contenido |
+| --- | --- |
+| `workoutSchemas.ts` | WorkoutSetSchema, CreateWorkoutInput, etc. |
+| `exerciseSchemas.ts` | CreateExerciseSchema, validación de ejercicios |
+| `bodyWeightSchemas.ts` | BodyWeightEntrySchema |
+| `preferencesSchemas.ts` | PreferenceUpdateSchema |
+| `backupSchemas.ts` | BackupDataSchema, validación de JSON importado |
+
+```typescript
+// Ejemplo: shared/schemas/workoutSchemas.ts
+import { z } from 'zod';
 
 export const WorkoutSetSchema = z.object({
   exerciseId: z.string().uuid(),
@@ -315,158 +422,151 @@ export const WorkoutSetSchema = z.object({
 });
 
 export type CreateSetInput = z.infer<typeof WorkoutSetSchema>;
-
-export const WorkoutSchema = z.object({
-  routineId: z.string().uuid().nullable(),
-  notes: z.string().max(500).nullable().default(null),
-});
-
-export type CreateWorkoutInput = z.infer<typeof WorkoutSchema>;
-
-// --- Validación segura ---
-
-export function validateSetInput(raw: unknown) {
-  const result = WorkoutSetSchema.safeParse(raw);
-  if (!result.success) {
-    throw new ValidationError(
-      'Set inválido',
-      result.error.flatten().fieldErrors
-    );
-  }
-  return result.data;
-}
 ```
 
 ---
 
-## 8. Repository Interfaces
+## 9. Repository Interfaces
 
 Los repositorios abstraen el acceso a la base de datos. Se definen como **interfaces en el dominio** y se implementan en infraestructura.
 
+### Repositorios del sistema
+
+| Interface (Domain) | Implementación (Infra) | Responsabilidad |
+| --- | --- | --- |
+| `ExerciseRepository` | `SQLiteExerciseRepository` | CRUD de ejercicios, búsqueda, filtrado por músculo |
+| `WorkoutRepository` | `SQLiteWorkoutRepository` | CRUD de workouts, sets, historial de ejercicios |
+| `RoutineRepository` | `SQLiteRoutineRepository` | CRUD de rutinas |
+| `StatsRepository` | `SQLiteStatsRepository` | Estadísticas, PRs, balance muscular, daily stats |
+| `UserPreferencesRepository` | `SQLiteUserPreferencesRepository` | Preferencias del usuario |
+| `BodyWeightRepository` | `SQLiteBodyWeightRepository` | Historial de peso corporal |
+| `BackupRepository` | `SQLiteBackupRepository` | Export/import de datos, CSV |
+
 ```typescript
-// domain/repositories/ExerciseRepository.ts
+// Ejemplo: domain/repositories/ExerciseRepository.ts
 interface ExerciseRepository {
   getAll(): Promise<Exercise[]>;
   getById(id: string): Promise<Exercise | null>;
   search(query: string): Promise<Exercise[]>;
+  getByMuscleGroup(muscle: string): Promise<Exercise[]>;
+  isInUse(id: string): Promise<boolean>;
   save(exercise: Exercise): Promise<void>;
+  delete(id: string): Promise<void>;
 }
 
-// domain/repositories/WorkoutRepository.ts
+// Ejemplo: domain/repositories/WorkoutRepository.ts
 interface WorkoutRepository {
   getById(id: string): Promise<Workout | null>;
   getByDateRange(start: Date, end: Date): Promise<Workout[]>;
+  getRecent(limit: number): Promise<Workout[]>;
   save(workout: Workout): Promise<void>;
   delete(id: string): Promise<void>;
+  addSet(workoutId: string, exerciseId: string, set: WorkoutSet): Promise<void>;
+  updateSet(workoutId: string, set: WorkoutSet): Promise<void>;
+  deleteSet(workoutId: string, setId: string): Promise<void>;
+  markExerciseSkipped(workoutId: string, exerciseId: string, skipped: boolean): Promise<void>;
+  addExercise(workoutId: string, exercise: WorkoutExercise): Promise<void>;
+  reorderExercises(workoutId: string, exerciseIds: string[]): Promise<void>;
+  getExerciseHistory(exerciseId: string, limit?: number): Promise<WorkoutSet[]>;
 }
 
-// domain/repositories/RoutineRepository.ts
-interface RoutineRepository {
-  getAll(): Promise<Routine[]>;
-  getById(id: string): Promise<Routine | null>;
-  save(routine: Routine): Promise<void>;
-  delete(id: string): Promise<void>;
-}
-
-// domain/repositories/StatsRepository.ts
+// Ejemplo: domain/repositories/StatsRepository.ts
 interface StatsRepository {
   getExerciseStats(exerciseId: string): Promise<ExerciseStats | null>;
+  deleteExerciseStats(exerciseId: string): Promise<void>;
+  recalculateExerciseStats(exerciseId: string): Promise<ExerciseStats | null>;
   updateExerciseStats(stats: ExerciseStats): Promise<void>;
-  getDailyStats(date: Date): Promise<DailyStats | null>;
+  getDailyStats(date: string): Promise<DailyStats | null>;
+  getDailyStatsRange(startDate: string, endDate: string): Promise<DailyStats[]>;
+  getWeeklyStats(startDate: string, endDate: string): Promise<DailyStats[]>;
+  deleteDailyStats(date: string): Promise<void>;
+  recalculateDailyStats(date: string): Promise<DailyStats | null>;
   upsertDailyStats(stats: DailyStats): Promise<void>;
   getPersonalRecords(exerciseId: string): Promise<PersonalRecord[]>;
+  getLatestRecord(exerciseId: string, recordType: string): Promise<PersonalRecord | null>;
   savePersonalRecord(record: PersonalRecord): Promise<void>;
-}
-```
-
-### Implementación en infraestructura
-
-```typescript
-// infrastructure/repositories/SQLiteExerciseRepository.ts
-class SQLiteExerciseRepository implements ExerciseRepository {
-  constructor(private db: SQLiteDatabase) {}
-
-  async getAll(): Promise<Exercise[]> {
-    return this.db.getAllAsync<Exercise>('SELECT * FROM exercises');
-  }
-
-  async getById(id: string): Promise<Exercise | null> {
-    return this.db.getFirstAsync<Exercise>(
-      'SELECT * FROM exercises WHERE id = ?',
-      [id]
-    );
-  }
-
-  async search(query: string): Promise<Exercise[]> {
-    return this.db.getAllAsync<Exercise>(
-      'SELECT * FROM exercises WHERE name LIKE ?',
-      [`%${query}%`]
-    );
-  }
-
-  async save(exercise: Exercise): Promise<void> {
-    await this.db.runAsync(
-      `INSERT OR REPLACE INTO exercises (id, name, primary_muscle, secondary_muscles, equipment, weight_increment, animation_path, description)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [exercise.id, exercise.name, exercise.primaryMuscle, JSON.stringify(exercise.secondaryMuscles), exercise.equipment, exercise.weightIncrement, exercise.animationPath, exercise.description]
-    );
-  }
+  getMuscleVolumeDistribution(startDate: string, endDate: string): Promise<{ muscle: string; volume: number; sets: number }[]>;
 }
 ```
 
 ---
 
-## 9. Casos de uso principales
+## 10. Casos de uso (Application Layer)
 
 Cada caso de uso encapsula **una acción concreta** del sistema.
 
-### `StartWorkout`
+### Workouts (10 use cases)
 
-```mermaid
-flowchart TD
-    A["Iniciar entrenamiento"] --> B["Crear instancia Workout"]
-    B --> C["Cargar ejercicios desde Routine"]
-    C --> D["Guardar Workout en BD"]
-    D --> E["Retornar Workout activo"]
-```
+| Use Case | Descripción |
+| --- | --- |
+| `StartWorkout` | Crear workout desde rutina o vacío |
+| `FinishWorkout` | Finalizar workout, calcular duración |
+| `DeleteWorkoutUseCase` | Eliminar workout y recalcular stats |
+| `RecordSet` | Registrar set, actualizar stats y PRs |
+| `UpdateSetUseCase` | Modificar un set existente |
+| `DeleteSetUseCase` | Eliminar set y recalcular stats |
+| `SkipExercise` | Marcar ejercicio como saltado |
+| `AddExerciseToWorkoutUseCase` | Agregar ejercicio a workout en curso |
+| `ReorderWorkoutExercisesUseCase` | Reordenar ejercicios del workout |
+| `SuggestWeight` | Sugerir peso + calentamiento inteligente |
 
-```typescript
-class StartWorkoutUseCase {
-  constructor(
-    private workoutRepo: WorkoutRepository,
-    private routineRepo: RoutineRepository,
-  ) {}
+### Exercises (4 use cases)
 
-  async execute(routineId: string): Promise<Workout> {
-    const routine = await this.routineRepo.getById(routineId);
-    if (!routine) {
-      throw new DomainError(`Routine ${routineId} no encontrada`);
-    }
+| Use Case | Descripción |
+| --- | --- |
+| `CreateExerciseUseCase` | Crear ejercicio personalizado |
+| `UpdateExerciseUseCase` | Actualizar ejercicio |
+| `DeleteExerciseUseCase` | Eliminar ejercicio (verifica uso) |
+| `GetExerciseHistoryUseCase` | Historial de sets de un ejercicio |
 
-    const workout: Workout = {
-      id: generateId(),
-      routineId,
-      date: new Date(),
-      durationSeconds: 0,
-      notes: null,
-      exercises: routine.exercises.map((re) => ({
-        id: generateId(),
-        exerciseId: re.exerciseId,
-        orderIndex: re.orderIndex,
-        skipped: false,
-        sets: [],
-      })),
-    };
+### Routines (4 use cases)
 
-    await this.workoutRepo.save(workout);
-    return workout;
-  }
-}
-```
+| Use Case | Descripción |
+| --- | --- |
+| `CreateRoutineUseCase` | Crear rutina nueva |
+| `UpdateRoutineUseCase` | Actualizar rutina existente |
+| `DeleteRoutineUseCase` | Eliminar rutina |
+| `DuplicateRoutineUseCase` | Duplicar rutina existente |
+
+### Statistics (3 use cases)
+
+| Use Case | Descripción |
+| --- | --- |
+| `GetWeeklyStatsUseCase` | Estadísticas por rango de fechas |
+| `GetMuscleBalanceUseCase` | Distribución de volumen por músculo |
+| `GetTrainingFrequencyUseCase` | Frecuencia de entrenamiento |
+
+### Preferences (2 use cases)
+
+| Use Case | Descripción |
+| --- | --- |
+| `GetPreferencesUseCase` | Obtener preferencias del usuario |
+| `UpdatePreferenceUseCase` | Actualizar una preferencia |
+
+### Body Weight (2 use cases)
+
+| Use Case | Descripción |
+| --- | --- |
+| `LogBodyWeightUseCase` | Registrar peso corporal |
+| `GetBodyWeightHistoryUseCase` | Historial de peso corporal |
+
+### Backup (3 use cases)
+
+| Use Case | Descripción |
+| --- | --- |
+| `CreateBackupUseCase` | Exportar BD a JSON |
+| `RestoreBackupUseCase` | Restaurar BD desde JSON |
+| `ExportCSVUseCase` | Exportar datos a CSV |
+
+### Application Services (1)
+
+| Service | Descripción |
+| --- | --- |
+| `StatsCalculator` | Cálculo de 1RM (Epley), volumen, detección de PRs |
 
 ---
 
-### `RecordSet`
+### Flujo de `RecordSet` (ejemplo detallado)
 
 ```mermaid
 flowchart TD
@@ -482,175 +582,71 @@ flowchart TD
     I --> J["Actualizar daily_stats"]
 ```
 
-```typescript
-class RecordSetUseCase {
-  constructor(
-    private workoutRepo: WorkoutRepository,
-    private statsRepo: StatsRepository,
-  ) {}
+### Flujo de `SuggestWeight` (Doble Progresión)
 
-  async execute(workoutId: string, input: unknown): Promise<WorkoutSet> {
-    // Validar con Zod
-    const data = validateSetInput(input);
-
-    // Crear set
-    const set: WorkoutSet = {
-      id: generateId(),
-      ...data,
-      createdAt: new Date(),
-    };
-
-    // Transacción atómica
-    await this.workoutRepo.addSet(workoutId, set);
-    await this.statsRepo.updateExerciseStats(/* ... */);
-    await this.statsRepo.upsertDailyStats(/* ... */);
-
-    // Verificar PR
-    const isPR = await this.checkPersonalRecord(set);
-    if (isPR) {
-      await this.statsRepo.savePersonalRecord(/* ... */);
-    }
-
-    return set;
-  }
-}
-```
+Ver detalle completo del algoritmo en `sobrecarga progresiva.md`.
 
 ---
 
-### `FinishWorkout`
-
-```typescript
-class FinishWorkoutUseCase {
-  constructor(private workoutRepo: WorkoutRepository) {}
-
-  async execute(workoutId: string): Promise<Workout> {
-    const workout = await this.workoutRepo.getById(workoutId);
-    if (!workout) {
-      throw new DomainError(`Workout ${workoutId} no encontrado`);
-    }
-
-    // Calcular duración
-    const duration = Math.floor(
-      (Date.now() - workout.date.getTime()) / 1000
-    );
-
-    const finishedWorkout = { ...workout, durationSeconds: duration };
-    await this.workoutRepo.save(finishedWorkout);
-
-    return finishedWorkout;
-  }
-}
-```
-
----
-
-### `SkipExercise`
-
-```typescript
-class SkipExerciseUseCase {
-  constructor(private workoutRepo: WorkoutRepository) {}
-
-  async execute(workoutId: string, exerciseId: string): Promise<void> {
-    await this.workoutRepo.markExerciseSkipped(workoutId, exerciseId);
-  }
-}
-```
-
----
-
-## 10. Servicios del sistema
+## 11. Servicios del sistema (Interface Layer)
 
 Los services son la **interfaz pública** que el frontend consume.
 
+| Service | Métodos | Use Cases que orquesta |
+| --- | --- | --- |
+| `WorkoutService` | 11 métodos | StartWorkout, FinishWorkout, DeleteWorkout, RecordSet, UpdateSet, DeleteSet, SkipExercise, AddExerciseToWorkout, ReorderWorkoutExercises, SuggestWeight |
+| `ExerciseService` | 4 métodos | CreateExercise, UpdateExercise, DeleteExercise, GetExerciseHistory |
+| `RoutineService` | 4 métodos | CreateRoutine, UpdateRoutine, DeleteRoutine, DuplicateRoutine |
+| `StatsService` | 3 métodos | GetWeeklyStats, GetMuscleBalance, GetTrainingFrequency |
+| `BackupService` | 3 métodos | CreateBackup, RestoreBackup, ExportCSV |
+| `PreferencesService` | 2 métodos | GetPreferences, UpdatePreference |
+| `BodyWeightService` | 2 métodos | LogBodyWeight, GetBodyWeightHistory |
+
+---
+
+## 12. React Hooks (Interface Layer)
+
+Los hooks son el puente entre los services del backend y los componentes React Native.
+
+### `useContainer`
+
 ```typescript
-// interface/services/WorkoutService.ts
-class WorkoutService {
-  constructor(
-    private startWorkout: StartWorkoutUseCase,
-    private recordSet: RecordSetUseCase,
-    private finishWorkout: FinishWorkoutUseCase,
-    private skipExercise: SkipExerciseUseCase,
-  ) {}
+// Context + Provider para inyectar el AppContainer en el árbol React.
+// Uso:
+const container = createContainer(db);
 
-  async start(routineId: string): Promise<Workout> {
-    return this.startWorkout.execute(routineId);
-  }
+<ContainerProvider container={container}>
+  <App />
+</ContainerProvider>
+```
 
-  async addSet(workoutId: string, input: unknown): Promise<WorkoutSet> {
-    return this.recordSet.execute(workoutId, input);
-  }
+### Hooks disponibles
 
-  async finish(workoutId: string): Promise<Workout> {
-    return this.finishWorkout.execute(workoutId);
-  }
+| Hook | Service que wrappea | Métodos expuestos |
+| --- | --- | --- |
+| `useWorkout()` | WorkoutService | startWorkout, finishWorkout, deleteWorkout, recordSet, updateSet, deleteSet, skipExercise, addExerciseToWorkout, reorderWorkoutExercises, suggestWeight, suggestWarmup |
+| `useExercises()` | ExerciseService | createExercise, updateExercise, deleteExercise, getExerciseHistory |
+| `useRoutines()` | RoutineService | createRoutine, updateRoutine, deleteRoutine, duplicateRoutine |
+| `useStats()` | StatsService | getWeeklyStats, getMuscleBalance, getTrainingFrequency |
+| `useBodyWeight()` | BodyWeightService | logBodyWeight, getBodyWeightHistory |
+| `usePreferences()` | PreferencesService | getPreferences, updatePreference |
+| `useBackup()` | BackupService | createBackup, restoreBackup, exportCSV |
 
-  async skip(workoutId: string, exerciseId: string): Promise<void> {
-    return this.skipExercise.execute(workoutId, exerciseId);
-  }
-}
+Todos los hooks utilizan `useCallback` y `useMemo` para estabilidad referencial.
 
-// interface/services/ExerciseService.ts
-class ExerciseService {
-  constructor(private exerciseRepo: ExerciseRepository) {}
+```typescript
+// Ejemplo de uso en un componente:
+function WorkoutScreen() {
+  const { startWorkout, recordSet, suggestWeight } = useWorkout();
+  const { getWeeklyStats } = useStats();
 
-  async getAll(): Promise<Exercise[]> {
-    return this.exerciseRepo.getAll();
-  }
-
-  async getById(id: string): Promise<Exercise | null> {
-    return this.exerciseRepo.getById(id);
-  }
-
-  async search(query: string): Promise<Exercise[]> {
-    return this.exerciseRepo.search(query);
-  }
-}
-
-// interface/services/StatsService.ts
-class StatsService {
-  constructor(private statsRepo: StatsRepository) {}
-
-  async getExerciseStats(exerciseId: string): Promise<ExerciseStats | null> {
-    return this.statsRepo.getExerciseStats(exerciseId);
-  }
-
-  async getDailyStats(date: Date): Promise<DailyStats | null> {
-    return this.statsRepo.getDailyStats(date);
-  }
-
-  async getPersonalRecords(exerciseId: string): Promise<PersonalRecord[]> {
-    return this.statsRepo.getPersonalRecords(exerciseId);
-  }
-}
-
-// interface/services/BackupService.ts
-class BackupService {
-  constructor(
-    private createBackupUseCase: CreateBackupUseCase,
-    private restoreBackupUseCase: RestoreBackupUseCase,
-    private exportCSVUseCase: ExportCSVUseCase
-  ) {}
-
-  async createBackup(): Promise<string> { /* ... */ }
-  async restoreBackup(data: string): Promise<void> { /* ... */ }
-  async exportCSV(): Promise<string> { /* ... */ }
-}
-
-// interface/services/PreferencesService.ts
-class PreferencesService {
-  // Methods to get/update UserPreferences
-}
-
-// interface/services/BodyWeightService.ts
-class BodyWeightService {
-  // Methods to log and retrieve body weight history
+  // ...
 }
 ```
 
 ---
 
-## 11. Manejo de errores
+## 13. Manejo de errores
 
 Errores estructurados con jerarquía de clases:
 
@@ -697,7 +693,7 @@ class DatabaseError extends AppError {
 
 ---
 
-## 12. Estrategia de transacciones
+## 14. Estrategia de transacciones
 
 Las operaciones críticas **deben ejecutarse en transacciones** para asegurar consistencia.
 
@@ -709,36 +705,11 @@ async function recordSetTransaction(
 ): Promise<void> {
   await db.withTransactionAsync(async () => {
     // 1. Insertar set
-    await db.runAsync(
-      'INSERT INTO sets (...) VALUES (...)',
-      [/* params */]
-    );
-
+    await db.runAsync('INSERT INTO sets (...) VALUES (...)', [/* params */]);
     // 2. Actualizar estadísticas del ejercicio
-    await db.runAsync(
-      'UPDATE exercise_stats SET ... WHERE exercise_id = ?',
-      [set.exerciseId]
-    );
-
+    await db.runAsync('UPDATE exercise_stats SET ... WHERE exercise_id = ?', [set.exerciseId]);
     // 3. Verificar y guardar PR
-    const currentMax = await db.getFirstAsync(
-      'SELECT max_weight FROM exercise_stats WHERE exercise_id = ?',
-      [set.exerciseId]
-    );
-
-    if (set.weight > (currentMax?.max_weight ?? 0)) {
-      await db.runAsync(
-        'INSERT INTO personal_records (...) VALUES (...)',
-        [/* params */]
-      );
-    }
-
     // 4. Actualizar estadísticas diarias
-    await db.runAsync(
-      `INSERT INTO daily_stats (date, ...) VALUES (?, ...)
-       ON CONFLICT(date) DO UPDATE SET ...`,
-      [/* params */]
-    );
   });
 }
 ```
@@ -748,102 +719,226 @@ async function recordSetTransaction(
 
 ---
 
-## 13. Arquitectura de carpetas
+## 15. Dependency Injection
 
+El sistema utiliza un **contenedor manual** en `infrastructure/di/container.ts` (re-exportado desde `shared/container.ts` por retrocompatibilidad).
+
+```typescript
+export interface AppContainer {
+  readonly exerciseService: ExerciseService;
+  readonly routineService: RoutineService;
+  readonly workoutService: WorkoutService;
+  readonly statsService: StatsService;
+  readonly backupService: BackupService;
+  readonly preferencesService: PreferencesService;
+  readonly bodyWeightService: BodyWeightService;
+}
+
+export function createContainer(db: SQLiteDatabase): AppContainer {
+  // 1. Repositories (7)
+  const exerciseRepo = new SQLiteExerciseRepository(db);
+  const routineRepo = new SQLiteRoutineRepository(db);
+  const workoutRepo = new SQLiteWorkoutRepository(db);
+  const statsRepo = new SQLiteStatsRepository(db);
+  const preferencesRepo = new SQLiteUserPreferencesRepository(db);
+  const bodyWeightRepo = new SQLiteBodyWeightRepository(db);
+  const backupRepo = new SQLiteBackupRepository(db);
+
+  // 2. Wire Use Cases → Services (7)
+  const exerciseService = new ExerciseService(/* use cases */);
+  const routineService = new RoutineService(/* use cases */);
+  const workoutService = new WorkoutService(/* use cases */);
+  const statsService = new StatsService(/* use cases */);
+  const backupService = new BackupService(/* use cases */);
+  const preferencesService = new PreferencesService(/* use cases */);
+  const bodyWeightService = new BodyWeightService(/* use cases */);
+
+  return { exerciseService, routineService, workoutService, statsService, backupService, preferencesService, bodyWeightService };
+}
 ```
+
+---
+
+## 16. Arquitectura de carpetas
+
+```text
 src/
 ├── domain/
 │   ├── entities/
 │   │   ├── Exercise.ts
 │   │   ├── Workout.ts
 │   │   ├── WorkoutSet.ts
-│   │   └── Routine.ts
+│   │   ├── Routine.ts
+│   │   ├── ExerciseStats.ts
+│   │   ├── PersonalRecord.ts
+│   │   ├── DailyStats.ts
+│   │   ├── UserPreferences.ts
+│   │   ├── BodyWeightEntry.ts
+│   │   └── index.ts
 │   ├── repositories/
 │   │   ├── ExerciseRepository.ts
 │   │   ├── WorkoutRepository.ts
 │   │   ├── RoutineRepository.ts
-│   │   └── StatsRepository.ts
+│   │   ├── StatsRepository.ts
+│   │   ├── UserPreferencesRepository.ts
+│   │   ├── BodyWeightRepository.ts
+│   │   ├── BackupRepository.ts
+│   │   └── index.ts
+│   ├── services/
+│   │   └── Logger.ts
 │   └── valueObjects/
 │       ├── MuscleGroup.ts
-│       └── Equipment.ts
+│       ├── Equipment.ts
+│       ├── SetType.ts
+│       └── SessionContext.ts
 │
 ├── application/
 │   ├── useCases/
 │   │   ├── StartWorkout.ts
-│   │   ├── RecordSet.ts
 │   │   ├── FinishWorkout.ts
+│   │   ├── DeleteWorkoutUseCase.ts
+│   │   ├── RecordSet.ts
+│   │   ├── UpdateSetUseCase.ts
+│   │   ├── DeleteSetUseCase.ts
 │   │   ├── SkipExercise.ts
-│   │   └── SuggestWeightUseCase.ts
+│   │   ├── AddExerciseToWorkoutUseCase.ts
+│   │   ├── ReorderWorkoutExercisesUseCase.ts
+│   │   ├── SuggestWeight.ts
+│   │   ├── CreateExerciseUseCase.ts
+│   │   ├── UpdateExerciseUseCase.ts
+│   │   ├── DeleteExerciseUseCase.ts
+│   │   ├── GetExerciseHistoryUseCase.ts
+│   │   ├── CreateRoutineUseCase.ts
+│   │   ├── UpdateRoutineUseCase.ts
+│   │   ├── DeleteRoutineUseCase.ts
+│   │   ├── DuplicateRoutineUseCase.ts
+│   │   ├── GetWeeklyStatsUseCase.ts
+│   │   ├── GetMuscleBalanceUseCase.ts
+│   │   ├── GetTrainingFrequencyUseCase.ts
+│   │   ├── GetPreferencesUseCase.ts
+│   │   ├── UpdatePreferenceUseCase.ts
+│   │   ├── LogBodyWeightUseCase.ts
+│   │   ├── GetBodyWeightHistoryUseCase.ts
+│   │   ├── CreateBackupUseCase.ts
+│   │   ├── RestoreBackupUseCase.ts
+│   │   ├── ExportCSVUseCase.ts
+│   │   └── __tests__/
+│   │       └── SuggestWeight.test.ts
 │   └── services/
-│       └── StatsCalculator.ts
+│       ├── StatsCalculator.ts
+│       └── __tests__/
+│           └── StatsCalculator.test.ts
 │
 ├── infrastructure/
 │   ├── database/
 │   │   ├── connection.ts
 │   │   ├── migrations/
-│   │   │   ├── 001_initial_schema.ts
-│   │   │   └── 002_add_indexes.ts
+│   │   │   ├── 001_schema_migrations.ts
+│   │   │   ├── 002_exercises.ts
+│   │   │   ├── 003_routines.ts
+│   │   │   ├── 004_routine_exercises.ts
+│   │   │   ├── 005_workouts.ts
+│   │   │   ├── 006_workout_exercises.ts
+│   │   │   ├── 007_sets.ts
+│   │   │   ├── 008_exercise_stats.ts
+│   │   │   ├── 009_personal_records.ts
+│   │   │   ├── 010_daily_stats.ts
+│   │   │   ├── 011_add_rir_and_rep_range.ts
+│   │   │   ├── 012_add_anatomical_svg_to_exercises.ts
+│   │   │   ├── 013_seed_wger_exercises.ts
+│   │   │   ├── 014_add_set_type.ts
+│   │   │   ├── 015_add_workout_exercise_notes.ts
+│   │   │   ├── 016_add_rest_seconds.ts
+│   │   │   ├── 017_user_preferences.ts
+│   │   │   ├── 018_body_weight_log.ts
+│   │   │   ├── 019_superset_groups.ts
+│   │   │   ├── 020_add_max_reps.ts
+│   │   │   ├── 021_primary_muscles_array.ts
+│   │   │   ├── 022_fix_exercise_muscles.ts
+│   │   │   └── index.ts
 │   │   └── seeds/
-│   │       └── exercises.ts
 │   ├── repositories/
 │   │   ├── SQLiteExerciseRepository.ts
 │   │   ├── SQLiteWorkoutRepository.ts
 │   │   ├── SQLiteRoutineRepository.ts
-│   │   └── SQLiteStatsRepository.ts
+│   │   ├── SQLiteStatsRepository.ts
+│   │   ├── SQLiteUserPreferencesRepository.ts
+│   │   ├── SQLiteBodyWeightRepository.ts
+│   │   └── SQLiteBackupRepository.ts
 │   ├── di/
 │   │   └── container.ts
+│   ├── backup/
+│   │   └── DriveBackupService.ts
 │   ├── scripts/
-│   │   └── wgerMapper.ts
-│   └── backup/
-│       └── DriveBackupService.ts
+│   │   ├── wgerMapper.ts
+│   │   ├── importWgerData.ts
+│   │   ├── seed_wger.ts
+│   │   └── __tests__/
+│   │       └── wgerMapper.test.ts
+│   └── services/
+│       └── ConsoleLogger.ts
 │
 ├── interface/
 │   ├── services/
 │   │   ├── WorkoutService.ts
 │   │   ├── ExerciseService.ts
+│   │   ├── RoutineService.ts
 │   │   ├── StatsService.ts
-│   │   └── BackupService.ts
+│   │   ├── BackupService.ts
+│   │   ├── PreferencesService.ts
+│   │   └── BodyWeightService.ts
 │   └── hooks/
+│       ├── useContainer.ts
 │       ├── useWorkout.ts
 │       ├── useExercises.ts
-│       └── useStats.ts
+│       ├── useRoutines.ts
+│       ├── useStats.ts
+│       ├── useBodyWeight.ts
+│       ├── usePreferences.ts
+│       ├── useBackup.ts
+│       └── index.ts
 │
 └── shared/
+    ├── container.ts
     ├── errors.ts
     ├── types.ts
     ├── utils/
     │   ├── generateId.ts
-    │   └── dateUtils.ts
+    │   ├── dateUtils.ts
+    │   └── Logger.ts
     └── schemas/
         ├── workoutSchemas.ts
-        └── exerciseSchemas.ts
+        ├── exerciseSchemas.ts
+        ├── bodyWeightSchemas.ts
+        ├── preferencesSchemas.ts
+        └── backupSchemas.ts
 ```
 
 ---
 
-## 14. Dependencias
+## 17. Dependencias
 
-| Paquete      | Uso                              | Justificación                         |
-| ------------ | -------------------------------- | ------------------------------------- |
-| `expo-sqlite`| Acceso a SQLite                  | Integración nativa con Expo           |
-| `zod`        | Validación de datos              | Source of truth + type inference       |
-| `date-fns`   | Manipulación de fechas           | Inmutable, tree-shakeable, ligero     |
-| `expo-crypto`| Generación de UUIDs              | Mucho más rápido que UUID nativo de JS |
+| Paquete | Uso | Justificación |
+| --- | --- | --- |
+| `expo-sqlite` | Acceso a SQLite | Integración nativa con Expo |
+| `zod` | Validación de datos | Source of truth + type inference |
+| `date-fns` | Manipulación de fechas | Inmutable, tree-shakeable, ligero |
+| `expo-crypto` | Generación de UUIDs | Mucho más rápido que UUID nativo de JS |
 
 ---
 
-## 15. Estrategia de testing
+## 18. Estrategia de testing
 
 ### Herramientas
 
-| Herramienta  | Tipo de test                      |
-| ------------ | --------------------------------- |
-| `jest`       | Unit tests + integration tests    |
-| `ts-jest`    | Soporte TypeScript para Jest      |
+| Herramienta | Tipo de test |
+| --- | --- |
+| `jest` | Unit tests + integration tests |
+| `ts-jest` | Soporte TypeScript para Jest |
 
 ### Cobertura objetivo
 
-```
+```text
 Target mínimo: 80%
 ├── Use Cases  → 90%+
 ├── Services   → 85%+
@@ -851,66 +946,17 @@ Target mínimo: 80%
 └── Repositories → 70%+ (integración)
 ```
 
-### Ejemplo de test (patrón AAA)
+### Tests existentes
 
-```typescript
-// application/useCases/__tests__/RecordSet.test.ts
-describe('RecordSetUseCase', () => {
-  let useCase: RecordSetUseCase;
-  let mockWorkoutRepo: jest.Mocked<WorkoutRepository>;
-  let mockStatsRepo: jest.Mocked<StatsRepository>;
-
-  beforeEach(() => {
-    mockWorkoutRepo = {
-      addSet: jest.fn(),
-      getById: jest.fn(),
-    } as any;
-    mockStatsRepo = {
-      updateExerciseStats: jest.fn(),
-      upsertDailyStats: jest.fn(),
-      savePersonalRecord: jest.fn(),
-    } as any;
-
-    useCase = new RecordSetUseCase(mockWorkoutRepo, mockStatsRepo);
-  });
-
-  it('should save a valid set and update stats', async () => {
-    // Arrange
-    const input = {
-      exerciseId: 'uuid-123',
-      setNumber: 1,
-      weight: 100,
-      reps: 8,
-      durationSeconds: 0,
-      completed: true,
-      skipped: false,
-    };
-
-    // Act
-    const result = await useCase.execute('workout-id', input);
-
-    // Assert
-    expect(mockWorkoutRepo.addSet).toHaveBeenCalledOnce();
-    expect(mockStatsRepo.updateExerciseStats).toHaveBeenCalledOnce();
-    expect(result.weight).toBe(100);
-    expect(result.reps).toBe(8);
-  });
-
-  it('should throw ValidationError for negative weight', async () => {
-    // Arrange
-    const input = { exerciseId: 'uuid-123', weight: -5, reps: 8 };
-
-    // Act & Assert
-    await expect(useCase.execute('workout-id', input))
-      .rejects
-      .toThrow(ValidationError);
-  });
-});
-```
+| Test | Cobertura |
+| --- | --- |
+| `SuggestWeight.test.ts` | Doble progresión, deload, warmup, SessionContext |
+| `StatsCalculator.test.ts` | 1RM Epley, volumen, stats acumulados, PRs |
+| `wgerMapper.test.ts` | Mapeo de datos wger |
 
 ---
 
-## 16. Gestión de estadísticas
+## 19. Gestión de estadísticas
 
 Las estadísticas se calculan **en escritura, no en lectura**.
 
@@ -928,56 +974,116 @@ Esto mantiene las consultas de lectura **instantáneas**.
 
 ---
 
-## 17. Backups
+## 20. Backups
+
+### Backup Local (MVP)
 
 ```mermaid
 flowchart TD
-    A["createBackup()"] --> B["serializeDatabase()\n→ JSON"]
-    B --> C["uploadBackup()\n→ Google Drive API"]
-    C --> D{"¿Más de 2 backups?"}
-    D -- Sí --> E["Borrar backup más antiguo"]
-    D -- No --> F["Completado"]
-    E --> F
+    A["createBackup()"] --> B["SQLiteBackupRepository\n→ exportData()"]
+    B --> C["Serializar todas las tablas\n→ JSON"]
+    C --> D["Retornar JSON string"]
 ```
 
-### Política de retención
+### Backup Google Drive (Futuro)
+
+```mermaid
+flowchart TD
+    A["createBackup()"] --> B["DriveBackupService\n→ exportData()"]
+    B --> C["Serializar BD → JSON"]
+    C --> D["Upload a Google Drive API"]
+    D --> E{"¿Más de 2 backups?"}
+    E -- Sí --> F["Borrar backup más antiguo"]
+    E -- No --> G["Completado"]
+    F --> G
+```
+
+> [!NOTE]
+> Google Drive integration está implementada como **stub**. Requiere OAuth 2.0 con el scope `drive.appdata`. Se completará en versiones posteriores al MVP.
+
+### Política de retención (futuro)
 
 - **1 backup actual** + **1 backup anterior**
 - Formato: JSON exportado de todas las tablas
 
 ---
 
-## 18. Logging
+## 21. Logging
+
+El sistema utiliza un **Logger persistente** que escribe a consola y a un archivo local en el dispositivo.
 
 ```typescript
 // shared/utils/Logger.ts
 
-const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
-type LogLevel = typeof LOG_LEVELS[number];
-
 class Logger {
-  constructor(private namespace: string) {}
-
-  debug(message: string, ...args: unknown[]): void {
-    if (__DEV__) {
-      console.debug(`[${this.namespace}]`, message, ...args);
-    }
-  }
-
-  info(message: string, ...args: unknown[]): void {
-    console.info(`[${this.namespace}]`, message, ...args);
-  }
-
-  warn(message: string, ...args: unknown[]): void {
-    console.warn(`[${this.namespace}]`, message, ...args);
-  }
-
-  error(message: string, error?: Error): void {
-    console.error(`[${this.namespace}]`, message, error);
-  }
+  debug(message: string, ...args: unknown[]): void;  // Solo en __DEV__
+  info(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string, error?: unknown): void;
 }
 
 // Uso:
-const log = new Logger('WorkoutService');
+const log = createLogger('WorkoutService');
 log.info('Workout iniciado', { routineId: '...' });
 ```
+
+### Persistencia a disco
+
+- Los logs se acumulan en un **buffer en memoria** y se escriben a `app_logs.txt` cada 2 segundos.
+- El archivo se almacena en `FileSystem.documentDirectory` (persistente, accesible para backups).
+- **Rotación básica:** Si el archivo supera **1 MB**, se borra y empieza uno nuevo.
+- La función `getLogFilePath()` expone la ruta del archivo para que el frontend pueda leerlo o exportarlo.
+
+> [!TIP]
+> El Logger usa `expo-file-system/legacy` para escritura asíncrona. El buffer evita degradar el rendimiento por escrituras frecuentes a disco.
+
+---
+
+## 22. Shared Types
+
+El archivo `shared/types.ts` centraliza tipos utilitarios y re-exporta los tipos más usados del dominio:
+
+```typescript
+// Utility types
+type AsyncResult<T>       // Wraps Promise<{ success, data } | { success, error }>
+type Nullable<T>          // T | null
+type DateString           // Branded 'YYYY-MM-DD'
+type UUID                 // Branded string
+type Kilograms            // number alias
+type Seconds              // number alias
+type CreateInput<T>       // Omit<T, 'id' | 'createdAt'>
+type UpdateInput<T>       // Partial<Omit<T, 'id' | 'createdAt'>>
+
+// Re-exports of all entities, value objects, etc.
+```
+
+---
+
+## 23. Migraciones de base de datos
+
+El sistema de migraciones es incremental. Cada archivo es idempotente y se ejecuta en orden.
+
+| # | Archivo | Descripción |
+| --- | --- | --- |
+| 001 | `schema_migrations` | Tabla de control de migraciones |
+| 002 | `exercises` | Tabla de ejercicios |
+| 003 | `routines` | Tabla de rutinas |
+| 004 | `routine_exercises` | Ejercicios dentro de rutinas |
+| 005 | `workouts` | Tabla de entrenamientos |
+| 006 | `workout_exercises` | Ejercicios dentro de entrenamientos |
+| 007 | `sets` | Sets realizados |
+| 008 | `exercise_stats` | Estadísticas pre-calculadas |
+| 009 | `personal_records` | Records personales |
+| 010 | `daily_stats` | Estadísticas diarias |
+| 011 | `add_rir_and_rep_range` | RIR + rango de reps en routine_exercises |
+| 012 | `add_anatomical_svg` | SVG anatómico en ejercicios |
+| 013 | `seed_wger_exercises` | Seed de ejercicios desde wger |
+| 014 | `add_set_type` | Tipo de set (normal/warmup/dropset/failure) |
+| 015 | `add_workout_exercise_notes` | Notas por ejercicio en workout |
+| 016 | `add_rest_seconds` | Descanso en sets y routine_exercises |
+| 017 | `user_preferences` | Tabla de preferencias |
+| 018 | `body_weight_log` | Historial de peso corporal |
+| 019 | `superset_groups` | Supersets/circuitos |
+| 020 | `add_max_reps` | maxReps en routine_exercises |
+| 021 | `primary_muscles_array` | primaryMuscles como array JSON |
+| 022 | `fix_exercise_muscles` | Corrección de músculos primarios/secundarios |

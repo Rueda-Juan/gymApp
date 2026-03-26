@@ -1,5 +1,5 @@
-import type { LogBodyWeightUseCase } from '../../application/useCases/LogBodyWeightUseCase';
-import type { GetBodyWeightHistoryUseCase } from '../../application/useCases/GetBodyWeightHistoryUseCase';
+import type { LogBodyWeightUseCase } from '../../application/useCases/stats/LogBodyWeightUseCase';
+import type { GetBodyWeightHistoryUseCase } from '../../application/useCases/stats/GetBodyWeightHistoryUseCase';
 import type { BodyWeightEntry } from '../../domain/entities/BodyWeightEntry';
 
 export class BodyWeightService {

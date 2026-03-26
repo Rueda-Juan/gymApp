@@ -1,29 +1,18 @@
+﻿import { YStack } from 'tamagui';
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { View } from 'react-native';
+import { useTheme } from '@tamagui/core';
+import { AppText } from '@/components/ui/AppText';
 
 export default function ModalScreen() {
+  const theme = useTheme();
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
+    <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor={theme.background?.val} padding="$xl">
+      <AppText variant="titleLg">This is a modal</AppText>
+      <Link href="/" dismissTo style={{ marginTop: 15, paddingVertical: 15 }}>
+        <AppText variant="bodyMd" color="primary" style={{ fontWeight: '600' }}>Go to home screen</AppText>
       </Link>
-    </ThemedView>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-});

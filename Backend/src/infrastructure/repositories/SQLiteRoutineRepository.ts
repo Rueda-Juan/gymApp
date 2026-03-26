@@ -50,11 +50,21 @@ export class SQLiteRoutineRepository implements RoutineRepository {
       const routines: Routine[] = [];
       for (const row of routineRows) {
         const exercises = await this.getRoutineExercises(row.id);
+        
+        // Compute unique target muscles for the routine summary badges
+        const musclesSet = new Set<string>();
+        exercises.forEach((ex: any) => {
+          if (ex.exercise?.primaryMuscles) {
+            ex.exercise.primaryMuscles.forEach((m: string) => musclesSet.add(m));
+          }
+        });
+
         routines.push({
           id: row.id,
           name: row.name,
           notes: row.notes,
           exercises,
+          muscles: Array.from(musclesSet).slice(0, 3), // Show max 3 muscles as badges
           createdAt: fromSQLiteDateTime(row.created_at),
         });
       }
@@ -74,13 +84,22 @@ export class SQLiteRoutineRepository implements RoutineRepository {
       if (!row) return null;
 
       const exercises = await this.getRoutineExercises(id);
+      
+      const musclesSet = new Set<string>();
+      exercises.forEach((ex: any) => {
+        if (ex.exercise?.primaryMuscles) {
+          ex.exercise.primaryMuscles.forEach((m: string) => musclesSet.add(m));
+        }
+      });
+
       return {
         id: row.id,
         name: row.name,
         notes: row.notes,
         exercises,
+        muscles: Array.from(musclesSet),
         createdAt: fromSQLiteDateTime(row.created_at),
-      };
+      } as any;
     } catch (error) {
       throw new DatabaseError(`Error al obtener rutina ${id}`, error);
     }
@@ -137,11 +156,26 @@ export class SQLiteRoutineRepository implements RoutineRepository {
 
   // --- Private helpers ---
 
-  private async getRoutineExercises(routineId: string): Promise<RoutineExercise[]> {
-    const rows = await this.db.getAllAsync<RoutineExerciseRow>(
-      'SELECT * FROM routine_exercises WHERE routine_id = ? ORDER BY order_index',
+  private async getRoutineExercises(routineId: string): Promise<any[]> {
+    const rows = await this.db.getAllAsync<any>(
+      `SELECT re.*, 
+              e.id as ex_id, e.name as ex_name, e.name_es as ex_name_es, 
+              e.primary_muscles as ex_primary_muscles, e.equipment as ex_equipment
+       FROM routine_exercises re
+       LEFT JOIN exercises e ON re.exercise_id = e.id
+       WHERE re.routine_id = ? ORDER BY re.order_index`,
       [routineId],
     );
-    return rows.map(mapRowToRoutineExercise);
+    return rows.map(row => {
+      const re = mapRowToRoutineExercise(row);
+      (re as any).exercise = {
+        id: row.ex_id,
+        name: row.ex_name,
+        nameEs: row.ex_name_es,
+        primaryMuscles: row.ex_primary_muscles ? JSON.parse(row.ex_primary_muscles) : [],
+        equipment: row.ex_equipment,
+      };
+      return re;
+    });
   }
 }

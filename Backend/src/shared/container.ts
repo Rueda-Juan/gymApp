@@ -11,42 +11,48 @@ import { SQLiteBackupRepository } from '../infrastructure/repositories/SQLiteBac
 import { ConsoleLogger } from '../infrastructure/services/ConsoleLogger';
 
 // --- Use Cases: Exercises ---
-import { CreateExerciseUseCase } from '../application/useCases/CreateExerciseUseCase';
-import { UpdateExerciseUseCase } from '../application/useCases/UpdateExerciseUseCase';
-import { DeleteExerciseUseCase } from '../application/useCases/DeleteExerciseUseCase';
-import { GetExerciseHistoryUseCase } from '../application/useCases/GetExerciseHistoryUseCase';
+import { CreateExerciseUseCase } from '../application/useCases/exercises/CreateExerciseUseCase';
+import { UpdateExerciseUseCase } from '../application/useCases/exercises/UpdateExerciseUseCase';
+import { DeleteExerciseUseCase } from '../application/useCases/exercises/DeleteExerciseUseCase';
+import { GetExerciseHistoryUseCase } from '../application/useCases/exercises/GetExerciseHistoryUseCase';
+import { GetExercisesUseCase } from '../application/useCases/exercises/GetExercisesUseCase';
+import { GetExerciseByIdUseCase } from '../application/useCases/exercises/GetExerciseByIdUseCase';
 
 // --- Use Cases: Routines ---
-import { CreateRoutineUseCase } from '../application/useCases/CreateRoutineUseCase';
-import { UpdateRoutineUseCase } from '../application/useCases/UpdateRoutineUseCase';
-import { DeleteRoutineUseCase } from '../application/useCases/DeleteRoutineUseCase';
-import { DuplicateRoutineUseCase } from '../application/useCases/DuplicateRoutineUseCase';
+import { CreateRoutineUseCase } from '../application/useCases/routines/CreateRoutineUseCase';
+import { UpdateRoutineUseCase } from '../application/useCases/routines/UpdateRoutineUseCase';
+import { DeleteRoutineUseCase } from '../application/useCases/routines/DeleteRoutineUseCase';
+import { DuplicateRoutineUseCase } from '../application/useCases/routines/DuplicateRoutineUseCase';
+import { GetRoutinesUseCase } from '../application/useCases/routines/GetRoutinesUseCase';
+import { GetRoutineByIdUseCase } from '../application/useCases/routines/GetRoutineByIdUseCase';
 
 // --- Use Cases: Workouts ---
-import { StartWorkoutUseCase } from '../application/useCases/StartWorkout';
-import { FinishWorkoutUseCase } from '../application/useCases/FinishWorkout';
-import { DeleteWorkoutUseCase } from '../application/useCases/DeleteWorkoutUseCase';
-import { RecordSetUseCase } from '../application/useCases/RecordSet';
-import { UpdateSetUseCase } from '../application/useCases/UpdateSetUseCase';
-import { DeleteSetUseCase } from '../application/useCases/DeleteSetUseCase';
-import { SkipExerciseUseCase } from '../application/useCases/SkipExercise';
-import { AddExerciseToWorkoutUseCase } from '../application/useCases/AddExerciseToWorkoutUseCase';
-import { ReorderWorkoutExercisesUseCase } from '../application/useCases/ReorderWorkoutExercisesUseCase';
-import { SuggestWeightUseCase } from '../application/useCases/SuggestWeight';
+import { StartWorkoutUseCase } from '../application/useCases/workouts/StartWorkout';
+import { FinishWorkoutUseCase } from '../application/useCases/workouts/FinishWorkout';
+import { DeleteWorkoutUseCase } from '../application/useCases/workouts/DeleteWorkoutUseCase';
+import { RecordSetUseCase } from '../application/useCases/workouts/RecordSet';
+import { UpdateSetUseCase } from '../application/useCases/workouts/UpdateSetUseCase';
+import { DeleteSetUseCase } from '../application/useCases/workouts/DeleteSetUseCase';
+import { SkipExerciseUseCase } from '../application/useCases/workouts/SkipExercise';
+import { AddExerciseToWorkoutUseCase } from '../application/useCases/workouts/AddExerciseToWorkoutUseCase';
+import { ReorderWorkoutExercisesUseCase } from '../application/useCases/workouts/ReorderWorkoutExercisesUseCase';
+import { SuggestWeightUseCase } from '../application/useCases/exercises/SuggestWeight';
+import { GetWorkoutHistoryUseCase } from '../application/useCases/workouts/GetWorkoutHistoryUseCase';
+import { GetWorkoutByIdUseCase } from '../application/useCases/workouts/GetWorkoutByIdUseCase';
 
 // --- Use Cases: Stats ---
-import { GetWeeklyStatsUseCase } from '../application/useCases/GetWeeklyStatsUseCase';
-import { GetMuscleBalanceUseCase } from '../application/useCases/GetMuscleBalanceUseCase';
-import { GetTrainingFrequencyUseCase } from '../application/useCases/GetTrainingFrequencyUseCase';
+import { GetWeeklyStatsUseCase } from '../application/useCases/stats/GetWeeklyStatsUseCase';
+import { GetMuscleBalanceUseCase } from '../application/useCases/stats/GetMuscleBalanceUseCase';
+import { GetTrainingFrequencyUseCase } from '../application/useCases/stats/GetTrainingFrequencyUseCase';
 
 // --- Use Cases: Others ---
-import { GetPreferencesUseCase } from '../application/useCases/GetPreferencesUseCase';
-import { UpdatePreferenceUseCase } from '../application/useCases/UpdatePreferenceUseCase';
-import { LogBodyWeightUseCase } from '../application/useCases/LogBodyWeightUseCase';
-import { GetBodyWeightHistoryUseCase } from '../application/useCases/GetBodyWeightHistoryUseCase';
-import { CreateBackupUseCase } from '../application/useCases/CreateBackupUseCase';
-import { RestoreBackupUseCase } from '../application/useCases/RestoreBackupUseCase';
-import { ExportCSVUseCase } from '../application/useCases/ExportCSVUseCase';
+import { GetPreferencesUseCase } from '../application/useCases/settings/GetPreferencesUseCase';
+import { UpdatePreferenceUseCase } from '../application/useCases/settings/UpdatePreferenceUseCase';
+import { LogBodyWeightUseCase } from '../application/useCases/stats/LogBodyWeightUseCase';
+import { GetBodyWeightHistoryUseCase } from '../application/useCases/stats/GetBodyWeightHistoryUseCase';
+import { CreateBackupUseCase } from '../application/useCases/backup/CreateBackupUseCase';
+import { RestoreBackupUseCase } from '../application/useCases/backup/RestoreBackupUseCase';
+import { ExportCSVUseCase } from '../application/useCases/backup/ExportCSVUseCase';
 
 // --- Service Facades ---
 import { ExerciseService } from '../interface/services/ExerciseService';
@@ -56,6 +62,10 @@ import { StatsService } from '../interface/services/StatsService';
 import { BackupService } from '../interface/services/BackupService';
 import { PreferencesService } from '../interface/services/PreferencesService';
 import { BodyWeightService } from '../interface/services/BodyWeightService';
+import { PersonalRecordService } from '../interface/services/PersonalRecordService';
+
+// --- Records Use Cases ---
+import { GetPersonalRecordsUseCase, GetBestPersonalRecordUseCase } from '../application/useCases/stats/GetPersonalRecords';
 
 export interface AppContainer {
   readonly exerciseService: ExerciseService;
@@ -65,6 +75,7 @@ export interface AppContainer {
   readonly backupService: BackupService;
   readonly preferencesService: PreferencesService;
   readonly bodyWeightService: BodyWeightService;
+  readonly personalRecordService: PersonalRecordService;
 }
 
 export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
@@ -83,27 +94,33 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     new CreateExerciseUseCase(exerciseRepo),
     new UpdateExerciseUseCase(exerciseRepo),
     new DeleteExerciseUseCase(exerciseRepo),
-    new GetExerciseHistoryUseCase(workoutRepo)
+    new GetExerciseHistoryUseCase(workoutRepo),
+    new GetExercisesUseCase(exerciseRepo),
+    new GetExerciseByIdUseCase(exerciseRepo)
   );
 
   const routineService = new RoutineService(
     new CreateRoutineUseCase(routineRepo),
     new UpdateRoutineUseCase(routineRepo),
     new DeleteRoutineUseCase(routineRepo),
-    new DuplicateRoutineUseCase(routineRepo)
+    new DuplicateRoutineUseCase(routineRepo),
+    new GetRoutinesUseCase(routineRepo),
+    new GetRoutineByIdUseCase(routineRepo)
   );
 
   const workoutService = new WorkoutService(
     new StartWorkoutUseCase(workoutRepo, routineRepo),
     new FinishWorkoutUseCase(workoutRepo),
-    new DeleteWorkoutUseCase(workoutRepo, statsRepo),
+    new DeleteWorkoutUseCase(workoutRepo, statsRepo, db),
     new RecordSetUseCase(workoutRepo, statsRepo, db),
     new UpdateSetUseCase(workoutRepo, statsRepo),
     new DeleteSetUseCase(workoutRepo, statsRepo),
     new SkipExerciseUseCase(workoutRepo),
     new AddExerciseToWorkoutUseCase(workoutRepo),
     new ReorderWorkoutExercisesUseCase(workoutRepo),
-    new SuggestWeightUseCase(workoutRepo, statsRepo, exerciseRepo)
+    new SuggestWeightUseCase(workoutRepo, statsRepo, exerciseRepo),
+    new GetWorkoutHistoryUseCase(workoutRepo),
+    new GetWorkoutByIdUseCase(workoutRepo)
   );
 
   const statsService = new StatsService(
@@ -128,6 +145,11 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     new GetBodyWeightHistoryUseCase(bodyWeightRepo)
   );
 
+  const personalRecordService = new PersonalRecordService(
+    new GetPersonalRecordsUseCase(statsRepo),
+    new GetBestPersonalRecordUseCase(statsRepo)
+  );
+
   return {
     exerciseService,
     routineService,
@@ -136,5 +158,6 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     backupService,
     preferencesService,
     bodyWeightService,
+    personalRecordService,
   };
 }

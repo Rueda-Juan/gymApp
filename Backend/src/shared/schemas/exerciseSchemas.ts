@@ -7,13 +7,14 @@ import { ValidationError } from '../errors';
 
 export const ExerciseSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido').max(100),
-  primaryMuscle: z.enum(MUSCLE_GROUPS, {
+  primaryMuscles: z.array(z.enum(MUSCLE_GROUPS, {
     errorMap: () => ({ message: 'Grupo muscular inválido' }),
-  }),
+  })).min(1, 'Al menos un músculo primario es requerido'),
   secondaryMuscles: z.array(z.enum(MUSCLE_GROUPS)).default([]),
   equipment: z.enum(EQUIPMENT, {
     errorMap: () => ({ message: 'Equipamiento inválido' }),
   }),
+  exerciseType: z.enum(['compound', 'isolation']).default('isolation'),
   weightIncrement: z.number().min(0).default(2.5),
   animationPath: z.string().nullable().default(null),
   description: z.string().nullable().default(null),

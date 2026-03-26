@@ -1,7 +1,9 @@
-import type { CreateExerciseUseCase } from '../../application/useCases/CreateExerciseUseCase';
-import type { UpdateExerciseUseCase } from '../../application/useCases/UpdateExerciseUseCase';
-import type { DeleteExerciseUseCase } from '../../application/useCases/DeleteExerciseUseCase';
-import type { GetExerciseHistoryUseCase } from '../../application/useCases/GetExerciseHistoryUseCase';
+import type { CreateExerciseUseCase } from '../../application/useCases/exercises/CreateExerciseUseCase';
+import type { UpdateExerciseUseCase } from '../../application/useCases/exercises/UpdateExerciseUseCase';
+import type { DeleteExerciseUseCase } from '../../application/useCases/exercises/DeleteExerciseUseCase';
+import type { GetExerciseHistoryUseCase } from '../../application/useCases/exercises/GetExerciseHistoryUseCase';
+import type { GetExercisesUseCase } from '../../application/useCases/exercises/GetExercisesUseCase';
+import type { GetExerciseByIdUseCase } from '../../application/useCases/exercises/GetExerciseByIdUseCase';
 import type { Exercise } from '../../domain/entities/Exercise';
 
 export class ExerciseService {
@@ -10,7 +12,17 @@ export class ExerciseService {
     private readonly _updateExercise: UpdateExerciseUseCase,
     private readonly _deleteExercise: DeleteExerciseUseCase,
     private readonly _getExerciseHistory: GetExerciseHistoryUseCase,
+    private readonly _getExercises: GetExercisesUseCase,
+    private readonly _getExerciseById: GetExerciseByIdUseCase,
   ) {}
+
+  async getAll() {
+    return this._getExercises.execute();
+  }
+
+  async getById(id: string) {
+    return this._getExerciseById.execute(id);
+  }
 
   async createExercise(params: Omit<Exercise, 'id'>) {
     return this._createExercise.execute(params);

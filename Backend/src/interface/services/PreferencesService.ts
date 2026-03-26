@@ -1,5 +1,5 @@
-import type { GetPreferencesUseCase } from '../../application/useCases/GetPreferencesUseCase';
-import type { UpdatePreferenceUseCase } from '../../application/useCases/UpdatePreferenceUseCase';
+import type { GetPreferencesUseCase } from '../../application/useCases/settings/GetPreferencesUseCase';
+import type { UpdatePreferenceUseCase } from '../../application/useCases/settings/UpdatePreferenceUseCase';
 import type { UserPreferences } from '../../domain/entities/UserPreferences';
 
 export class PreferencesService {

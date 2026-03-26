@@ -7,6 +7,7 @@ export interface Routine {
   name: string;
   notes: string | null;
   exercises: RoutineExercise[];
+  muscles?: string[];
   createdAt: Date;
 }
 

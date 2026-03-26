@@ -1,5 +1,6 @@
 import type * as SQLite from 'expo-sqlite';
 import type { Exercise } from '../../domain/entities/Exercise';
+import type { ExerciseType } from '../../domain/entities/Exercise';
 import type { ExerciseRepository } from '../../domain/repositories/ExerciseRepository';
 import type { MuscleGroup } from '../../domain/valueObjects/MuscleGroup';
 import type { Equipment } from '../../domain/valueObjects/Equipment';
@@ -8,9 +9,12 @@ import { DatabaseError } from '../../shared/errors';
 interface ExerciseRow {
   id: string;
   name: string;
+  name_es: string | null;
   primary_muscle: string;
+  primary_muscles: string | null;
   secondary_muscles: string | null;
   equipment: string | null;
+  exercise_type: string | null;
   weight_increment: number;
   animation_path: string | null;
   description: string | null;
@@ -19,16 +23,27 @@ interface ExerciseRow {
 
 /**
  * Maps a raw SQLite row to an Exercise domain entity.
+ * Reads from primary_muscles (JSON array) if available, falls back to primary_muscle (singular).
  */
 function mapRowToExercise(row: ExerciseRow): Exercise {
+  // Parse primary muscles: prefer new JSON array column, fall back to singular
+  let primaryMuscles: MuscleGroup[];
+  if (row.primary_muscles) {
+    primaryMuscles = JSON.parse(row.primary_muscles) as MuscleGroup[];
+  } else {
+    primaryMuscles = [row.primary_muscle as MuscleGroup];
+  }
+
   return {
     id: row.id,
     name: row.name,
-    primaryMuscle: row.primary_muscle as MuscleGroup,
+    nameEs: row.name_es,
+    primaryMuscles,
     secondaryMuscles: row.secondary_muscles
       ? (JSON.parse(row.secondary_muscles) as MuscleGroup[])
       : [],
     equipment: (row.equipment ?? 'other') as Equipment,
+    exerciseType: (row.exercise_type ?? 'isolation') as ExerciseType,
     weightIncrement: row.weight_increment,
     animationPath: row.animation_path,
     description: row.description,
@@ -65,8 +80,8 @@ export class SQLiteExerciseRepository implements ExerciseRepository {
   async search(query: string): Promise<Exercise[]> {
     try {
       const rows = await this.db.getAllAsync<ExerciseRow>(
-        'SELECT * FROM exercises WHERE name LIKE ? ORDER BY name',
-        [`%${query}%`],
+        'SELECT * FROM exercises WHERE name LIKE ? OR name_es LIKE ? ORDER BY name',
+        [`%${query}%`, `%${query}%`],
       );
       return rows.map(mapRowToExercise);
     } catch (error) {
@@ -76,9 +91,12 @@ export class SQLiteExerciseRepository implements ExerciseRepository {
 
   async getByMuscleGroup(muscle: string): Promise<Exercise[]> {
     try {
+      // Search in both new JSON array column and legacy singular column
       const rows = await this.db.getAllAsync<ExerciseRow>(
-        'SELECT * FROM exercises WHERE primary_muscle = ? ORDER BY name',
-        [muscle],
+        `SELECT * FROM exercises 
+         WHERE primary_muscles LIKE ? OR primary_muscle = ? 
+         ORDER BY name`,
+        [`%"${muscle}"%`, muscle],
       );
       return rows.map(mapRowToExercise);
     } catch (error) {
@@ -108,14 +126,17 @@ export class SQLiteExerciseRepository implements ExerciseRepository {
     try {
       await this.db.runAsync(
         `INSERT OR REPLACE INTO exercises
-         (id, name, primary_muscle, secondary_muscles, equipment, weight_increment, animation_path, description, anatomical_representation_svg)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, name, name_es, primary_muscle, primary_muscles, secondary_muscles, equipment, exercise_type, weight_increment, animation_path, description, anatomical_representation_svg)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           exercise.id,
           exercise.name,
-          exercise.primaryMuscle,
+          exercise.nameEs,
+          exercise.primaryMuscles[0] ?? 'other', // backward compat: keep first muscle in old col
+          JSON.stringify(exercise.primaryMuscles),
           JSON.stringify(exercise.secondaryMuscles),
           exercise.equipment,
+          exercise.exerciseType,
           exercise.weightIncrement,
           exercise.animationPath,
           exercise.description,
