@@ -50,6 +50,9 @@ export type { PersonalRecord, RecordType } from '../domain/entities/PersonalReco
 export type { DailyStats } from '../domain/entities/DailyStats';
 export type { UserPreferences } from '../domain/entities/UserPreferences';
 export type { BodyWeightEntry } from '../domain/entities/BodyWeightEntry';
+export type { UpdateBodyWeightInput } from '../application/useCases/stats/UpdateBodyWeightUseCase';
 export type { MuscleGroup } from '../domain/valueObjects/MuscleGroup';
 export type { Equipment } from '../domain/valueObjects/Equipment';
 export type { SetType } from '../domain/valueObjects/SetType';
+export type { SessionContext } from '../domain/valueObjects/SessionContext';
+export type { WarmupStyle, WeightSuggestion } from '../application/useCases/exercises/SuggestWeight';

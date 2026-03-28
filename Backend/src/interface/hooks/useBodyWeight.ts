@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useContainer } from './useContainer';
 import type { BodyWeightEntry } from '../../domain/entities/BodyWeightEntry';
+import type { UpdateBodyWeightInput } from '../../application/useCases/stats/UpdateBodyWeightUseCase';
 
 /**
  * Hook that exposes body weight tracking operations.
@@ -21,8 +22,22 @@ export function useBodyWeight() {
     [bodyWeightService],
   );
 
+  const updateBodyWeight = useCallback(
+    (params: UpdateBodyWeightInput) =>
+      bodyWeightService.updateBodyWeight(params),
+    [bodyWeightService],
+  );
+
+  const deleteBodyWeight = useCallback(
+    (bodyWeightId: string) =>
+      bodyWeightService.deleteBodyWeight(bodyWeightId),
+    [bodyWeightService],
+  );
+
   return useMemo(() => ({
     logBodyWeight,
     getBodyWeightHistory,
-  }), [logBodyWeight, getBodyWeightHistory]);
+    updateBodyWeight,
+    deleteBodyWeight,
+  }), [logBodyWeight, getBodyWeightHistory, updateBodyWeight, deleteBodyWeight]);
 }

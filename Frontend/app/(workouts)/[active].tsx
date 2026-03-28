@@ -1,321 +1,241 @@
-import { XStack, YStack } from 'tamagui';
-import React, { useEffect } from 'react';
-import { View, TouchableOpacity, Alert, BackHandler } from 'react-native';
-import { useTheme } from '@tamagui/core';
-
-import { useActiveWorkout, WorkoutExerciseState } from '@/store/useActiveWorkout';
-import { Screen } from '@/components/ui/Screen';
-import { useRestTimer } from '@/store/useRestTimer';
-import { useWorkout } from '@/hooks/useWorkout';
-import { useExercises } from '@/hooks/useExercises';
+import { XStack, YStack, useTheme } from 'tamagui';
+import React, { useEffect, useCallback, useRef } from 'react';
+import type { WeightSuggestion } from 'backend/shared/types';
+import { Alert, BackHandler, Pressable, ScrollView } from 'react-native';
 import { router as expoRouter } from 'expo-router';
-import { FlashList } from '@shopify/flash-list';
-import { X, Search, Check, SkipForward, Eye, EyeOff, MoreVertical, ChevronRight, Link2 } from 'lucide-react-native';
-import BottomSheet, { BottomSheetView, BottomSheetTextInput, BottomSheetFlashList } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView, BottomSheetTextInput, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
 import * as Haptics from 'expo-haptics';
-import { CardBase } from '@/components/ui/card';
+import { X, Search, Check, SkipForward, MoreVertical, ChevronRight, ChevronLeft, Plus, Square } from 'lucide-react-native';
+import Animated, { FadeInRight, FadeInLeft, FadeOutLeft, FadeOutRight } from 'react-native-reanimated';
+
+import { useActiveWorkout } from '@/store/useActiveWorkout';
+import { useRestTimer } from '@/store/useRestTimer';
+import { Screen } from '@/components/ui/Screen';
+import { useWorkout } from '@/hooks/useWorkout';
+import { useSetCompletion } from '@/hooks/useSetCompletion';
+import { useSupersetNavigation } from '@/hooks/useSupersetNavigation';
+import { useWorkoutTimer } from '@/hooks/useWorkoutTimer';
 import { SetRow } from '@/components/cards/set-row';
 import { AppText } from '@/components/ui/AppText';
-import { IconButton } from '@/components/ui/AppButton';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { Badge } from '@/components/ui/badge';
 import { getExerciseName } from '@/utils/exercise';
+import { WorkoutHeader } from '@/components/workout/WorkoutHeader';
 
 export default function ActiveWorkoutScreen() {
   const theme = useTheme();
+  const workoutService = useWorkout();
 
-  const {
-    isActive, workoutId, startTime, routineName, exercises,
-    currentExerciseIndex, cancelWorkout, finishWorkout: clearStore,
-    addSet: addSetStore, addExercise, updateSetValues,
-    toggleSetComplete, skipExercise, setCurrentExercise,
-    removeExercise, moveExerciseToEnd,
-  } = useActiveWorkout();
+  const workoutId = useActiveWorkout(s => s.workoutId);
+  const routineId = useActiveWorkout(s => s.routineId);
+  const routineName = useActiveWorkout(s => s.routineName);
+  const exercises = useActiveWorkout(s => s.exercises);
+  const currentExerciseIndex = useActiveWorkout(s => s.currentExerciseIndex);
+  const cancelWorkout = useActiveWorkout(s => s.cancelWorkout);
+  const clearStore = useActiveWorkout(s => s.finishWorkout);
+  const addSetStore = useActiveWorkout(s => s.addSet);
+  const addExercise = useActiveWorkout(s => s.addExercise);
+  const updateSetValues = useActiveWorkout(s => s.updateSetValues);
+  const skipExercise = useActiveWorkout(s => s.skipExercise);
+  const setCurrentExercise = useActiveWorkout(s => s.setCurrentExercise);
+  const removeExercise = useActiveWorkout(s => s.removeExercise);
+  const moveExerciseToEnd = useActiveWorkout(s => s.moveExerciseToEnd);
 
-  const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
+  //--------------estado------------
   const [search, setSearch] = React.useState('');
   const [allExercises, setAllExercises] = React.useState<any[]>([]);
   const [isFocusMode, setIsFocusMode] = React.useState(false);
-
-  const workoutService = useWorkout();
-  const exerciseService = useExercises();
-  const { startTimer } = useRestTimer();
-
-  const bottomSheetRef = React.useRef<BottomSheet>(null);
-  const optionsSheetRef = React.useRef<BottomSheet>(null);
+  const [focusedSetId, setFocusedSetId] = React.useState<string | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = React.useState<string | null>(null);
+  const [navDirection, setNavDirection] = React.useState<'forward' | 'back'>('forward');
+  const [weightSuggestion, setWeightSuggestion] = React.useState<WeightSuggestion | null>(null); 
 
-  useEffect(() => { exerciseService.getAll().then(setAllExercises); }, []);
+  //--------------Hooks------------
+  const { formattedTime } = useWorkoutTimer();
+  const restTimerIsActive = useRestTimer(s => s.isActive);
+  const restRemainingSeconds = useRestTimer(s => s.getRemainingSeconds());
+  const { completeSet } = useSetCompletion();
+  const { isCurrentGroupCompleted, moveToNextExercise } = useSupersetNavigation();
+
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const optionsSheetRef = useRef<BottomSheet>(null);
+
+  //-------------Derivados del ejercicio actual
+  const currentExercise = exercises[currentExerciseIndex];
+  const isFirst = currentExerciseIndex === 0;
+  const isLast = currentExerciseIndex === exercises.length - 1;
+  const completedSets = currentExercise?.sets.filter(s => s.isCompleted).length ?? 0;
+  const totalSets = currentExercise?.sets.length ?? 0;
+
+  const previousWeight = weightSuggestion?.lastWeight != null && weightSuggestion?.lastReps != null
+    ? `${weightSuggestion.lastWeight} kg × ${weightSuggestion.lastReps}`
+    : null;
+  const suggestedWeight = weightSuggestion?.suggestedWeight != null
+    ? `${weightSuggestion.suggestedWeight} kg`
+    : null;
+  const suggestionBasis = weightSuggestion?.basis ?? null;
+  const suggestionMessage = weightSuggestion?.message ?? null;
+
+  //--------------Effects------------
+  useEffect(() => {
+    const fetchExercises = async () => {
+      try {
+        setAllExercises([]); // Placeholder
+      } catch (error) {
+        console.error('Error fetching exercises:', error);
+      }
+    };
+    fetchExercises();
+  }, []);
+
+  useEffect(() => {
+    if (!currentExercise?.exerciseId) return;
+    let cancelled = false;
+
+    workoutService.suggestWeight(currentExercise.exerciseId)
+      .then((suggestion) => {
+        if (!cancelled) {
+          console.debug('suggestWeight', suggestion);
+          setWeightSuggestion(suggestion);
+        }
+      })
+      .catch((err) => {
+        console.warn('suggestWeight error', err);
+        if (!cancelled) setWeightSuggestion(null);
+      });
+
+    return () => { cancelled = true; };
+  }, [currentExercise?.exerciseId, workoutService]);
 
   const filteredExercises = allExercises.filter(e =>
     getExerciseName(e).toLowerCase().includes(search.toLowerCase())
   );
 
-  const flashListRef = React.useRef<any>(null);
-
-  useEffect(() => {
-    if (startTime) {
-      const interval = setInterval(() => {
-        setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-      }, 1000);
-      return () => clearInterval(interval);
+  const handleSupersetCompletion = useCallback(() => {
+    if (isCurrentGroupCompleted()) {
+      setTimeout(() => moveToNextExercise(), 1000);
     }
-  }, [startTime]);
+  }, [isCurrentGroupCompleted, moveToNextExercise]);
 
-  useEffect(() => {
-    if (flashListRef.current && !isFocusMode) {
-      flashListRef.current.scrollToIndex({ index: currentExerciseIndex, animated: true, viewPosition: 0.2 });
-    }
-  }, [currentExerciseIndex, isFocusMode]);
-
-  const checkExerciseCompletion = () => {
-    const activeGroup = exercises[currentExerciseIndex]?.supersetGroup;
-    const activeIndices = exercises
-      .map((ex, i) => (activeGroup != null && ex.supersetGroup === activeGroup) || i === currentExerciseIndex ? i : -1)
-      .filter(i => i !== -1);
-
-    const allCompleted = activeIndices.length > 0 && activeIndices.every(idx =>
-      exercises[idx].sets.every(s => s.isCompleted)
+  const handleCancel = useCallback(() => {
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      '¿Cancelar entrenamiento?',
+      'Se perderá todo el progreso no guardado.',
+      [
+        { text: 'No, continuar', style: 'cancel' },
+        { text: 'Sí, salir', style: 'destructive', onPress: () => { cancelWorkout(); expoRouter.back(); } },
+      ],
+      { cancelable: false }
     );
-
-    if (allCompleted) {
-      const lastIndexInGroup = Math.max(...activeIndices);
-      if (lastIndexInGroup < exercises.length - 1) {
-        setTimeout(() => setCurrentExercise(lastIndexInGroup + 1), 1000);
-      }
-    }
-  };
-
-  const formatElapsedTime = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hrs > 0 ? hrs + ':' : ''}${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, [cancelWorkout]);
 
   useEffect(() => {
     const backAction = () => { handleCancel(); return true; };
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
-  }, []);
+  }, [handleCancel]);
 
-  const handleCancel = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Alert.alert("¿Cancelar entrenamiento?", "Se perderá todo el progreso no guardado.", [
-      { text: "No, continuar", style: "cancel" },
-      { text: "Sí, salir", style: "destructive", onPress: () => { cancelWorkout(); expoRouter.back(); } },
-    ]);
-  };
-
-  const handleFinish = async () => {
+  const handleFinish = useCallback(async () => {
     if (!workoutId) return;
     try {
       await workoutService.finishWorkout(workoutId);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Toast.show({ type: 'success', text1: '¡Entrenamiento Guardado!', text2: 'Felicidades por completar tu sesión.', position: 'top' });
       clearStore();
       expoRouter.replace({ pathname: '/(workouts)/summary' as any, params: { id: workoutId } });
-    } catch (e) {
+    } catch {
       Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo guardar el entrenamiento' });
     }
-  };
+  }, [workoutId, clearStore, workoutService]);
 
-  const [focusedSetId, setFocusedSetId] = React.useState<string | null>(null);
+  const goToNext = useCallback(() => {
+    if (isLast) { handleFinish(); return; }
+    setNavDirection('forward');
+    setCurrentExercise(currentExerciseIndex + 1);
+    setFocusedSetId(null);
+  }, [isLast, currentExerciseIndex, setCurrentExercise, handleFinish]);
 
-  const onSetToggle = async (exerciseId: string, setId: string, currentlyCompleted: boolean) => {
-    toggleSetComplete(exerciseId, setId);
+  const goToPrev = useCallback(() => {
+    if (isFirst) return;
+    setNavDirection('back');
+    setCurrentExercise(currentExerciseIndex - 1);
+    setFocusedSetId(null);
+  }, [isFirst, currentExerciseIndex, setCurrentExercise]);
 
-    if (!currentlyCompleted && workoutId) {
-      const exercise = exercises.find(ex => ex.id === exerciseId);
-      if (!exercise) return;
+  const onSetToggle = useCallback(async (exerciseId: string, setId: string, currentlyCompleted: boolean) => {
+    const exercise = exercises.find(ex => ex.id === exerciseId);
 
+    if (exercise && !currentlyCompleted) {
       const setIndex = exercise.sets.findIndex(s => s.id === setId);
-      const set = exercise.sets[setIndex];
+      const currentSet = exercise.sets[setIndex];
+      const previousSet = setIndex > 0 ? exercise.sets[setIndex - 1] : null;
 
-      if (set) {
-        try {
-          const result = await workoutService.recordSet(workoutId, {
-            exerciseId: exercise.exerciseId,
-            setNumber: setIndex + 1,
-            weight: set.weight,
-            reps: set.reps,
-            setType: set.type,
-            completed: true,
-          });
-
-          if (result.newRecords && result.newRecords.length > 0) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            result.newRecords.forEach((record: any) => {
-              Toast.show({
-                type: 'success', text1: '¡NUEVO RÉCORD! 🏆',
-                text2: `Has superado tu mejor ${record.recordType.replace('_', ' ')}: ${record.value}`,
-                position: 'top', visibilityTime: 4000,
-              });
-            });
-          }
-
-          if (setIndex < exercise.sets.length - 1) {
-            setFocusedSetId(exercise.sets[setIndex + 1].id);
-          } else {
-            setFocusedSetId(null);
-          }
-
-          Toast.show({ type: 'success', text1: `Set ${setIndex + 1} registrado`, position: 'bottom', bottomOffset: 120, visibilityTime: 1500 });
-          startTimer(90);
-          checkExerciseCompletion();
-        } catch (e) {
-          console.error('Failed to record set', e);
-        }
+      if (currentSet && previousSet && currentSet.weight <= 0 && previousSet.weight > 0) {
+        updateSetValues(exerciseId, setId, { weight: previousSet.weight });
       }
     }
-  };
 
-  const addSet = (exerciseId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    addSetStore(exerciseId);
-  };
+    await completeSet(exerciseId, setId, currentlyCompleted);
 
-  const handleSkipExercise = (exerciseId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    skipExercise(exerciseId);
-    if (currentExerciseIndex < exercises.length - 1) {
-      setCurrentExercise(currentExerciseIndex + 1);
+    if (exercise && !currentlyCompleted) {
+      const setIndex = exercise.sets.findIndex(s => s.id === setId);
+      if (setIndex < exercise.sets.length - 1) {
+        setFocusedSetId(exercise.sets[setIndex + 1].id);
+      } else {
+        setFocusedSetId(null);
+      }
     }
-  };
 
-  const renderExercise = ({ item, index }: { item: WorkoutExerciseState; index: number }) => {
-    const activeGroup = exercises[currentExerciseIndex]?.supersetGroup;
-    const isCurrent = index === currentExerciseIndex || (activeGroup != null && item.supersetGroup === activeGroup);
-    const isSkipped = item.status === 'skipped';
-    const isGroupedWithPrev = index > 0 && item.supersetGroup != null && item.supersetGroup === exercises[index - 1].supersetGroup;
+    handleSupersetCompletion();
+  }, [completeSet, exercises, handleSupersetCompletion, updateSetValues]);
 
-    if (isFocusMode && !isCurrent) return null;
+  const addSet = useCallback((exerciseId: string) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    addSetStore(exerciseId);
+  }, [addSetStore]);
 
-    return (
-      <YStack key={item.id}>
-        {isGroupedWithPrev && (
-          <YStack alignItems="center" height={16} zIndex={-1}>
-            <YStack width={2} height={32} position="absolute" top={-16} backgroundColor="$primary" />
-            <Link2 size={16} color={theme.primary?.val} style={{ backgroundColor: theme.background?.val, zIndex: 2 }} />
-          </YStack>
-        )}
-        <CardBase
-          style={[
-            { marginBottom: isGroupedWithPrev ? 8 : 16, padding: 16 },
-            isCurrent && { borderColor: theme.primary?.val, borderWidth: 2, shadowColor: theme.primary?.val, shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 },
-            isSkipped && { opacity: 0.5 },
-          ]}
-        >
-          <XStack justifyContent="space-between" alignItems="center" marginBottom="$lg">
-            <XStack alignItems="center" gap="$md" flex={1}>
-              <AppText variant="titleSm" style={{ flex: 1 }}>{getExerciseName(item)}</AppText>
-            </XStack>
+  const handleSkipExercise = useCallback((exerciseId: string) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    skipExercise(exerciseId);
+    if (!isLast) goToNext();
+  }, [skipExercise, isLast, goToNext]);
 
-            <XStack alignItems="center" gap="$md">
-              {!isSkipped && (
-                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={() => handleSkipExercise(item.id)}>
-                  <SkipForward size={16} color={theme.textTertiary?.val} />
-                  <AppText variant="label" color="textTertiary">Saltar</AppText>
-                </TouchableOpacity>
-              )}
-              {isSkipped && <Badge label="OMITIDO" variant="danger" size="sm" />}
-              <TouchableOpacity
-                onPress={() => { setSelectedExerciseId(item.id); optionsSheetRef.current?.snapToIndex(0); }}
-                style={{ padding: 4 }}
-              >
-                <MoreVertical size={20} color={theme.textTertiary?.val} />
-              </TouchableOpacity>
-            </XStack>
-          </XStack>
-
-          {!isSkipped && (
-            <>
-              <XStack marginBottom="$xs" paddingRight="$sm">
-                <AppText variant="label" color="textTertiary" style={{ flex: 1, textAlign: 'center' }}>SET</AppText>
-                <AppText variant="label" color="textTertiary" style={{ flex: 2, textAlign: 'center' }}>PREVIO</AppText>
-                <AppText variant="label" color="textTertiary" style={{ flex: 2, textAlign: 'center' }}>KG</AppText>
-                <AppText variant="label" color="textTertiary" style={{ flex: 2, textAlign: 'center' }}>REPS</AppText>
-                <View style={{ width: 44 }} />
-              </XStack>
-
-              <YStack gap="$xs">
-                {item.sets.map((set, setIndex) => (
-                  <SetRow
-                    key={set.id}
-                    index={setIndex}
-                    setRef={set}
-                    autoFocus={set.id === focusedSetId}
-                    onUpdate={(values) => updateSetValues(item.id, set.id, values)}
-                    onToggleComplete={() => onSetToggle(item.id, set.id, set.isCompleted)}
-                    onRemove={() => useActiveWorkout.getState().removeSet(item.id, set.id)}
-                  />
-                ))}
-              </YStack>
-
-              <TouchableOpacity
-                style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 12, marginTop: 8 }}
-                onPress={() => addSet(item.id)}
-              >
-                <AppText variant="bodyMd" color="primary" style={{ fontWeight: '600' }}>+ Añadir set</AppText>
-              </TouchableOpacity>
-            </>
-          )}
-        </CardBase>
-      </YStack>
-    );
-  };
-
-  const handleAddExerciseSelection = (item: any) => {
+  const handleAddExerciseSelection = useCallback((item: any) => {
     addExercise({
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substring(2, 9),
       exerciseId: item.exerciseId,
       name: item.name,
       nameEs: item.nameEs,
-      sets: [{ id: Math.random().toString(36).substr(2, 9), weight: 0, reps: 0, isCompleted: false, type: 'normal' }],
+      sets: [{ id: Math.random().toString(36).substring(2, 9), weight: 0, reps: 0, isCompleted: false, type: 'normal' }],
     });
     bottomSheetRef.current?.close();
     setSearch('');
-  };
+  }, [addExercise]);
+
+  if (!currentExercise) return null;
+
+  const isSkipped = currentExercise.status === 'skipped';
+  const enterAnim = navDirection === 'forward' ? FadeInRight.duration(220) : FadeInLeft.duration(220);
+  const exitAnim = navDirection === 'forward' ? FadeOutLeft.duration(180) : FadeOutRight.duration(180);
 
   return (
-    <Screen scroll={false}>
+    <Screen scroll={false} safeAreaEdges={['top', 'left', 'right']}>
       {/* Header */}
-      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingVertical="$sm">
-        <IconButton icon={<X size={24} color={theme.color?.val} />} onPress={handleCancel} />
-
-        <YStack alignItems="center">
-          <AppText variant="bodySm" color="textTertiary" tabularNums style={{ fontWeight: '600' }}>
-            {formatElapsedTime(elapsedSeconds)}
-          </AppText>
-          <AppText variant="titleSm" style={{ maxWidth: 180 }} numberOfLines={1}>
-            {routineName}
-          </AppText>
-          <AppText variant="label" color="primary" style={{ marginTop: 2 }}>
-            EJERCICIO {currentExerciseIndex + 1} DE {exercises.length}
-          </AppText>
-        </YStack>
-
-        <XStack alignItems="center">
-          <IconButton
-            icon={isFocusMode ? <Eye color={theme.primary?.val} size={22} /> : <EyeOff color={theme.textTertiary?.val} size={22} />}
-            backgroundColor={isFocusMode ? theme.primarySubtle?.val : 'transparent'}
-            onPress={() => setIsFocusMode(!isFocusMode)}
-            style={{ marginRight: 8 }}
-          />
-          <TouchableOpacity
-            onPress={handleFinish}
-            style={{
-              paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
-              backgroundColor: theme.primarySubtle?.val,
-            }}
-          >
-            <AppText variant="bodySm" color="primary" style={{ fontWeight: '700' }}>Finalizar</AppText>
-          </TouchableOpacity>
-        </XStack>
-      </XStack>
+      <WorkoutHeader
+        formattedTime={formattedTime}
+        routineName={routineName}
+        currentExerciseIndex={currentExerciseIndex}
+        totalExercises={exercises.length}
+        isFocusMode={isFocusMode}
+        onToggleFocus={() => setIsFocusMode(!isFocusMode)}
+        onCancel={handleCancel}
+        onFinish={handleFinish}
+      />
 
       {/* Progress Bar */}
-      <YStack height={4} backgroundColor="$borderColor" width="100%">
+      <YStack height={3} backgroundColor="$borderColor" width="100%">
         <YStack
           height="100%"
           backgroundColor="$primary"
@@ -323,30 +243,264 @@ export default function ActiveWorkoutScreen() {
         />
       </YStack>
 
-      {/* Main Content */}
-      <YStack flex={1}>
-        <FlashList
-          ref={flashListRef}
-          data={exercises}
-          renderItem={renderExercise}
-          // @ts-ignore
-          estimatedItemSize={250}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 150 }}
+      {/* Rest Timer chip */}
+      {restTimerIsActive && (
+        <YStack
+          borderRadius="$xl"
+          backgroundColor="$primarySubtle"
+          borderColor="$primary"
+          borderWidth={1}
+          paddingHorizontal="$sm"
+          paddingVertical="$xs"
+          alignSelf="center"
+          marginTop="$sm"
+        >
+          <AppText variant="label" color="primary" fontWeight="700">
+            DESCANSO: {Math.max(0, restRemainingSeconds)}s
+          </AppText>
+        </YStack>
+      )}
+
+      {/* Exercise View — single exercise at a time */}
+      <Animated.View
+        key={currentExercise.id}
+        entering={enterAnim}
+        exiting={exitAnim}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 140, flexGrow: 1, justifyContent: 'center' }}
           showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            <TouchableOpacity
-              style={{
-                alignItems: 'center', justifyContent: 'center',
-                borderWidth: 1, borderStyle: 'dashed', borderRadius: 12,
-                padding: 20, marginVertical: 12,
-                borderColor: theme.borderColor?.val,
-              }}
-              onPress={() => bottomSheetRef.current?.snapToIndex(1)}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Exercise Title + Actions */}
+          <XStack
+            justifyContent="space-between"
+            alignItems="center"
+            paddingHorizontal="$xl"
+            paddingTop="$lg"
+            paddingBottom="$sm"
+          >
+            <YStack flex={1} marginRight="$md">
+              <AppText variant="titleMd" numberOfLines={2}>
+                {getExerciseName(currentExercise)}
+              </AppText>
+              <AppText variant="bodySm" color="textSecondary" marginTop="$xs">
+                {completedSets}/{totalSets} sets completados
+              </AppText>
+            </YStack>
+
+            <XStack alignItems="center" gap="$sm">
+              {!isSkipped && (
+                <Pressable onPress={() => handleSkipExercise(currentExercise.id)} accessibilityLabel="Saltar ejercicio">
+                  <XStack
+                    alignItems="center"
+                    gap="$xs"
+                    backgroundColor="$surfaceSecondary"
+                    paddingHorizontal="$sm"
+                    paddingVertical="$xs"
+                    borderRadius="$md"
+                  >
+                    <AppIcon icon={SkipForward} color="textTertiary" size={14} />
+                    <AppText variant="label" color="textTertiary">Saltar</AppText>
+                  </XStack>
+                </Pressable>
+              )}
+              {isSkipped && <Badge label="OMITIDO" variant="danger" size="sm" />}
+              <Pressable
+                onPress={() => { setSelectedExerciseId(currentExercise.id); optionsSheetRef.current?.snapToIndex(0); }}
+                accessibilityLabel="Opciones del ejercicio"
+              >
+                <YStack padding="$xs">
+                  <AppIcon icon={MoreVertical} color="textTertiary" size={20} />
+                </YStack>
+              </Pressable>
+            </XStack>
+          </XStack>
+
+          {/* Previous & Suggested Weight Cards */}
+          {(previousWeight || suggestedWeight) && (
+            <XStack gap="$sm" paddingHorizontal="$xl" marginBottom="$lg">
+              {previousWeight && (
+                <YStack
+                  flex={1}
+                  backgroundColor="$surface"
+                  borderRadius="$lg"
+                  borderCurve="continuous"
+                  borderWidth={1}
+                  borderColor="$borderColor"
+                  padding="$md"
+                >
+                  <AppText variant="label" color="textTertiary" marginBottom="$xs">
+                    PESO ANTERIOR
+                  </AppText>
+                  <AppText variant="titleSm" tabularNums>
+                    {previousWeight}
+                  </AppText>
+                </YStack>
+              )}
+              {suggestedWeight && (
+                <YStack
+                  flex={1}
+                  backgroundColor="$primarySubtle"
+                  borderRadius="$lg"
+                  borderCurve="continuous"
+                  borderWidth={1}
+                  borderColor="$primary"
+                  padding="$md"
+                >
+                  <AppText variant="label" color="primary" marginBottom="$xs">
+                    SUGERIDO
+                  </AppText>
+                  <AppText variant="titleSm" color="primary" tabularNums>
+                    {suggestedWeight}
+                  </AppText>
+                  {(suggestionBasis === 'deload' || suggestionBasis === 'failure_recovery') && suggestionMessage && (
+                    <AppText variant="label" color="warning" marginTop="$xs" numberOfLines={2}>
+                      {suggestionMessage}
+                    </AppText>
+                  )}
+                </YStack>
+              )}
+            </XStack>
+          )}
+
+          {/* Sets Table */}
+          {!isSkipped && (
+            <YStack paddingHorizontal="$xl">
+              {/* Column headers */}
+              <XStack marginBottom="$xs" paddingHorizontal={4} alignItems="center">
+                <AppText variant="label" color="textTertiary" width={32} textAlign="center">SET</AppText>
+                <AppText variant="label" color="textTertiary" flex={1.2} textAlign="center">KG</AppText>
+                <AppText variant="label" color="textTertiary" flex={1} textAlign="center">REPS</AppText>
+                <YStack width={44} />
+              </XStack>
+
+              {/* Set Rows */}
+              <YStack gap="$xs">
+                {currentExercise.sets.map((set, setIndex) => {
+                  const previousWeight = setIndex > 0 ? currentExercise.sets[setIndex - 1].weight : 0;
+                  return (
+                    <SetRow
+                      key={set.id}
+                      index={setIndex}
+                      setRef={set}
+                      previousWeight={previousWeight}
+                      autoFocus={set.id === focusedSetId}
+                      onUpdate={(values) => updateSetValues(currentExercise.id, set.id, values)}
+                      onToggleComplete={() => onSetToggle(currentExercise.id, set.id, set.isCompleted)}
+                      onRemove={() => useActiveWorkout.getState().removeSet(currentExercise.id, set.id)}
+                    />
+                  );
+                })}
+              </YStack>
+
+              {/* Add Set */}
+              <Pressable onPress={() => addSet(currentExercise.id)} accessibilityLabel="Añadir nuevo set">
+                <XStack
+                  alignItems="center"
+                  justifyContent="center"
+                  borderWidth={1.5}
+                  borderStyle="dashed"
+                  borderColor="$borderColor"
+                  borderRadius="$lg"
+                  borderCurve="continuous"
+                  paddingVertical="$md"
+                  marginTop="$md"
+                  gap="$xs"
+                >
+                  <AppIcon icon={Plus} color="textTertiary" size={16} />
+                  <AppText variant="bodyMd" color="textTertiary" fontWeight="600">
+                    Añadir set
+                  </AppText>
+                </XStack>
+              </Pressable>
+            </YStack>
+          )}
+        </ScrollView>
+      </Animated.View>
+
+      {/* Bottom Navigation Bar */}
+      <YStack
+        position="absolute"
+        bottom={0}
+        left={0}
+        right={0}
+        backgroundColor="$surface"
+        borderTopWidth={1}
+        borderTopColor="$borderColor"
+        paddingBottom="$xl"
+        paddingTop="$md"
+        paddingHorizontal="$xl"
+      >
+        <XStack alignItems="center" gap="$sm">
+          {/* Prev button */}
+          <Pressable onPress={goToPrev} disabled={isFirst} accessibilityLabel="Ejercicio anterior">
+            <YStack
+              width={52}
+              height={52}
+              borderRadius="$lg"
+              borderCurve="continuous"
+              alignItems="center"
+              justifyContent="center"
+              backgroundColor="$surfaceSecondary"
+              opacity={isFirst ? 0.3 : 1}
             >
-              <AppText variant="bodyMd" color="primary" style={{ fontWeight: '700' }}>+ Añadir Ejercicio</AppText>
-            </TouchableOpacity>
-          }
-        />
+              <AppIcon icon={ChevronLeft} color="color" size={22} />
+            </YStack>
+          </Pressable>
+
+          {/* Add exercise button */}
+          <Pressable onPress={() => bottomSheetRef.current?.snapToIndex(1)} accessibilityLabel="Añadir ejercicio">
+            <YStack
+              width={52}
+              height={52}
+              borderRadius="$lg"
+              borderCurve="continuous"
+              alignItems="center"
+              justifyContent="center"
+              backgroundColor="$surfaceSecondary"
+            >
+              <AppIcon icon={Plus} color="color" size={22} />
+            </YStack>
+          </Pressable>
+
+          {/* Rest timer button (manual) */}
+          <Pressable onPress={() => expoRouter.push('/(workouts)/rest-timer')} accessibilityLabel="Abrir timer de descanso">
+            <YStack
+              width={52}
+              height={52}
+              borderRadius="$lg"
+              borderCurve="continuous"
+              alignItems="center"
+              justifyContent="center"
+              backgroundColor={restTimerIsActive ? '$successSubtle' : '$surfaceSecondary'}
+              borderWidth={1}
+              borderColor={restTimerIsActive ? '$success' : '$borderColor'}
+            >
+              <AppIcon icon={Square} color={restTimerIsActive ? 'success' : 'color'} size={22} />
+            </YStack>
+          </Pressable>
+
+          {/* Next / Finish button */}
+          <Pressable onPress={goToNext} style={{ flex: 1 }} accessibilityLabel={isLast ? 'Finalizar entrenamiento' : 'Siguiente ejercicio'}>
+            <XStack
+              flex={1}
+              height={52}
+              borderRadius="$lg"
+              borderCurve="continuous"
+              alignItems="center"
+              justifyContent="center"
+              backgroundColor="$primary"
+              gap="$sm"
+            >
+              <AppText variant="bodyMd" color="background" fontWeight="700">
+                {isLast ? 'Finalizar' : 'Siguiente ejercicio'}
+              </AppText>
+              <AppIcon icon={ChevronRight} color="background" size={20} />
+            </XStack>
+          </Pressable>
+        </XStack>
       </YStack>
 
       {/* Exercise Picker Bottom Sheet */}
@@ -355,55 +509,51 @@ export default function ActiveWorkoutScreen() {
         index={-1}
         snapPoints={['50%', '90%']}
         enablePanDownToClose
-        backgroundStyle={{ backgroundColor: theme.surfaceSecondary?.val }}
-        handleIndicatorStyle={{ backgroundColor: theme.textTertiary?.val }}
+        backgroundStyle={{ backgroundColor: theme.surfaceSecondary?.val as string }}
+        handleIndicatorStyle={{ backgroundColor: theme.textTertiary?.val as string }}
       >
         <BottomSheetView style={{ flex: 1, padding: 12 }}>
           <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
             <AppText variant="titleSm">Añadir Ejercicio</AppText>
-            <TouchableOpacity onPress={() => bottomSheetRef.current?.close()}>
-              <X size={24} color={theme.textSecondary?.val} />
-            </TouchableOpacity>
+            <Pressable onPress={() => bottomSheetRef.current?.close()} accessibilityLabel="Cerrar">
+              <AppIcon icon={X} color="textSecondary" size={24} />
+            </Pressable>
           </XStack>
 
           <XStack
             alignItems="center"
             gap="$sm"
-            style={{
-              height: 48, borderRadius: 12, paddingHorizontal: 12,
-              backgroundColor: theme.surface?.val, marginBottom: 12,
-            }}
+            height={48}
+            borderRadius="$lg"
+            paddingHorizontal="$md"
+            backgroundColor="$surface"
+            marginBottom="$md"
           >
-            <Search size={20} color={theme.textTertiary?.val} />
+            <AppIcon icon={Search} color="textTertiary" size={20} />
             <BottomSheetTextInput
-              style={{ flex: 1, marginLeft: 8, color: theme.color?.val, fontSize: 14 }}
+              style={{ flex: 1, color: theme.color?.val as string, fontSize: 16 }}
               placeholder="Ej. Press de banca..."
-              placeholderTextColor={theme.textTertiary?.val}
+              placeholderTextColor={theme.textTertiary?.val as string}
               value={search}
               onChangeText={setSearch}
             />
           </XStack>
 
-          <BottomSheetFlashList
+          <BottomSheetFlatList
             data={filteredExercises}
             keyExtractor={(item: any) => item.id}
-            estimatedItemSize={70}
             renderItem={({ item }: any) => (
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  borderBottomColor: theme.borderColor?.val, borderBottomWidth: 1, paddingVertical: 12,
-                }}
-                onPress={() => handleAddExerciseSelection(item)}
-              >
-                <View style={{ flex: 1 }}>
-                  <AppText variant="subtitle">{getExerciseName(item)}</AppText>
-                  <AppText variant="label" color="textSecondary">
-                    {item.primaryMuscles?.join(', ') || 'other'} · {item.equipment}
-                  </AppText>
-                </View>
-                <Check size={20} color={theme.primary?.val} />
-              </TouchableOpacity>
+              <Pressable onPress={() => handleAddExerciseSelection(item)}>
+                <XStack alignItems="center" borderBottomColor="$borderColor" borderBottomWidth={1} paddingVertical="$md">
+                  <YStack flex={1}>
+                    <AppText variant="subtitle">{getExerciseName(item)}</AppText>
+                    <AppText variant="label" color="textSecondary">
+                      {item.primaryMuscles?.join(', ') || 'other'} · {item.equipment}
+                    </AppText>
+                  </YStack>
+                  <AppIcon icon={Check} color="primary" size={20} />
+                </XStack>
+              </Pressable>
             )}
           />
         </BottomSheetView>
@@ -415,19 +565,18 @@ export default function ActiveWorkoutScreen() {
         index={-1}
         snapPoints={[300]}
         enablePanDownToClose
-        backgroundStyle={{ backgroundColor: theme.surfaceSecondary?.val }}
-        handleIndicatorStyle={{ backgroundColor: theme.textTertiary?.val }}
+        backgroundStyle={{ backgroundColor: theme.surfaceSecondary?.val as string }}
+        handleIndicatorStyle={{ backgroundColor: theme.textTertiary?.val as string }}
       >
         <BottomSheetView style={{ flex: 1, padding: 12 }}>
           <XStack justifyContent="space-between" alignItems="center" marginBottom="$lg">
             <AppText variant="titleSm">Opciones de Ejercicio</AppText>
-            <TouchableOpacity onPress={() => optionsSheetRef.current?.close()}>
-              <X size={24} color={theme.textSecondary?.val} />
-            </TouchableOpacity>
+            <Pressable onPress={() => optionsSheetRef.current?.close()} accessibilityLabel="Cerrar">
+              <AppIcon icon={X} color="textSecondary" size={24} />
+            </Pressable>
           </XStack>
 
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', borderBottomColor: theme.borderColor?.val, borderBottomWidth: 1, paddingVertical: 12 }}
+          <Pressable
             onPress={() => {
               if (selectedExerciseId) {
                 const selectedEx = exercises.find(e => e.id === selectedExerciseId);
@@ -444,14 +593,26 @@ export default function ActiveWorkoutScreen() {
               }
             }}
           >
-            <View style={{ flex: 1 }}>
-              <AppText variant="bodyMd">Sustituir Ejercicio</AppText>
-            </View>
-            <ChevronRight size={20} color={theme.textTertiary?.val} />
-          </TouchableOpacity>
+            <XStack alignItems="center" borderBottomColor="$borderColor" borderBottomWidth={1} paddingVertical="$md">
+              <AppText variant="bodyMd" flex={1}>Sustituir Ejercicio</AppText>
+              <AppIcon icon={ChevronRight} color="textTertiary" size={20} />
+            </XStack>
+          </Pressable>
 
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', borderBottomColor: theme.borderColor?.val, borderBottomWidth: 1, paddingVertical: 12 }}
+          <Pressable
+            onPress={() => {
+              if (routineId) {
+                optionsSheetRef.current?.close();
+                expoRouter.push({ pathname: `/routine/${routineId}` } as any);
+              }
+            }}
+          >
+            <XStack alignItems="center" borderBottomColor="$borderColor" borderBottomWidth={1} paddingVertical="$md">
+              <AppText variant="bodyMd">Editar Rutina</AppText>
+            </XStack>
+          </Pressable>
+
+          <Pressable
             onPress={() => {
               if (selectedExerciseId) {
                 moveExerciseToEnd(selectedExerciseId);
@@ -460,22 +621,30 @@ export default function ActiveWorkoutScreen() {
               }
             }}
           >
-            <AppText variant="bodyMd">Mover al final</AppText>
-          </TouchableOpacity>
+            <XStack alignItems="center" borderBottomColor="$borderColor" borderBottomWidth={1} paddingVertical="$md">
+              <AppText variant="bodyMd">Mover al final</AppText>
+            </XStack>
+          </Pressable>
 
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}
+          <Pressable
             onPress={() => {
               if (selectedExerciseId) {
-                Alert.alert("¿Eliminar Ejercicio?", "Se borrará permanentemente de este entrenamiento.", [
-                  { text: "Cancelar", style: "cancel" },
-                  { text: "Eliminar", style: "destructive", onPress: () => { removeExercise(selectedExerciseId); optionsSheetRef.current?.close(); } },
+                Alert.alert('¿Eliminar Ejercicio?', 'Se borrará permanentemente de este entrenamiento.', [
+                  { text: 'Cancelar', style: 'cancel' },
+                  {
+                    text: 'Eliminar', style: 'destructive', onPress: () => {
+                      removeExercise(selectedExerciseId);
+                      optionsSheetRef.current?.close();
+                    }
+                  },
                 ]);
               }
             }}
           >
-            <AppText variant="bodyMd" color="error" style={{ fontWeight: '700' }}>Eliminar Ejercicio</AppText>
-          </TouchableOpacity>
+            <XStack alignItems="center" paddingVertical="$md">
+              <AppText variant="bodyMd" color="danger" fontWeight="700">Eliminar Ejercicio</AppText>
+            </XStack>
+          </Pressable>
         </BottomSheetView>
       </BottomSheet>
     </Screen>

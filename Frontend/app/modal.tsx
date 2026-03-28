@@ -1,6 +1,5 @@
 ﻿import { YStack } from 'tamagui';
 import { Link } from 'expo-router';
-import { View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { AppText } from '@/components/ui/AppText';
 

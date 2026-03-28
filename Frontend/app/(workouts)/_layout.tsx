@@ -1,8 +1,6 @@
-import React, { useEffect } from 'react';
-
+import React from 'react';
 import { Stack as ExpoStack } from 'expo-router';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
-import { Alert } from 'react-native';
 
 export default function WorkoutsLayout() {
   const isActive = useActiveWorkout(state => state.isActive);
@@ -19,7 +17,7 @@ export default function WorkoutsLayout() {
         name="[active]" 
         options={{
           title: 'Entrenamiento Activo',
-          gestureEnabled: false, // Force them to use the explicit 'Finish'/'Cancel' buttons
+          gestureEnabled: false,
         }} 
       />
       

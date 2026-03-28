@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Value, ViewStyle } from 'react-native';
+import { DimensionValue } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,63 +8,61 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated';
-import { useTheme } from '@tamagui/core';
-import { YStack, XStack } from 'tamagui';
+import { YStack, XStack, YStackProps } from 'tamagui';
 
-interface SkeletonLoaderProps {
-  width?: Value | string;
-  height?: Value | string;
-  borderRadius?: number;
-  style?: ViewStyle;
+const AnimatedYStack = Animated.createAnimatedComponent(YStack);
+
+interface SkeletonLoaderProps extends YStackProps {
+  width?: DimensionValue;
+  height?: DimensionValue;
 }
-
-const AnimatedView = Animated.createAnimatedComponent(YStack);
 
 export function SkeletonLoader({
   width = '100%',
   height = 20,
-  borderRadius = 8,
-  style,
+  borderRadius = '$md',
+  ...props
 }: SkeletonLoaderProps) {
-  const theme = useTheme();
-  const opacity = useSharedValue(0.3);
+  const opacity = useSharedValue(0.5);
 
   useEffect(() => {
     opacity.value = withRepeat(
       withSequence(
-        withTiming(0.7, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.3, { duration: 800, easing: Easing.inOut(Easing.ease) })
+        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.5, { duration: 800, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       true
     );
-  }, []);
+  }, [opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
   }));
 
   return (
-    <AnimatedView
+    <AnimatedYStack
       width={width}
       height={height}
       borderRadius={borderRadius}
+      borderCurve="continuous"
       backgroundColor="$surfaceSecondary"
       overflow="hidden"
-      style={[animatedStyle, style]}
+      style={animatedStyle}
+      {...props}
     />
   );
 }
 
 export function RoutineCardSkeleton() {
   return (
-    <YStack width={280} p="$md" borderRadius="$lg" backgroundColor="$surface" mr="$md">
-      <SkeletonLoader width="70%" height={20} style={{ marginBottom: 12 }} />
-      <SkeletonLoader width="100%" height={14} style={{ marginBottom: 8 }} />
-      <SkeletonLoader width="80%" height={14} style={{ marginBottom: 20 }} />
+    <YStack width={280} padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" marginRight="$md" gap="$sm">
+      <SkeletonLoader width="70%" height={24} />
+      <SkeletonLoader width="100%" height={16} />
+      <SkeletonLoader width="80%" height={16} marginBottom="$sm" />
       <XStack justifyContent="space-between" alignItems="center">
-        <SkeletonLoader width={60} height={12} />
-        <SkeletonLoader width={32} height={32} borderRadius={9999} />
+        <SkeletonLoader width={60} height={14} />
+        <SkeletonLoader width={32} height={32} borderRadius="$full" />
       </XStack>
     </YStack>
   );
@@ -72,15 +70,15 @@ export function RoutineCardSkeleton() {
 
 export function HistoryCardSkeleton() {
   return (
-    <YStack p="$md" borderRadius="$lg" backgroundColor="$surface" mb="$md" borderLeftWidth={4} borderLeftColor="$surfaceSecondary">
-      <XStack width="100%" justifyContent="space-between" mb="$3">
-        <YStack flex={1}>
-          <SkeletonLoader width="60%" height={18} style={{ marginBottom: 4 }} />
-          <SkeletonLoader width="40%" height={12} />
+    <YStack padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" marginBottom="$md" borderLeftWidth={4} borderLeftColor="$surfaceSecondary" gap="$md">
+      <XStack width="100%" justifyContent="space-between" alignItems="flex-start">
+        <YStack flex={1} gap="$xs">
+          <SkeletonLoader width="60%" height={20} />
+          <SkeletonLoader width="40%" height={14} />
         </YStack>
-        <SkeletonLoader width={80} height={24} borderRadius={12} />
+        <SkeletonLoader width={80} height={24} borderRadius="$full" />
       </XStack>
-      <XStack width="100%" justifyContent="flex-start" space="$5">
+      <XStack width="100%" justifyContent="flex-start" gap="$md">
         <SkeletonLoader width={60} height={14} />
         <SkeletonLoader width={80} height={14} />
       </XStack>

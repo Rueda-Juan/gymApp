@@ -1,99 +1,144 @@
-﻿import { XStack, YStack } from 'tamagui';
-import React, { useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { useTheme } from '@tamagui/core';
+﻿import { XStack, YStack, useTheme } from 'tamagui';
+import React, { useEffect, useCallback } from 'react';
+import { TextInput, Pressable, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Save, Plus, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
+
 import { AppText } from '@/components/ui/AppText';
 import { AppInput } from '@/components/ui/AppInput';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { IconButton } from '@/components/ui/AppButton';
 import { useRoutineStore } from '@/store/routineStore';
 import { RoutineExerciseRow } from '@/components/cards/routine-exercise-row';
 import { useRoutines } from '@/hooks/useRoutines';
-import * as Haptics from 'expo-haptics';
-import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 import { getExerciseName } from '@/utils/exercise';
 
 export default function CreateRoutineScreen() {
   const theme = useTheme();
-  const { name, notes, exercises, setName, setNotes, removeExercise, updateExercise, reorderExercises, linkExerciseNext, unlinkExercise, reset } = useRoutineStore();
+  
+  const name = useRoutineStore(s => s.name);
+  const notes = useRoutineStore(s => s.notes);
+  const exercises = useRoutineStore(s => s.exercises);
+  const setName = useRoutineStore(s => s.setName);
+  const setNotes = useRoutineStore(s => s.setNotes);
+  const removeExercise = useRoutineStore(s => s.removeExercise);
+  const updateExercise = useRoutineStore(s => s.updateExercise);
+  const reorderExercises = useRoutineStore(s => s.reorderExercises);
+  const linkExerciseNext = useRoutineStore(s => s.linkExerciseNext);
+  const unlinkExercise = useRoutineStore(s => s.unlinkExercise);
+  const reset = useRoutineStore(s => s.reset);
+  
   const routineService = useRoutines();
 
-  useEffect(() => { return () => reset(); }, []);
+  useEffect(() => { 
+    return () => reset(); 
+  }, [reset]);
 
-  const handleSave = async () => {
-    if (!name.trim()) { Alert.alert('Error', 'Por favor ingresa un nombre para la rutina'); return; }
-    if (exercises.length === 0) { Alert.alert('Error', 'Debes agregar al menos un ejercicio'); return; }
+  const handleSave = useCallback(async () => {
+    if (!name.trim()) { 
+      Alert.alert('Error', 'Por favor ingresa un nombre para la rutina'); 
+      return; 
+    }
+    if (exercises.length === 0) { 
+      Alert.alert('Error', 'Debes agregar al menos un ejercicio'); 
+      return; 
+    }
 
     try {
       await routineService.createRoutine({
-        name, notes,
+        name, 
+        notes,
         exercises: exercises.map((e, index) => {
           let minReps = 10, maxReps = 10;
           if (e.reps) {
             const parts = String(e.reps).split('-');
             if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
-              minReps = Number(parts[0].trim()); maxReps = Number(parts[1].trim());
+              minReps = Number(parts[0].trim()); 
+              maxReps = Number(parts[1].trim());
             } else if (!isNaN(Number(e.reps))) {
-              minReps = Number(String(e.reps).trim()); maxReps = minReps;
+              minReps = Number(String(e.reps).trim()); 
+              maxReps = minReps;
             }
           }
-          return { exerciseId: e.id, orderIndex: index, targetSets: e.sets, minReps, maxReps, restSeconds: null, supersetGroup: e.supersetGroup || null };
+          return { 
+            exerciseId: e.id, 
+            orderIndex: index, 
+            targetSets: e.sets, 
+            minReps, 
+            maxReps, 
+            restSeconds: null, 
+            supersetGroup: e.supersetGroup || null 
+          };
         }),
       } as any);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'No se pudo guardar la rutina');
     }
-  };
+  }, [name, exercises, notes, routineService]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val }} edges={['top', 'bottom']}>
-      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" style={{ height: 56 }}>
-        <IconButton icon={<X size={24} color={theme.color?.val} />} onPress={() => router.back()} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val as string }} edges={['top', 'bottom']}>
+      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" height={56}>
+        <IconButton icon={<AppIcon icon={X} size={24} color="color" />} onPress={() => router.back()} />
         <AppText variant="titleSm">Nueva Rutina</AppText>
-        <IconButton icon={<Save size={20} color="#000" />} backgroundColor={theme.primary?.val} onPress={handleSave} />
+        <IconButton 
+          icon={<AppIcon icon={Save} size={20} color="background" />} 
+          backgroundColor="$primary" 
+          onPress={handleSave} 
+        />
       </XStack>
 
       <DraggableFlatList
         data={exercises}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        onDragEnd={({ data }) => { reorderExercises(data); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+        onDragEnd={({ data }) => { 
+          reorderExercises(data); 
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
+        }}
         ListHeaderComponent={
           <YStack marginBottom="$lg">
             <YStack marginBottom="$xl">
-              <AppText variant="label" color="textSecondary" style={{ marginBottom: 8 }}>NOMBRE DE LA RUTINA</AppText>
+              <AppText variant="label" color="textSecondary" marginBottom="$xs">NOMBRE DE LA RUTINA</AppText>
               <AppInput placeholder="Ej. Empuje (Push Day)" value={name} onChangeText={setName} />
             </YStack>
 
             <YStack marginBottom="$2xl">
-              <AppText variant="label" color="textSecondary" style={{ marginBottom: 8 }}>NOTAS (OPCIONAL)</AppText>
+              <AppText variant="label" color="textSecondary" marginBottom="$xs">NOTAS (OPCIONAL)</AppText>
               <TextInput
                 style={{
-                  height: 100, borderRadius: 8, paddingHorizontal: 12, paddingTop: 12,
-                  backgroundColor: theme.surfaceSecondary?.val, borderWidth: 1, borderColor: theme.borderColor?.val,
-                  color: theme.color?.val, fontSize: 14, textAlignVertical: 'top',
+                  height: 100, 
+                  borderRadius: 12, 
+                  paddingHorizontal: 12, 
+                  paddingTop: 12,
+                  backgroundColor: theme.surfaceSecondary?.val as string, 
+                  borderWidth: 1, 
+                  borderColor: theme.borderColor?.val as string,
+                  color: theme.color?.val as string, 
+                  fontSize: 16, 
+                  textAlignVertical: 'top',
                 }}
-                placeholder="DescripciÃ³n breve..."
-                placeholderTextColor={theme.textTertiary?.val}
+                placeholder="Descripción breve..."
+                placeholderTextColor={theme.textTertiary?.val as string}
                 multiline
                 value={notes}
                 onChangeText={setNotes}
               />
             </YStack>
 
-            <XStack justifyContent="space-between" alignItems="center" marginBottom="$sm">
+            <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
               <AppText variant="titleSm">Ejercicios</AppText>
-              <TouchableOpacity
-                style={{ flexDirection: 'row', padding: 4 }}
-                onPress={() => router.push('/(workouts)/exercise-browser?target=routine')}
-              >
-                <Plus size={18} color={theme.primary?.val} />
-                <AppText variant="bodyMd" color="primary" style={{ marginLeft: 4, fontWeight: '600' }}>Agregar</AppText>
-              </TouchableOpacity>
+              <Pressable onPress={() => router.push('/(workouts)/exercise-browser?target=routine')}>
+                <XStack alignItems="center" gap="$xs" padding="$xs">
+                  <AppIcon icon={Plus} size={18} color="primary" />
+                  <AppText variant="bodyMd" color="primary" fontWeight="600">Agregar</AppText>
+                </XStack>
+              </Pressable>
             </XStack>
           </YStack>
         }
@@ -123,11 +168,11 @@ export default function CreateRoutineScreen() {
           );
         }}
         ListEmptyComponent={
-          <View style={{ padding: 40, alignItems: 'center' }}>
-            <AppText variant="bodyMd" color="textSecondary" style={{ textAlign: 'center' }}>
-              AÃºn no has agregado ejercicios a esta rutina.
+          <YStack padding="$4xl" alignItems="center">
+            <AppText variant="bodyMd" color="textSecondary" textAlign="center">
+              Aún no has agregado ejercicios a esta rutina.
             </AppText>
-          </View>
+          </YStack>
         }
       />
     </SafeAreaView>

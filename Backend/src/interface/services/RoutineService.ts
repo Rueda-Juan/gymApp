@@ -4,6 +4,7 @@ import type { DeleteRoutineUseCase } from '../../application/useCases/routines/D
 import type { DuplicateRoutineUseCase } from '../../application/useCases/routines/DuplicateRoutineUseCase';
 import type { GetRoutinesUseCase } from '../../application/useCases/routines/GetRoutinesUseCase';
 import type { GetRoutineByIdUseCase } from '../../application/useCases/routines/GetRoutineByIdUseCase';
+import type { GetRoutineExercisesUseCase } from '../../application/useCases/routines/GetRoutineExercisesUseCase';
 import type { Routine } from '../../domain/entities/Routine';
 
 export class RoutineService {
@@ -14,6 +15,7 @@ export class RoutineService {
     private readonly _duplicateRoutine: DuplicateRoutineUseCase,
     private readonly _getRoutines: GetRoutinesUseCase,
     private readonly _getRoutineById: GetRoutineByIdUseCase,
+    private readonly _getRoutineExercises: GetRoutineExercisesUseCase,
   ) {}
 
   async getAll() {
@@ -38,5 +40,9 @@ export class RoutineService {
 
   async duplicateRoutine(id: string) {
     return this._duplicateRoutine.execute(id);
+  }
+
+  async getExercises(routineId: string) {
+    return this._getRoutineExercises.execute(routineId);
   }
 }

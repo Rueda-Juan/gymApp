@@ -61,6 +61,18 @@ export function useWorkout() {
     [workoutService],
   );
 
+  const deleteWorkoutExercise = useCallback(
+    (workoutId: string, workoutExerciseId: string) =>
+      workoutService.deleteWorkoutExercise(workoutId, workoutExerciseId),
+    [workoutService],
+  );
+
+  const updateWorkoutExercise = useCallback(
+    (workoutId: string, workoutExerciseId: string, notes?: string) =>
+      workoutService.updateWorkoutExercise(workoutId, workoutExerciseId, notes),
+    [workoutService],
+  );
+
   const suggestWeight = useCallback(
     (exerciseId: string) => workoutService.suggestWeight(exerciseId),
     [workoutService],
@@ -82,12 +94,15 @@ export function useWorkout() {
     skipExercise,
     addExerciseToWorkout,
     reorderWorkoutExercises,
+    deleteWorkoutExercise,
+    updateWorkoutExercise,
     suggestWeight,
     suggestWarmup,
   }), [
     startWorkout, finishWorkout, deleteWorkout,
     recordSet, updateSet, deleteSet,
     skipExercise, addExerciseToWorkout, reorderWorkoutExercises,
+    deleteWorkoutExercise, updateWorkoutExercise,
     suggestWeight, suggestWarmup,
   ]);
 }

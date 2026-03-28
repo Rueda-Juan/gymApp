@@ -30,6 +30,12 @@ export interface WorkoutRepository {
   /** Reorders exercises within a workout */
   reorderExercises(workoutId: string, exerciseIds: string[]): Promise<void>;
 
+  /** Deletes a specific exercise from a workout */
+  deleteExercise(workoutId: string, workoutExerciseId: string): Promise<void>;
+
+  /** Updates notes for a workout exercise */
+  updateExerciseNotes(workoutId: string, workoutExerciseId: string, notes: string | null): Promise<void>;
+
   /** Gets the most recent sets for a specific exercise across workouts */
   getExerciseHistory(exerciseId: string, limit?: number): Promise<WorkoutSet[]>;
 }

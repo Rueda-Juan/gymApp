@@ -1,327 +1,231 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, Modal } from 'react-native';
-import { XStack, YStack, useTheme } from 'tamagui';
-import { Check, Flame, X, Trash2 } from 'lucide-react-native';
-import { useSettings } from '@/store/useSettings';
-import { calculatePlates } from '@/utils/plateMath';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
+import { TextInput, Pressable } from 'react-native';
+import { XStack, YStack, View, useTheme, Button } from 'tamagui';
+import { Check, Flame, X, Info } from 'lucide-react-native';
+import { PlateCalculatorModal } from '../workout/PlateCalculatorModal';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, withSpring, useSharedValue, withTiming, interpolate, interpolateColor } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+  useSharedValue,
+  withTiming,
+  interpolate,
+  interpolateColor,
+  withSequence
+} from 'react-native-reanimated';
 import { WorkoutSetState } from '@/store/useActiveWorkout';
 import { AppText } from '../ui/AppText';
+import { AppIcon } from '../ui/AppIcon';
 
 export interface SetRowProps {
   index: number;
   setRef: WorkoutSetState;
+  previousWeight?: number;
   onUpdate: (values: Partial<WorkoutSetState>) => void;
   onToggleComplete: () => void;
   onRemove?: () => void;
-  isNew?: boolean;
   autoFocus?: boolean;
 }
 
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
-const AnimatedView = Animated.createAnimatedComponent(View);
+const AnimatedXStack = Animated.createAnimatedComponent(XStack);
 
-export function SetRow({ index, setRef, onUpdate, onToggleComplete, onRemove, isNew, autoFocus }: SetRowProps) {
+export const SetRow = React.memo(function SetRow({
+  index,
+  setRef,
+  previousWeight,
+  onUpdate,
+  onToggleComplete,
+  onRemove,
+  autoFocus
+}: SetRowProps) {
   const theme = useTheme();
-  const { availablePlates, defaultBarWeight } = useSettings();
-  const [showPlateMath, setShowPlateMath] = React.useState(false);
-
-  const plateCalculation = React.useMemo(() =>
-    calculatePlates(setRef.weight, defaultBarWeight, availablePlates),
-  [setRef.weight, defaultBarWeight, availablePlates]);
+  const [showPlateMath, setShowPlateMath] = useState(false);
+  const [showRirSelector, setShowRirSelector] = useState(false);
 
   const weightRef = useRef<TextInput>(null);
   const repsRef = useRef<TextInput>(null);
 
-  useEffect(() => {
-    if (isNew || autoFocus) {
-      setTimeout(() => weightRef.current?.focus(), 100);
-    }
-  }, [isNew, autoFocus]);
-
   const scale = useSharedValue(1);
-  const bgColor = useSharedValue(setRef.isCompleted ? theme.successSubtle?.val : theme.surfaceSecondary?.val);
-
-  const [showRirInput, setShowRirInput] = React.useState(false);
   const rirAnim = useSharedValue(0);
+  const completionAnim = useSharedValue(setRef.isCompleted ? 1 : 0);
 
   useEffect(() => {
-    bgColor.value = withTiming(setRef.isCompleted ? theme.successSubtle?.val : theme.surfaceSecondary?.val, { duration: 200 });
-  }, [setRef.isCompleted, theme]);
-
-  useEffect(() => {
-    if (showRirInput) {
-      rirAnim.value = withSpring(1, { damping: 15, stiffness: 120 });
-    } else {
-      rirAnim.value = withSpring(0, { damping: 15, stiffness: 120 });
+    if (autoFocus) {
+      const timer = setTimeout(() => weightRef.current?.focus(), 150);
+      return () => clearTimeout(timer);
     }
-  }, [showRirInput]);
+  }, [autoFocus]);
 
-  const handleToggle = () => {
+  useEffect(() => {
+    rirAnim.value = withSpring(showRirSelector ? 1 : 0, { damping: 20 });
+  }, [showRirSelector, rirAnim]);                    // ← add rirAnim
+
+  useEffect(() => {
+    completionAnim.value = withTiming(setRef.isCompleted ? 1 : 0, { duration: 200 });
+  }, [setRef.isCompleted, completionAnim]);
+
+  const handleToggle = useCallback(() => {
+    const isIOS = process.env.EXPO_OS === 'ios';
     if (!setRef.isCompleted) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      if (setRef.rir === null) {
-        setShowRirInput(true);
-        return;
+      if (isIOS) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (setRef.rir === null && setRef.type === 'normal') {
+        setShowRirSelector(true);
       }
     } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (isIOS) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setShowRirSelector(false);
     }
-    scale.value = withSpring(0.9, {}, () => {
-      scale.value = withSpring(1);
-    });
+
+    scale.value = withSequence(withSpring(0.9), withSpring(1));
     onToggleComplete();
-  };
+  }, [setRef.isCompleted, setRef.rir, setRef.type, onToggleComplete, scale]);
 
-  const handleRirSelect = (val: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onUpdate({ rir: val });
-    setShowRirInput(false);
-    if (!setRef.isCompleted) {
-      onToggleComplete();
-      scale.value = withSpring(0.9, {}, () => {
-        scale.value = withSpring(1);
-      });
-    }
-  };
+  const parseWeight = useCallback((value: string) => {
+    if (!value) return 0;
+    const normalized = value.replace(',', '.').replace(/[^0-9.]/g, '');
+    const parsed = parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, []);
 
-  const toggleSetType = () => {
-    if (setRef.isCompleted) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onUpdate({ type: setRef.type === 'warmup' ? 'normal' : 'warmup' });
-  };
+  const isCompletedStyle = setRef.isCompleted ? {
+    backgroundColor: theme.successSubtle?.val,
+    borderColor: theme.success?.val,
+  } : {};
+
+  const inputTextColor = setRef.isCompleted ? theme.success?.val : theme.color?.val;
+  const inputBgColor = setRef.isCompleted ? theme.successSubtle?.val : theme.surfaceSecondary?.val;
 
   const animatedCheckStyle = useAnimatedStyle(() => ({
-    backgroundColor: bgColor.value,
+    backgroundColor: interpolateColor(
+      completionAnim.value,
+      [0, 1],
+      [theme.surfaceSecondary?.val ?? 'transparent', theme.successSubtle?.val ?? 'transparent']
+    ),
     transform: [{ scale: scale.value }],
   }));
 
-  const inputsContainerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(rirAnim.value, [0, 0.5], [1, 0]),
-    transform: [{ translateX: interpolate(rirAnim.value, [0, 1], [0, -20]) }],
-    zIndex: showRirInput ? 0 : 1,
-    pointerEvents: showRirInput ? 'none' as const : 'auto' as const,
+  const rirGroupStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(rirAnim.value, [0.2, 1], [0, 1]),
+    transform: [{ translateX: interpolate(rirAnim.value, [0, 1], [15, 0]) }],
   }));
 
-  const rirContainerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(rirAnim.value, [0.5, 1], [0, 1]),
-    transform: [{ translateX: interpolate(rirAnim.value, [0, 1], [20, 0]) }],
-    position: 'absolute' as const,
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: showRirInput ? 1 : 0,
-    pointerEvents: showRirInput ? 'auto' as const : 'none' as const,
+  const inputGroupStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(rirAnim.value, [0, 0.8], [1, 0]),
+    transform: [{ translateX: interpolate(rirAnim.value, [0, 1], [0, -15]) }],
   }));
-
-  const getSetTypeLabel = () => {
-    switch (setRef.type) {
-      case 'warmup': return 'W';
-      case 'dropset': return 'D';
-      case 'failure': return 'F';
-      default: return String(index + 1);
-    }
-  };
 
   return (
-    <Pressable
-      onLongPress={() => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        onRemove?.();
-      }}
-      delayLongPress={500}
-    >
-      <YStack backgroundColor="$surface">
-        <XStack
-          alignItems="center"
-          py="$2"
-          gap="$2"
-          height={56}
-          opacity={setRef.isCompleted && !showRirInput ? 0.7 : 1}
+    <YStack width="100%" borderRadius="$lg" overflow="hidden" style={isCompletedStyle}>
+      <XStack alignItems="center" height={52} gap="$sm" paddingHorizontal="$md" style={isCompletedStyle}>
+        <Pressable
+          onPress={() => onUpdate({ type: setRef.type === 'warmup' ? 'normal' : 'warmup' })}
+          style={{ width: 32, alignItems: 'center' }}
         >
-          <TouchableOpacity
-            style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}
-            onPress={toggleSetType}
-            disabled={setRef.isCompleted}
+          {setRef.type === 'warmup' ? (
+            <AppIcon icon={Flame} color="warning" size={16} />
+          ) : (
+            <AppText variant="bodySm" color="textSecondary" fontWeight="700">
+              {index + 1}
+            </AppText>
+          )}
+        </Pressable>
+
+        <View flex={1} height={40} position="relative">
+          <AnimatedXStack
+            style={[{ flex: 1, gap: 8 }, inputGroupStyle]}
+            pointerEvents={showRirSelector ? 'none' : 'auto'}
           >
-            {setRef.type === 'warmup' ? (
-              <Flame size={16} color={theme.gold?.val} />
-            ) : (
-              <AppText variant="bodySm" color="textSecondary" style={{ fontWeight: '700' }}>
-                {getSetTypeLabel()}
-              </AppText>
-            )}
-          </TouchableOpacity>
-
-          <View style={{ alignItems: 'center', flex: 1.5 }}>
-            <AppText variant="bodySm" color="textTertiary">--</AppText>
-          </View>
-
-          <View style={{ flex: 4.5, height: 40, justifyContent: 'center' }}>
-            <AnimatedView
-              style={[
-                { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', height: '100%' },
-                inputsContainerStyle,
-              ]}
+            <Pressable
+              onLongPress={() => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowPlateMath(true);
+              }}
+              delayLongPress={400}
+              style={{ flex: 1.2, flexDirection: 'row', backgroundColor: inputBgColor, borderRadius: 8, alignItems: 'center' }}
             >
-              <Pressable
-                style={{
-                  borderRadius: 8, backgroundColor: theme.surfaceSecondary?.val,
-                  flex: 1.2, height: 40, justifyContent: 'center',
-                }}
-                onLongPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setShowPlateMath(true);
-                }}
-                delayLongPress={300}
-              >
-                <TextInput
-                  ref={weightRef}
-                  style={{
-                    color: theme.color?.val, textAlign: 'center',
-                    fontWeight: '600', fontSize: 16,
-                    fontVariant: ['tabular-nums'],
-                  }}
-                  keyboardType="decimal-pad"
-                  value={setRef.weight > 0 ? String(setRef.weight) : ''}
-                  placeholder="0"
-                  placeholderTextColor={theme.textTertiary?.val}
-                  onChangeText={(val) => onUpdate({ weight: parseFloat(val) || 0 })}
-                  editable={!setRef.isCompleted}
-                  returnKeyType="next"
-                  onSubmitEditing={() => repsRef.current?.focus()}
-                  selectTextOnFocus
-                />
-                <View style={{ position: 'absolute', bottom: -12, alignSelf: 'center' }}>
-                  <View style={{ width: 12, height: 2, backgroundColor: theme.primary?.val, borderRadius: 1, opacity: 0.3 }} />
-                </View>
-              </Pressable>
-
-              <View
-                style={{
-                  borderRadius: 8, backgroundColor: theme.surfaceSecondary?.val,
-                  flex: 1, height: 40, justifyContent: 'center',
-                }}
-              >
-                <TextInput
-                  ref={repsRef}
-                  style={{
-                    color: theme.color?.val, textAlign: 'center',
-                    flex: 1, fontWeight: '600', fontSize: 16,
-                    fontVariant: ['tabular-nums'],
-                  }}
-                  keyboardType="number-pad"
-                  value={setRef.reps > 0 ? String(setRef.reps) : ''}
-                  placeholder="0"
-                  placeholderTextColor={theme.textTertiary?.val}
-                  onChangeText={(val) => onUpdate({ reps: parseInt(val) || 0 })}
-                  editable={!setRef.isCompleted}
-                  selectTextOnFocus
-                />
+              <TextInput
+                ref={weightRef}
+                style={{ flex: 1, color: inputTextColor, textAlign: 'center', fontWeight: '700', fontSize: 16 }}
+                keyboardType="decimal-pad"
+                value={setRef.weight > 0 ? String(setRef.weight) : ''}
+                placeholder={previousWeight && previousWeight > 0 ? String(previousWeight) : '0'}
+                placeholderTextColor={theme.textTertiary?.val}
+                onChangeText={(v) => onUpdate({ weight: parseWeight(v) })}
+                editable={!setRef.isCompleted}
+              />
+              <View paddingRight={8}>
+                <AppIcon icon={Info} size={14} color="textTertiary" />
               </View>
-            </AnimatedView>
+            </Pressable>
 
-            <AnimatedView
-              style={[
-                { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-                rirContainerStyle,
-              ]}
-            >
-              {[0, 1, 2, 3, 4].map(rirOption => (
-                <TouchableOpacity
-                  key={rirOption}
-                  style={{
-                    width: 36, height: 36, borderRadius: 18,
-                    alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: setRef.rir === rirOption ? theme.primary?.val : theme.surfaceSecondary?.val,
-                    borderWidth: 1,
-                    borderColor: setRef.rir === rirOption ? theme.primary?.val : theme.borderColor?.val,
-                  }}
-                  onPress={() => handleRirSelect(rirOption)}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: setRef.rir === rirOption ? '#FFF' : theme.color?.val,
-                      fontWeight: '700',
-                    }}
-                  >
-                    {rirOption}{rirOption === 4 && '+'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </AnimatedView>
-          </View>
+            <View flex={1} style={{ backgroundColor: inputBgColor, borderRadius: 8 }}>
+              <TextInput
+                ref={repsRef}
+                style={{ flex: 1, color: inputTextColor, textAlign: 'center', fontWeight: '700', fontSize: 16 }}
+                keyboardType="number-pad"
+                value={setRef.reps > 0 ? String(setRef.reps) : ''}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary?.val}
+                onChangeText={(v) => onUpdate({ reps: parseInt(v) || 0 })}
+                editable={!setRef.isCompleted}
+              />
+            </View>
+          </AnimatedXStack>
 
-          <AnimatedTouchableOpacity
-            activeOpacity={0.7}
-            onPress={handleToggle}
-            style={[
-              { width: 44, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-              animatedCheckStyle,
-            ]}
-            hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
+          <AnimatedXStack
+            style={[{ position: 'absolute', inset: 0, justifyContent: 'space-between', alignItems: 'center' }, rirGroupStyle]}
+            pointerEvents={showRirSelector ? 'auto' : 'none'}
           >
-            <Check
+            {[0, 1, 2, 3, 4].map((v) => (
+              <Button
+                key={v}
+                size="$2"
+                circular
+                backgroundColor={setRef.rir === v ? '$primary' : '$surfaceSecondary'}
+                onPress={() => {
+                  onUpdate({ rir: v });
+                  setShowRirSelector(false);
+                }}
+              >
+                <AppText color={setRef.rir === v ? "background" : "color"} fontWeight="700" fontSize={12}>
+                  {v}{v === 4 ? '+' : ''}
+                </AppText>
+              </Button>
+            ))}
+            <Pressable onPress={() => setShowRirSelector(false)} style={{ padding: 4 }}>
+              <AppIcon icon={X} size={14} color="textTertiary" />
+            </Pressable>
+          </AnimatedXStack>
+        </View>
+
+        <Animated.View style={[
+          { borderRadius: 8, width: 44, height: 40 } as const,
+          animatedCheckStyle as any,                        // ← breaks DefaultStyle vs AnimatedStyle conflict
+        ]}>
+          <Pressable
+            onPress={handleToggle}
+            onLongPress={() => {
+              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+              onRemove?.();
+            }}
+            delayLongPress={1000}
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+          >
+            <AppIcon
+              icon={Check}
+              color={setRef.isCompleted ? 'success' : 'textTertiary'}
               size={22}
-              color={setRef.isCompleted ? theme.success?.val : theme.textTertiary?.val}
               strokeWidth={3}
             />
-          </AnimatedTouchableOpacity>
-        </XStack>
+          </Pressable>
+        </Animated.View>
+      </XStack>
 
-        <Modal visible={showPlateMath} transparent animationType="fade">
-          <View style={{ flex: 1, backgroundColor: theme.overlay?.val, justifyContent: 'center', padding: 20 }}>
-            <View style={{ backgroundColor: theme.surface?.val, borderRadius: 16, padding: 20, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 20 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AppText variant="titleMd">Plate Math</AppText>
-                <TouchableOpacity onPress={() => setShowPlateMath(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <X size={24} color={theme.textTertiary?.val} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <AppText variant="bodyMd" color="textSecondary">Barra:</AppText>
-                <AppText variant="titleSm">{defaultBarWeight} kg</AppText>
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AppText variant="bodyMd" color="textSecondary">Total Deseado:</AppText>
-                <AppText variant="titleSm" color="primary">{setRef.weight} kg</AppText>
-              </View>
-
-              <View style={{ height: 1, backgroundColor: theme.borderColor?.val, marginBottom: 16 }} />
-
-              <AppText variant="label" color="textTertiary" style={{ marginBottom: 12 }}>DISCOS POR LADO</AppText>
-
-              {plateCalculation.plates.length > 0 ? (
-                plateCalculation.plates.map((p, i) => (
-                  <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <AppText variant="bodyLg" style={{ fontWeight: '700' }}>{p.weight} kg</AppText>
-                    <View style={{ backgroundColor: theme.surfaceSecondary?.val, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
-                      <AppText variant="bodyMd" color="textSecondary" style={{ fontWeight: '600' }}>x{p.count}</AppText>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                <AppText variant="bodyMd" color="textSecondary" style={{ fontStyle: 'italic', textAlign: 'center', marginTop: 8 }}>
-                  {setRef.weight > 0 ? 'Solo necesitas la barra' : 'Ingresa un peso válido'}
-                </AppText>
-              )}
-
-              {plateCalculation.remainder !== 0 && setRef.weight > defaultBarWeight && (
-                <View style={{ backgroundColor: theme.warningSubtle?.val, padding: 12, borderRadius: 8, marginTop: 16 }}>
-                  <AppText variant="bodySm" color="warning" style={{ fontWeight: '600' }}>
-                    Aviso: El peso exacto no es alcanzable con tus discos. Faltan {plateCalculation.remainder} kg.
-                  </AppText>
-                </View>
-              )}
-            </View>
-          </View>
-        </Modal>
-      </YStack>
-    </Pressable>
+      <PlateCalculatorModal
+        visible={showPlateMath}
+        onClose={() => setShowPlateMath(false)}
+        targetWeight={setRef.weight}
+      />
+    </YStack>
   );
-}
+});

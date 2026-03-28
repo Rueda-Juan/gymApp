@@ -1,6 +1,6 @@
-import { YStack } from 'tamagui';
-import { LucideIcon } from 'lucide-react-native';
 import React from 'react';
+import { YStack, useTheme } from 'tamagui';
+import { LucideIcon } from 'lucide-react-native';
 import { AppText } from './AppText';
 
 interface EmptyStateProps {
@@ -11,18 +11,45 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
+  const theme = useTheme();
+  const iconColor = theme.textTertiary?.val ?? '#9CA3AF';
+
   return (
-    <YStack flex={1} alignItems="center" justifyContent="center" p="$5xl" gap="$lg">
-      <YStack width={64} height={64} borderRadius="$full" alignItems="center" justifyContent="center" backgroundColor="$surfaceSecondary">
-        <Icon size={32} color="$icon" />
+    <YStack
+      flex={1}
+      alignItems="center"
+      justifyContent="center"
+      paddingHorizontal="$lg"
+      paddingVertical="$5xl"
+      gap="$md"
+      minHeight={250}
+    >
+      <YStack
+        width={80}
+        height={80}
+        borderRadius="$full"
+        alignItems="center"
+        justifyContent="center"
+        backgroundColor="$surfaceSecondary"
+        marginBottom="$sm"
+      >
+        <Icon size={40} color={iconColor} strokeWidth={1.5} />
       </YStack>
-      <AppText variant="titleSm" textAlign="center">
-        {title}
-      </AppText>
-      <AppText variant="bodyMd" color="textSecondary" textAlign="center" lineHeight={20}>
-        {description}
-      </AppText>
-      {action && <YStack mt="$xl" width="100%">{action}</YStack>}
+
+      <YStack alignItems="center" gap="$xs" paddingHorizontal="$md">
+        <AppText variant="titleSm" textAlign="center" color="color">
+          {title}
+        </AppText>
+        <AppText variant="bodyMd" color="textSecondary" textAlign="center">
+          {description}
+        </AppText>
+      </YStack>
+
+      {action && (
+        <YStack marginTop="$lg" width="100%" alignItems="center">
+          {action}
+        </YStack>
+      )}
     </YStack>
   );
 }

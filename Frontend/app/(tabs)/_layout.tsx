@@ -1,28 +1,25 @@
-import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, View, StyleSheet } from 'react-native';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { useTheme } from '@tamagui/core';
-import { Home, ClipboardList, History, BarChart3, Settings } from 'lucide-react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { Tabs } from 'expo-router';
+import { useTheme } from 'tamagui';
 import { BlurView } from 'expo-blur';
+import { Home, ClipboardList, History, BarChart3, Settings } from 'lucide-react-native';
+import { HapticTab } from '@/components/haptic-tab';
 import { MiniPlayer } from '@/components/ui/mini-player';
-import { useActiveWorkout } from '@/store/useActiveWorkout';
 
 export default function TabLayout() {
   const theme = useTheme();
-  const { isActive } = useActiveWorkout();
 
   return (
-    <View style={{ flex: 1 }}>
+    <>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: theme.primary?.val as string,
-          tabBarInactiveTintColor: theme.textTertiary?.val as string,
+          tabBarActiveTintColor: theme.primary?.val,
+          tabBarInactiveTintColor: theme.textTertiary?.val,
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarBackground: () => {
-            if (Platform.OS === 'ios') {
+            if (process.env.EXPO_OS === 'ios') {
               return (
                 <BlurView
                   tint={theme.background?.val === '#0F0F14' ? 'dark' : 'light'}
@@ -35,7 +32,7 @@ export default function TabLayout() {
               <View
                 style={[
                   StyleSheet.absoluteFill,
-                  { backgroundColor: theme.surfaceSecondary?.val as string },
+                  { backgroundColor: theme.surfaceSecondary?.val },
                 ]}
               />
             );
@@ -47,20 +44,21 @@ export default function TabLayout() {
               elevation: 0,
             },
             default: {
-              borderTopColor: theme.borderColor?.val as string,
-              backgroundColor: theme.background?.val as string,
+              borderTopColor: theme.borderColor?.val,
+              backgroundColor: theme.background?.val,
+              borderTopWidth: 1, // Añadido para separación clara en Android
               elevation: 0,
             },
           }),
           tabBarLabelStyle: {
-            fontFamily: 'system-ui',
             fontSize: 10,
             fontWeight: '600',
             textTransform: 'uppercase',
             letterSpacing: 0.5,
             marginTop: -4,
           },
-        }}>
+        }}
+      >
         <Tabs.Screen
           name="index"
           options={{
@@ -97,7 +95,12 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-      {isActive && <MiniPlayer />}
-    </View>
+      
+      {/* MiniPlayer renderiza condicionalmente por dentro usando Zustand.
+        Como usa position: absolute, flotará correctamente sobre los tabs
+        sin necesidad de Views contenedores que rompan el layout nativo.
+      */}
+      <MiniPlayer />
+    </>
   );
 }

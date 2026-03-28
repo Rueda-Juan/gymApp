@@ -299,6 +299,49 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
     }
   }
 
+  async deleteExercise(workoutId: string, workoutExerciseId: string): Promise<void> {
+    try {
+      await this.db.withTransactionAsync(async () => {
+        // First, get the exercise_id before deleting
+        const exerciseRow = await this.db.getFirstAsync<{ exercise_id: string }>(
+          'SELECT exercise_id FROM workout_exercises WHERE id = ? AND workout_id = ?',
+          [workoutExerciseId, workoutId],
+        );
+
+        // Delete the exercise
+        await this.db.runAsync(
+          'DELETE FROM workout_exercises WHERE id = ? AND workout_id = ?',
+          [workoutExerciseId, workoutId],
+        );
+
+        // Also delete all sets associated with this exercise in the workout
+        if (exerciseRow) {
+          await this.db.runAsync(
+            'DELETE FROM sets WHERE workout_id = ? AND exercise_id = ?',
+            [workoutId, exerciseRow.exercise_id],
+          );
+        }
+      });
+    } catch (error) {
+      throw new DatabaseError('Error al eliminar ejercicio del workout', error);
+    }
+  }
+
+  async updateExerciseNotes(
+    workoutId: string,
+    workoutExerciseId: string,
+    notes: string | null,
+  ): Promise<void> {
+    try {
+      await this.db.runAsync(
+        'UPDATE workout_exercises SET notes = ? WHERE id = ? AND workout_id = ?',
+        [notes, workoutExerciseId, workoutId],
+      );
+    } catch (error) {
+      throw new DatabaseError('Error al actualizar notas del ejercicio', error);
+    }
+  }
+
   async getExerciseHistory(exerciseId: string, limit: number = 20): Promise<WorkoutSet[]> {
     try {
       const rows = await this.db.getAllAsync<SetRow>(

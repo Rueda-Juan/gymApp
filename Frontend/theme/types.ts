@@ -1,0 +1,27 @@
+// theme/types.ts
+
+export type ThemeColorKey =
+  | 'color'
+  | 'textSecondary'
+  | 'textTertiary'
+  | 'primary'
+  | 'success'
+  | 'danger'
+  | 'warning'
+  | 'gold'
+  | 'error'
+  | 'background'
+  | 'surface'
+  | 'surfaceSecondary'
+  | 'primaryDark'
+  | 'primaryLight'
+  | 'primarySubtle'
+  | 'successSubtle'
+  | 'dangerSubtle'
+  | 'warningSubtle'
+  | 'goldSubtle'
+  | 'icon'
+  | 'overlay'
+  | 'tabBar'
+  | 'transparent'
+  | 'darkText';

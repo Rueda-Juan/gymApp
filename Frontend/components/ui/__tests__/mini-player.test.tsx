@@ -1,62 +1,88 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, act } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { TamaguiProvider } from '@tamagui/core';
-import '@tamagui/native/setup-zeego';
+import { TamaguiProvider } from 'tamagui';
 import config from '@/tamagui.config';
 import { MiniPlayer } from '../mini-player';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
 
-// Mock the hook and vector icons
 jest.mock('@/store/useActiveWorkout');
+
 jest.mock('lucide-react-native', () => ({
-  ChevronRight: 'ChevronRight',
-  Activity: 'Activity'
+  ChevronRight: jest.fn(() => null),
+  Activity: jest.fn(() => null),
 }));
 
-// Mock the router
 jest.mock('expo-router', () => ({
   router: {
     push: jest.fn()
   }
 }));
 
-describe('MiniPlayer', () => {
-  it('does not render when workout is inactive', () => {
-    (useActiveWorkout as unknown as jest.Mock).mockReturnValue({
-      isActive: false
-    });
+jest.mock('@/utils/exercise', () => ({
+  getExerciseName: jest.fn(() => 'Bench Press')
+}));
 
-    const { toJSON } = render(<MiniPlayer />, {
-      wrapper: ({ children }) => (
-        <SafeAreaProvider>
-          <TamaguiProvider config={config} defaultTheme="light">
-            {children}
-          </TamaguiProvider>
-        </SafeAreaProvider>
-      ),
-    });
-    expect(toJSON()).toBeNull();
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 0, height: 0 },
+        insets: { top: 0, left: 0, right: 0, bottom: 0 },
+      }}
+    >
+      <TamaguiProvider config={config} defaultTheme="light">
+        {component}
+      </TamaguiProvider>
+    </SafeAreaProvider>
+  );
+};
+
+describe('MiniPlayer', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
   });
 
-  it('renders the routine name when active', () => {
-    (useActiveWorkout as unknown as jest.Mock).mockReturnValue({
-      isActive: true,
-      routineName: 'Push Day',
-      startTime: Date.now(),
-      currentExerciseIndex: 0,
-      exercises: [
-        { exerciseId: 'Bench Press' }
-      ]
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('no renderiza cuando el entrenamiento esta inactivo', () => {
+    (useActiveWorkout as unknown as jest.Mock).mockImplementation((selector) => {
+      const state = { isActive: false };
+      return selector(state);
     });
 
-    const { getByText } = render(<MiniPlayer />, {
-      wrapper: ({ children }) => (
-        <TamaguiProvider config={config} defaultTheme="light">
-          {children}
-        </TamaguiProvider>
-      ),
+    const { queryByText } = renderWithProviders(<MiniPlayer />);
+    expect(queryByText('Sesión actual')).toBeNull();
+    expect(queryByText('Bench Press')).toBeNull();
+  });
+
+  it('renderiza la rutina activa y calcula el tiempo transcurrido', () => {
+    const mockStartTime = Date.now() - 5000;
+
+    (useActiveWorkout as unknown as jest.Mock).mockImplementation((selector) => {
+      const state = {
+        isActive: true,
+        routineName: 'Push Day',
+        startTime: mockStartTime,
+        currentExerciseIndex: 0,
+        exercises: [{ exerciseId: '123' }]
+      };
+      return selector(state);
     });
+
+    const { getByText } = renderWithProviders(<MiniPlayer />);
+
     expect(getByText('Push Day')).toBeTruthy();
+    expect(getByText('Bench Press')).toBeTruthy();
+    expect(getByText('00:05')).toBeTruthy();
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(getByText('00:06')).toBeTruthy();
   });
 });

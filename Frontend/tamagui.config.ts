@@ -3,13 +3,13 @@ import { createTamagui, createTokens, createFont } from '@tamagui/core';
 const systemFont = createFont({
   family: 'System',
   size: {
-    1: 10,
-    2: 12,
-    3: 14,
-    4: 16,
-    5: 18,
-    6: 24,
-    7: 32,
+    1: 16,
+    2: 18,
+    3: 20,
+    4: 22,
+    5: 24,
+    6: 26,
+    7: 34,
   },
   lineHeight: {
     1: 14,
@@ -36,7 +36,7 @@ const systemFont = createFont({
 
 const tokens = createTokens({
   color: {
-    transparent: 'transparent',
+    transparent: '#ffffff00',
     white: '#FFFFFF',
     black: '#000000',
 
@@ -93,6 +93,15 @@ const tokens = createTokens({
 
   space: {
     0: 0,
+    1: 10,
+    2: 16,
+    3: 17,
+    4: 19,
+    5: 22,
+    6: 24,
+    7: 36,  
+    8: 40,  
+    9: 48,
     xs: 4,
     sm: 8,
     md: 12,
@@ -107,6 +116,15 @@ const tokens = createTokens({
 
   size: {
     0: 0,
+    1: 8,  
+    2: 10,   
+    3: 12,  
+    4: 16,  
+    5: 20,  
+    6: 24,  
+    7: 32,  
+    8: 40,  
+    9: 48,
     xs: 4,
     sm: 8,
     md: 12,
@@ -217,5 +235,6 @@ export default config;
 export type AppConfig = typeof config;
 
 declare module '@tamagui/core' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface TamaguiCustomConfig extends AppConfig {}
 }

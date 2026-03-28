@@ -5,11 +5,14 @@ import { useTheme } from '@tamagui/core';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Trophy, Clock, Dumbbell, Share2 } from 'lucide-react-native';
-import { Card } from '@/components/ui/card';
+
+import { CardBase } from '@/components/ui/card';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { Screen } from '@/components/ui/Screen';
 import { useWorkout } from '@/hooks/useWorkout';
+import { getExerciseName } from '@/utils/exercise';
 
 export default function WorkoutSummaryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,13 +22,19 @@ export default function WorkoutSummaryScreen() {
   const [workout, setWorkout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (id) loadWorkout(); }, [id]);
+  useEffect(() => {
+    const loadWorkout = async () => {
+      try { 
+        setWorkout(await workoutService.getWorkoutById(id as string)); 
+      } catch (e) { 
+        console.error(e); 
+      } finally { 
+        setLoading(false); 
+      }
+    };
 
-  const loadWorkout = async () => {
-    try { setWorkout(await workoutService.getById(id as string)); }
-    catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  };
+    if (id) loadWorkout();
+  }, [id, workoutService]);
 
   const calculateTotalVolume = () => {
     if (!workout) return 0;
@@ -36,16 +45,15 @@ export default function WorkoutSummaryScreen() {
   if (loading) {
     return (
       <Screen>
-        <ActivityIndicator size="large" color={theme.primary?.val} />
+        <ActivityIndicator size="large" color={theme.primary?.val as string} />
       </Screen>
     );
   }
 
   return (
-    <Screen>
+    <Screen safeAreaEdges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
 
-        {/* Celebration Header */}
         <Animated.View entering={FadeInDown.delay(200).duration(800)}>
           <YStack alignItems="center" marginVertical="$3xl">
             <YStack
@@ -57,7 +65,7 @@ export default function WorkoutSummaryScreen() {
               backgroundColor="$goldSubtle"
               marginBottom="$md"
             >
-              <Trophy size={60} color={theme.gold?.val} />
+              <AppIcon icon={Trophy} size={60} color="gold" />
             </YStack>
             <AppText variant="titleLg" marginTop="$lg">¡Entrenamiento Completo!</AppText>
             <AppText variant="bodyMd" color="textSecondary" marginTop="$sm">
@@ -66,55 +74,53 @@ export default function WorkoutSummaryScreen() {
           </YStack>
         </Animated.View>
 
-        {/* Highlight Stats */}
         <XStack gap="$md" marginBottom="$lg">
           <Animated.View entering={FadeInUp.delay(400)} style={{ flex: 1 }}>
-            <Card style={{ alignItems: 'center', justifyContent: 'center' }}>
-              <Clock size={20} color={theme.primary?.val} />
-              <AppText variant="titleMd" style={{ marginTop: 8 }}>
+            <CardBase alignItems="center" justifyContent="center" padding="$md">
+              <AppIcon icon={Clock} size={20} color="primary" />
+              <AppText variant="titleMd" marginTop="$sm">
                 {Math.floor(workout.durationSeconds / 60)}:{(workout.durationSeconds % 60).toString().padStart(2, '0')}
               </AppText>
-              <AppText variant="label" color="textTertiary">DURACIÃ“N</AppText>
-            </Card>
+              <AppText variant="label" color="textTertiary">DURACIÓN</AppText>
+            </CardBase>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(600)} style={{ flex: 1 }}>
-            <Card style={{ alignItems: 'center', justifyContent: 'center' }}>
-              <Dumbbell size={20} color={theme.primary?.val} />
-              <AppText variant="titleMd" style={{ marginTop: 8 }}>{calculateTotalVolume()} kg</AppText>
+            <CardBase alignItems="center" justifyContent="center" padding="$md">
+              <AppIcon icon={Dumbbell} size={20} color="primary" />
+              <AppText variant="titleMd" marginTop="$sm">{calculateTotalVolume()} kg</AppText>
               <AppText variant="label" color="textTertiary">VOLUMEN TOTAL</AppText>
-            </Card>
+            </CardBase>
           </Animated.View>
         </XStack>
 
-        {/* Exercise Summary */}
         <Animated.View entering={FadeIn.delay(800)}>
-          <AppText variant="titleSm" style={{ marginBottom: 12 }}>Resumen de Ejercicios</AppText>
+          <AppText variant="titleSm" marginBottom="$md">Resumen de Ejercicios</AppText>
 
           <YStack gap="$md">
             {workout.exercises.map((ex: any, exIdx: number) => (
               <Animated.View key={ex.id} entering={FadeInDown.delay(900 + (exIdx * 100)).springify()}>
-                <Card style={{ padding: 16, marginBottom: 12 }}>
-                  <AppText variant="titleSm" style={{ marginBottom: 12 }}>{ex.exerciseId}</AppText>
+                <CardBase padding="$md" marginBottom="$md">
+                  <AppText variant="titleSm" marginBottom="$md">{getExerciseName(ex)}</AppText>
 
                   <YStack gap="$sm">
-                    <XStack style={{ paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: theme.borderColor?.val }}>
-                      <AppText variant="label" color="textTertiary" style={{ flex: 1 }}>SET</AppText>
-                      <AppText variant="label" color="textTertiary" style={{ flex: 2, textAlign: 'center' }}>PESO</AppText>
-                      <AppText variant="label" color="textTertiary" style={{ flex: 2, textAlign: 'center' }}>REPS</AppText>
-                      <AppText variant="label" color="textTertiary" style={{ flex: 2, textAlign: 'right' }}>VOL</AppText>
+                    <XStack paddingBottom="$xs" borderBottomWidth={1} borderBottomColor="$borderColor">
+                      <AppText variant="label" color="textTertiary" flex={1}>SET</AppText>
+                      <AppText variant="label" color="textTertiary" flex={2} textAlign="center">PESO</AppText>
+                      <AppText variant="label" color="textTertiary" flex={2} textAlign="center">REPS</AppText>
+                      <AppText variant="label" color="textTertiary" flex={2} textAlign="right">VOL</AppText>
                     </XStack>
 
                     {ex.sets.map((set: any, sIdx: number) => (
-                      <XStack key={sIdx} style={{ paddingVertical: 4 }}>
-                        <AppText variant="bodySm" color="textSecondary" style={{ flex: 1, fontWeight: '700' }}>{sIdx + 1}</AppText>
-                        <AppText variant="bodySm" style={{ flex: 2, textAlign: 'center' }}>{set.weight} kg</AppText>
-                        <AppText variant="bodySm" style={{ flex: 2, textAlign: 'center' }}>{set.reps}</AppText>
-                        <AppText variant="bodySm" color="textSecondary" style={{ flex: 2, textAlign: 'right' }}>{set.weight * set.reps} kg</AppText>
+                      <XStack key={sIdx} paddingVertical="$xs">
+                        <AppText variant="bodySm" color="textSecondary" flex={1} fontWeight="700">{sIdx + 1}</AppText>
+                        <AppText variant="bodySm" flex={2} textAlign="center">{set.weight} kg</AppText>
+                        <AppText variant="bodySm" flex={2} textAlign="center">{set.reps}</AppText>
+                        <AppText variant="bodySm" color="textSecondary" flex={2} textAlign="right">{set.weight * set.reps} kg</AppText>
                       </XStack>
                     ))}
                   </YStack>
-                </Card>
+                </CardBase>
               </Animated.View>
             ))}
           </YStack>
@@ -124,9 +130,9 @@ export default function WorkoutSummaryScreen() {
 
         <YStack gap="$md" marginVertical="$3xl">
           <AppButton
-            variant="outline"
+            appVariant="outline"
             label="Compartir Progreso"
-            icon={<Share2 size={20} color={theme.color?.val} />}
+            icon={<AppIcon icon={Share2} size={20} color="color" />}
           />
           <AppButton
             label="Listo"

@@ -28,7 +28,7 @@ export default function LogWeightScreen() {
       setLoading(true);
       await weightService.logBodyWeight({ weight: numWeight, date: new Date() } as any);
       router.back();
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudo guardar el peso');
     } finally {
       setLoading(false);

@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSettings } from '@/store/useSettings';
 import { DIProvider } from '../context/DIContext';
 import config from '../tamagui.config';
 
@@ -17,14 +18,16 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const tamaguiTheme = colorScheme === 'dark' ? 'dark' : 'light';
+  const systemColorScheme = useColorScheme();
+  const themeMode = useSettings((state) => state.themeMode);
+  const effectiveScheme = themeMode === 'system' ? systemColorScheme : themeMode;
+  const tamaguiTheme = effectiveScheme === 'dark' ? 'dark' : 'light';
 
   return (
     <TamaguiProvider config={config} defaultTheme={tamaguiTheme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <DIProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <ThemeProvider value={effectiveScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

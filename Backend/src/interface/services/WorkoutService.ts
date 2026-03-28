@@ -7,6 +7,8 @@ import type { DeleteSetUseCase } from '../../application/useCases/workouts/Delet
 import type { SkipExerciseUseCase } from '../../application/useCases/workouts/SkipExercise';
 import type { AddExerciseToWorkoutUseCase } from '../../application/useCases/workouts/AddExerciseToWorkoutUseCase';
 import type { ReorderWorkoutExercisesUseCase } from '../../application/useCases/workouts/ReorderWorkoutExercisesUseCase';
+import type { DeleteWorkoutExerciseUseCase } from '../../application/useCases/workouts/DeleteWorkoutExerciseUseCase';
+import type { UpdateWorkoutExerciseUseCase } from '../../application/useCases/workouts/UpdateWorkoutExerciseUseCase';
 import type { SuggestWeightUseCase, WarmupStyle } from '../../application/useCases/exercises/SuggestWeight';
 import type { GetWorkoutHistoryUseCase } from '../../application/useCases/workouts/GetWorkoutHistoryUseCase';
 import type { GetWorkoutByIdUseCase } from '../../application/useCases/workouts/GetWorkoutByIdUseCase';
@@ -24,6 +26,8 @@ export class WorkoutService {
     private readonly _skipExercise: SkipExerciseUseCase,
     private readonly _addExerciseToWorkout: AddExerciseToWorkoutUseCase,
     private readonly _reorderWorkoutExercises: ReorderWorkoutExercisesUseCase,
+    private readonly _deleteWorkoutExercise: DeleteWorkoutExerciseUseCase,
+    private readonly _updateWorkoutExercise: UpdateWorkoutExerciseUseCase,
     private readonly _suggestWeight: SuggestWeightUseCase,
     private readonly _getHistory: GetWorkoutHistoryUseCase,
     private readonly _getById: GetWorkoutByIdUseCase,
@@ -71,6 +75,14 @@ export class WorkoutService {
 
   async reorderWorkoutExercises(workoutId: string, exerciseIds: string[]) {
     return this._reorderWorkoutExercises.execute(workoutId, exerciseIds);
+  }
+
+  async deleteWorkoutExercise(workoutId: string, workoutExerciseId: string) {
+    return this._deleteWorkoutExercise.execute(workoutId, workoutExerciseId);
+  }
+
+  async updateWorkoutExercise(workoutId: string, workoutExerciseId: string, notes?: string) {
+    return this._updateWorkoutExercise.execute({ workoutId, workoutExerciseId, ...(notes !== undefined && { notes }) });
   }
 
   async suggestWeight(exerciseId: string) {

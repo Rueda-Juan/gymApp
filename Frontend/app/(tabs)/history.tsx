@@ -1,13 +1,13 @@
-﻿import { XStack, YStack } from 'tamagui';
+﻿import { XStack, YStack, View } from 'tamagui';
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { useTheme } from '@tamagui/core';
+import { Pressable, Alert, FlatList } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { router } from 'expo-router';
 import { History, Calendar, Clock, Dumbbell, ChevronRight, Search, Trash2 } from 'lucide-react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { CardBase } from '@/components/ui/card';
 import { AppText } from '@/components/ui/AppText';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { useWorkout } from '@/hooks/useWorkout';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -17,26 +17,26 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getExerciseName } from '@/utils/exercise';
 
 export default function HistoryScreen() {
-  const theme = useTheme();
   const workoutService = useWorkout();
 
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => { loadWorkouts(); }, []);
-
-  const loadWorkouts = async () => {
-    try {
-      setLoading(true);
-      const data = await workoutService.getHistory(50);
-      setWorkouts(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const loadWorkouts = async () => {
+      try {
+        setLoading(true);
+        const data = await workoutService.getHistory(50);
+        setWorkouts(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadWorkouts();
+  }, [workoutService]);
 
   const calculateVolume = (exercises: any[]) =>
     exercises.reduce((acc, ex) =>
@@ -44,8 +44,8 @@ export default function HistoryScreen() {
 
   const handleDeleteWorkout = (id: string, nameOrDate: string) => {
     Alert.alert(
-      "Â¿Eliminar Entrenamiento?",
-      `Se borrarÃ¡ "${nameOrDate}" y todo su progreso de estadÃ­sticas de forma irreversible.`,
+      "¿Eliminar Entrenamiento?",
+      `Se borrará "${nameOrDate}" y todo su progreso de estadísticas de forma irreversible.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -65,16 +65,29 @@ export default function HistoryScreen() {
   };
 
   const renderRightActions = (id: string, nameOrDate: string) => (
-    <TouchableOpacity
+    <Pressable
       style={{
-        alignItems: 'center', justifyContent: 'center',
-        backgroundColor: theme.error?.val, width: 80,
-        height: '100%', borderRadius: 12, marginLeft: 8,
+        alignItems: 'center', 
+        justifyContent: 'center',
+        width: 80,
+        height: '100%', 
       }}
       onPress={() => handleDeleteWorkout(id, nameOrDate)}
+      accessibilityLabel="Eliminar entrenamiento"
     >
-      <Trash2 color="#FFF" size={24} />
-    </TouchableOpacity>
+      <YStack 
+        backgroundColor="$danger" 
+        width="100%" 
+        height="100%" 
+        borderRadius="$lg" 
+        borderCurve="continuous" 
+        marginLeft="$sm" 
+        alignItems="center" 
+        justifyContent="center"
+      >
+        <AppIcon icon={Trash2} color="background" size={24} />
+      </YStack>
+    </Pressable>
   );
 
   const filteredWorkouts = workouts.filter(w => {
@@ -96,53 +109,54 @@ export default function HistoryScreen() {
           renderRightActions={() => renderRightActions(item.id, item.name || title)}
           overshootRight={false}
         >
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push({ pathname: '/(workouts)/summary', params: { id: item.id } } as any)}
+            accessibilityLabel={`Ver detalle de entrenamiento ${item.name}`}
           >
             <CardBase gap="$lg" padding="$md">
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack>
-                  <AppText variant="bodyMd" style={{ fontWeight: '700' }}>{item.name || title}</AppText>
+                  <AppText variant="bodyMd" fontWeight="700">{item.name || title}</AppText>
                   <XStack alignItems="center" gap="$xs" marginTop="$xs">
-                    <Calendar size={12} color={theme.textTertiary?.val} />
+                    <AppIcon icon={Calendar} size={12} color="textTertiary" />
                     <AppText variant="bodySm" color="textTertiary">
                       {format(new Date(item.date), 'd MMM, yyyy', { locale: es })}
                     </AppText>
                   </XStack>
                 </YStack>
-                <ChevronRight size={20} color={theme.textTertiary?.val} />
+                <AppIcon icon={ChevronRight} size={20} color="textTertiary" />
               </XStack>
 
               <XStack alignItems="center" gap="$lg" marginTop="$sm">
                 <XStack alignItems="center" gap="$xs">
-                  <Clock size={14} color={theme.primary?.val} />
+                  <AppIcon icon={Clock} size={14} color="primary" />
                   <AppText variant="bodySm" color="textSecondary">
                     {Math.floor(item.durationSeconds / 60)} min
                   </AppText>
                 </XStack>
                 <XStack alignItems="center" gap="$xs">
-                  <Dumbbell size={14} color={theme.primary?.val} />
+                  <AppIcon icon={Dumbbell} size={14} color="primary" />
                   <AppText variant="bodySm" color="textSecondary">
                     {calculateVolume(item.exercises)} kg
                   </AppText>
                 </XStack>
                 <XStack alignItems="center" gap="$xs">
-                  <History size={14} color={theme.primary?.val} />
+                  <AppIcon icon={History} size={14} color="primary" />
                   <AppText variant="bodySm" color="textSecondary">
                     {item.exercises.length} ej.
                   </AppText>
                 </XStack>
               </XStack>
-</CardBase>
-          </TouchableOpacity>
+            </CardBase>
+          </Pressable>
         </Swipeable>
       </Animated.View>
     );
   };
 
   return (
-    <Screen>
-      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingTop="$lg" paddingBottom="$sm">
+    <Screen safeAreaEdges={['top', 'left', 'right']}>
+      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$sm">
         <AppText variant="titleLg">Historial</AppText>
       </XStack>
 
@@ -150,23 +164,29 @@ export default function HistoryScreen() {
         <XStack
           alignItems="center"
           gap="$sm"
-          style={{
-            height: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12,
-            backgroundColor: theme.surface?.val, borderColor: theme.borderColor?.val,
-          }}
+          height={48}
+          borderRadius="$lg"
+          borderWidth={1}
+          paddingHorizontal="$md"
+          backgroundColor="$surface"
+          borderColor="$borderColor"
         >
-          <Search size={20} color={theme.textTertiary?.val} />
+          <AppIcon icon={Search} size={20} color="textTertiary" />
           <AppInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Buscar por fecha, nombre o ejercicio..."
-            style={{ flex: 1, marginLeft: 8 }}
+            placeholder="Buscar por fecha o ejercicio..."
+            flex={1}
+            borderWidth={0}
+            backgroundColor="transparent"
+            paddingHorizontal={0}
+            focusStyle={{ borderColor: 'transparent' }}
           />
         </XStack>
       </YStack>
 
       {loading ? (
-        <YStack paddingHorizontal="$xl">
+        <YStack paddingHorizontal="$lg" gap="$md">
           <HistoryCardSkeleton />
           <HistoryCardSkeleton />
           <HistoryCardSkeleton />
@@ -177,12 +197,12 @@ export default function HistoryScreen() {
           data={filteredWorkouts}
           renderItem={renderWorkout}
           keyExtractor={item => item.id}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+          ItemSeparatorComponent={() => <View height="$md" />}
           ListEmptyComponent={() => (
-            <YStack alignItems="center" justifyContent="center" marginTop="$5xl">
-              <History size={48} color={theme.surfaceSecondary?.val} />
-              <AppText variant="bodyMd" color="textTertiary" style={{ marginTop: 12 }}>
+            <YStack alignItems="center" justifyContent="center" marginTop="$10">
+              <AppIcon icon={History} size={48} color="textTertiary" />
+              <AppText variant="bodyMd" color="textTertiary" marginTop="$md">
                 No hay entrenamientos guardados aún
               </AppText>
             </YStack>

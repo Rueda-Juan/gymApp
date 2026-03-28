@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TextInput as RNTextInput } from 'react-native';
 import { Trash2, GripVertical, Plus, Minus, Link2, Unlink } from 'lucide-react-native';
-import { XStack, YStack, useTheme } from 'tamagui';
+import { XStack, YStack, useTheme, View } from 'tamagui';
+import Animated, { 
+  useAnimatedStyle, 
+  withSpring, 
+  useSharedValue, 
+  withTiming 
+} from 'react-native-reanimated';
 import { AppText } from '../ui/AppText';
-import { Button as AppButton } from '../ui/AppButton';
+import { AppButton } from '../ui/AppButton';
+import { AppIcon } from '../ui/AppIcon';
 
 interface RoutineExerciseRowProps {
   exerciseName: string;
@@ -20,6 +27,9 @@ interface RoutineExerciseRowProps {
   onLinkNext?: () => void;
   onUnlink?: () => void;
 }
+
+// Convertimos el YStack de Tamagui en un componente animado
+const AnimatedYStack = Animated.createAnimatedComponent(YStack);
 
 export const RoutineExerciseRow: React.FC<RoutineExerciseRowProps> = ({
   exerciseName,
@@ -39,95 +49,178 @@ export const RoutineExerciseRow: React.FC<RoutineExerciseRowProps> = ({
   const theme = useTheme();
   const isSuperset = isLinkedNext || isLinkedPrev;
 
+  // Valores compartidos para Reanimated
+  const scale = useSharedValue(1);
+  const elevation = useSharedValue(0);
+
+  useEffect(() => {
+    if (isActive) {
+      scale.value = withSpring(1.03, { damping: 15 });
+      elevation.value = withTiming(10, { duration: 200 });
+    } else {
+      scale.value = withSpring(1, { damping: 15 });
+      elevation.value = withTiming(0, { duration: 200 });
+    }
+  }, [isActive, scale, elevation]);
+
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    shadowOpacity: withTiming(isActive ? 0.2 : 0, { duration: 200 }),
+    zIndex: isActive ? 999 : 1,
+  }));
+
   return (
-    <YStack mb={isLinkedNext ? '$sm' : '$xl'}>
+    <YStack marginBottom={isLinkedNext ? 0 : '$lg'} width="100%">
       {isLinkedPrev && (
-        <YStack position="absolute" top={-16} left={32} width={2} height={16} backgroundColor="$primary" />
+        <View 
+          height={12} 
+          width={4} 
+          backgroundColor="$primary" 
+          marginLeft={36} 
+        />
       )}
-      <YStack
+
+      <AnimatedYStack
+        style={animatedContainerStyle}
         borderRadius="$lg"
-        p="$lg"
-        borderWidth={1}
+        borderCurve="continuous"
+        padding="$md"
+        borderWidth={2}
         borderColor={isSuperset ? '$primary' : '$borderColor'}
         backgroundColor="$surface"
-        opacity={isActive ? 0.7 : 1}
-        elevation={isActive ? 10 : 2}
       >
-        <XStack>
-          <AppButton variant="ghost" size="sm" onPress={drag}>
-            <GripVertical size={20} color={theme.textSecondary} />
+        <XStack alignItems="center" gap="$sm">
+          <AppButton 
+            appVariant="ghost" 
+            size="sm" 
+            onPressIn={drag}
+            onLongPress={drag}
+            width={48} 
+            height={48}
+            fullWidth={false}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Arrastra para reordenar ejercicio"
+          >
+            <AppIcon icon={GripVertical} color="textTertiary" size={20} />
           </AppButton>
 
           <YStack flex={1}>
-            <AppText variant="subtitle">{exerciseName}</AppText>
-            <AppText variant="label" color="textSecondary">{muscleGroup}</AppText>
+            <AppText variant="subtitle" numberOfLines={1}>{exerciseName}</AppText>
+            <AppText variant="bodySm" color="textSecondary">{muscleGroup}</AppText>
           </YStack>
 
-          <AppButton variant="ghost" size="sm" onPress={onRemove}>
-            <Trash2 size={20} color={theme.error} />
+          <AppButton 
+            appVariant="ghost" 
+            size="sm" 
+            onPress={onRemove} 
+            width={40} 
+            fullWidth={false}
+          >
+            <AppIcon icon={Trash2} color="danger" size={20} />
           </AppButton>
         </XStack>
 
-        <XStack mt="$md" justifyContent="space-between">
-          <YStack flex={1} mr="$2">
-            <AppText variant="label" color="textSecondary">
-              SERIES
-            </AppText>
-            <XStack alignItems="center" height={36}>
-              <AppButton variant="ghost" size="sm" onPress={() => onUpdateSets(Math.max(1, sets - 1))}>
-                <Minus size={16} color={theme.color} />
+        <XStack marginTop="$md" gap="$md">
+          <YStack flex={1} gap="$xs">
+            <AppText variant="label" color="textSecondary">SERIES</AppText>
+            <XStack 
+              backgroundColor="$surfaceSecondary" 
+              borderRadius="$md" 
+              alignItems="center" 
+              justifyContent="space-between"
+              height={44}
+              paddingHorizontal="$xs"
+            >
+              <AppButton 
+                appVariant="ghost" 
+                size="sm" 
+                width={36}
+                fullWidth={false}
+                onPress={() => onUpdateSets(Math.max(1, sets - 1))}
+              >
+                <AppIcon icon={Minus} size={16} />
               </AppButton>
 
-              <AppText variant="subtitle" mx="$4" textAlign="center" minWidth={20}>
+              <AppText variant="bodyMd" tabularNums fontWeight="$7">
                 {sets}
               </AppText>
 
-              <AppButton variant="ghost" size="sm" onPress={() => onUpdateSets(sets + 1)}>
-                <Plus size={16} color={theme.color} />
+              <AppButton 
+                appVariant="ghost" 
+                size="sm" 
+                width={36}
+                fullWidth={false}
+                onPress={() => onUpdateSets(sets + 1)}
+              >
+                <AppIcon icon={Plus} size={16} />
               </AppButton>
             </XStack>
           </YStack>
 
-          <YStack flex={1} ml="$2">
-            <AppText variant="label" color="textSecondary">
-              RANGO DE REPS
-            </AppText>
-            <YStack height={36} borderRadius="$sm" px="$2" backgroundColor="$surfaceSecondary" borderWidth={1} borderColor="$borderColor" justifyContent="center">
+          <YStack flex={1} gap="$xs">
+            <AppText variant="label" color="textSecondary">RANGO REPS</AppText>
+            <XStack 
+              backgroundColor="$surfaceSecondary" 
+              borderRadius="$md" 
+              height={44}
+              borderWidth={1}
+              borderColor="$borderColor"
+            >
               <RNTextInput
-                style={{ textAlign: 'center', color: theme.color, fontSize: 16, fontWeight: '600' }}
+                style={{ 
+                  flex: 1,
+                  textAlign: 'center', 
+                  color: theme.color?.val, 
+                  fontSize: 16, 
+                  fontWeight: '600',
+                  fontVariant: ['tabular-nums']
+                }}
                 value={reps}
                 onChangeText={onUpdateReps}
                 placeholder="8-12"
-                placeholderTextColor={theme.textTertiary}
+                placeholderTextColor={theme.textTertiary?.val}
                 keyboardType="default"
               />
-            </YStack>
+            </XStack>
           </YStack>
         </XStack>
-      </YStack>
+      </AnimatedYStack>
 
       {isLinkedNext ? (
-        <YStack alignItems="center" height={24} justifyContent="center">
-          <YStack position="absolute" width={2} height={24} backgroundColor="$primary" left={32} />
+        <XStack height={32} alignItems="center">
+          <View width={4} height={32} backgroundColor="$primary" marginLeft={36} />
           <AppButton
-            variant="outline"
+            appVariant="outline"
             size="sm"
-            style={{ position: 'relative', left: -80, zIndex: 2 }}
+            marginLeft="$md"
+            height={28}
+            fullWidth={false}
             onPress={onUnlink}
+            borderColor="$danger"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Unlink size={14} color={theme.error} />
+            <AppIcon icon={Unlink} color="danger" size={14} />
+            <AppText variant="label" color="danger" marginLeft="$xs">UNLINK</AppText>
           </AppButton>
-        </YStack>
+        </XStack>
       ) : (
         onLinkNext && (
-          <YStack alignItems="center" height={16} justifyContent="center" opacity={0.3}>
-            <AppButton variant="ghost" size="sm" style={{ left: -80 }} onPress={onLinkNext}>
-              <Link2 size={16} color={theme.textTertiary} />
+          <XStack height={32} alignItems="center" opacity={0.8}>
+             <AppButton 
+              appVariant="ghost" 
+              size="sm" 
+              marginLeft="$xl"
+              height={30}
+              fullWidth={false}
+              onPress={onLinkNext}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <AppIcon icon={Link2} color="textTertiary" size={14} />
+              <AppText variant="label" color="textTertiary" marginLeft="$xs">SUPERSET</AppText>
             </AppButton>
-          </YStack>
+          </XStack>
         )
       )}
     </YStack>
   );
 };
-

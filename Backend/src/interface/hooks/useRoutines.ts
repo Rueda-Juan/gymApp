@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useContainer } from './useContainer';
-import type { Routine } from '../../domain/entities/Routine';
+import type { Routine, RoutineExercise } from '../../domain/entities/Routine';
 
 /**
  * Hook that exposes all routine-related operations.
@@ -8,6 +8,16 @@ import type { Routine } from '../../domain/entities/Routine';
  */
 export function useRoutines() {
   const { routineService } = useContainer();
+
+  const getRoutines = useCallback(
+    () => routineService.getAll(),
+    [routineService],
+  );
+
+  const getRoutineById = useCallback(
+    (id: string) => routineService.getById(id),
+    [routineService],
+  );
 
   const createRoutine = useCallback(
     (params: Omit<Routine, 'id' | 'createdAt'>) =>
@@ -31,10 +41,19 @@ export function useRoutines() {
     [routineService],
   );
 
+  const getExercises = useCallback(
+    (routineId: string): Promise<RoutineExercise[]> =>
+      routineService.getExercises(routineId),
+    [routineService],
+  );
+
   return useMemo(() => ({
+    getRoutines,
+    getRoutineById,
     createRoutine,
     updateRoutine,
     deleteRoutine,
     duplicateRoutine,
-  }), [createRoutine, updateRoutine, deleteRoutine, duplicateRoutine]);
+    getExercises,
+  }), [getRoutines, getRoutineById, createRoutine, updateRoutine, deleteRoutine, duplicateRoutine, getExercises]);
 }

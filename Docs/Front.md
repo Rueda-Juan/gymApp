@@ -52,9 +52,11 @@ El frontend es responsable de:
 > **Preferencias de librería** según skill `building-native-ui`:
 >
 > - `expo-image` en lugar de `<Image>` nativo
-> - `Pressable` en lugar de `TouchableOpacity`
+> - `Pressable` en lugar de `TouchableOpacity` (cuando no hay comportamientos avanzados)
+> - `TextInput` de React Native para inputs (mejor control nativo y performance)
 > - `process.env.EXPO_OS` en lugar de `Platform.OS`
 > - Inline styles en lugar de `StyleSheet.create` (salvo estilos reutilizados)
+> - **Dependencias en hooks**: Siempre incluir las funciones/servicios en el array de dependencias de `useEffect` para evitar stale closures
 
 ---
 
@@ -70,7 +72,8 @@ Para evitar redundancias y mantener un desarrollo limpio, aquí se detalla el us
 
 ### UI y Estilos (Look and Feel)
 
-- **`tamagui` & `@tamagui/core`**: Sistema de diseño principal. Construcción de componentes atómicos (Buttons, Inputs, Cards). Utiliza tokens de diseño definidos (colores, espaciado `8dp`) para compilar estilos nativos eficientes en lugar del viejo `StyleSheet.create`.
+- **`tamagui` & `@tamagui/core`**: Sistema de diseño principal. Construcción de componentes atómicos (Buttons, Cards, Stack layouts). Utiliza tokens de diseño definidos (colores, espaciado `8dp`) para compilar estilos nativos eficientes en lugar del viejo `StyleSheet.create`.
+- **`react-native` TextInput**: Inputs de texto/búsqueda usan `TextInput` nativo de React Native (no Tamagui) para mejor control, performance y compatibilidad con teclados nativos. *Uso en: búsquedas, campos de formulario, notas.*
 - **`lucide-react-native`**: **Única fuente de íconos**. Utilizada en botones, menús y Tabs. *Prohibido usar emojis estructurales o mezclar librerías de íconos.*
 - **`expo-font`**: Utilizada para cargar fuentes modernas (Inter, Roboto) y crucial para aplicar la regla `fontVariant: ['tabular-nums']` en textos numéricos fluctuantes (pesos, cronómetros).
 

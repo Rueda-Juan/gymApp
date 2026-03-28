@@ -25,6 +25,7 @@ import { DeleteRoutineUseCase } from '../application/useCases/routines/DeleteRou
 import { DuplicateRoutineUseCase } from '../application/useCases/routines/DuplicateRoutineUseCase';
 import { GetRoutinesUseCase } from '../application/useCases/routines/GetRoutinesUseCase';
 import { GetRoutineByIdUseCase } from '../application/useCases/routines/GetRoutineByIdUseCase';
+import { GetRoutineExercisesUseCase } from '../application/useCases/routines/GetRoutineExercisesUseCase';
 
 // --- Use Cases: Workouts ---
 import { StartWorkoutUseCase } from '../application/useCases/workouts/StartWorkout';
@@ -36,6 +37,8 @@ import { DeleteSetUseCase } from '../application/useCases/workouts/DeleteSetUseC
 import { SkipExerciseUseCase } from '../application/useCases/workouts/SkipExercise';
 import { AddExerciseToWorkoutUseCase } from '../application/useCases/workouts/AddExerciseToWorkoutUseCase';
 import { ReorderWorkoutExercisesUseCase } from '../application/useCases/workouts/ReorderWorkoutExercisesUseCase';
+import { DeleteWorkoutExerciseUseCase } from '../application/useCases/workouts/DeleteWorkoutExerciseUseCase';
+import { UpdateWorkoutExerciseUseCase } from '../application/useCases/workouts/UpdateWorkoutExerciseUseCase';
 import { SuggestWeightUseCase } from '../application/useCases/exercises/SuggestWeight';
 import { GetWorkoutHistoryUseCase } from '../application/useCases/workouts/GetWorkoutHistoryUseCase';
 import { GetWorkoutByIdUseCase } from '../application/useCases/workouts/GetWorkoutByIdUseCase';
@@ -50,6 +53,8 @@ import { GetPreferencesUseCase } from '../application/useCases/settings/GetPrefe
 import { UpdatePreferenceUseCase } from '../application/useCases/settings/UpdatePreferenceUseCase';
 import { LogBodyWeightUseCase } from '../application/useCases/stats/LogBodyWeightUseCase';
 import { GetBodyWeightHistoryUseCase } from '../application/useCases/stats/GetBodyWeightHistoryUseCase';
+import { UpdateBodyWeightUseCase } from '../application/useCases/stats/UpdateBodyWeightUseCase';
+import { DeleteBodyWeightUseCase } from '../application/useCases/stats/DeleteBodyWeightUseCase';
 import { CreateBackupUseCase } from '../application/useCases/backup/CreateBackupUseCase';
 import { RestoreBackupUseCase } from '../application/useCases/backup/RestoreBackupUseCase';
 import { ExportCSVUseCase } from '../application/useCases/backup/ExportCSVUseCase';
@@ -105,7 +110,8 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     new DeleteRoutineUseCase(routineRepo),
     new DuplicateRoutineUseCase(routineRepo),
     new GetRoutinesUseCase(routineRepo),
-    new GetRoutineByIdUseCase(routineRepo)
+    new GetRoutineByIdUseCase(routineRepo),
+    new GetRoutineExercisesUseCase(routineRepo)
   );
 
   const workoutService = new WorkoutService(
@@ -118,6 +124,8 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     new SkipExerciseUseCase(workoutRepo),
     new AddExerciseToWorkoutUseCase(workoutRepo),
     new ReorderWorkoutExercisesUseCase(workoutRepo),
+    new DeleteWorkoutExerciseUseCase(workoutRepo, statsRepo),
+    new UpdateWorkoutExerciseUseCase(workoutRepo),
     new SuggestWeightUseCase(workoutRepo, statsRepo, exerciseRepo),
     new GetWorkoutHistoryUseCase(workoutRepo),
     new GetWorkoutByIdUseCase(workoutRepo)
@@ -142,7 +150,9 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
 
   const bodyWeightService = new BodyWeightService(
     new LogBodyWeightUseCase(bodyWeightRepo),
-    new GetBodyWeightHistoryUseCase(bodyWeightRepo)
+    new GetBodyWeightHistoryUseCase(bodyWeightRepo),
+    new UpdateBodyWeightUseCase(bodyWeightRepo),
+    new DeleteBodyWeightUseCase(bodyWeightRepo)
   );
 
   const personalRecordService = new PersonalRecordService(
