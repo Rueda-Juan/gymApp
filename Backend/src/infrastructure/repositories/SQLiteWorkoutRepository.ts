@@ -56,6 +56,9 @@ interface JoinedExerciseSetRow {
   we_skipped: number;
   we_notes: string | null;
   we_superset_group: number | null;
+  // exercises columns
+  ex_name: string;
+  ex_name_es: string | null;
   // sets columns (nullable due to LEFT JOIN)
   s_id: string | null;
   s_exercise_id: string | null;
@@ -75,6 +78,7 @@ function mapSetRow(row: SetRow): WorkoutSet {
   return {
     id: row.id,
     exerciseId: row.exercise_id,
+    workoutId: row.workout_id,
     setNumber: row.set_number,
     weight: row.weight,
     reps: row.reps,
@@ -354,6 +358,28 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
     }
   }
 
+  async getPreviousSets(exerciseId: string): Promise<WorkoutSet[]> {
+    try {
+      const rows = await this.db.getAllAsync<SetRow>(
+        `SELECT s.*
+         FROM sets s
+         INNER JOIN (
+           SELECT workout_id
+           FROM sets
+           WHERE exercise_id = ?
+           ORDER BY created_at DESC
+           LIMIT 1
+         ) latest ON s.workout_id = latest.workout_id
+         WHERE s.exercise_id = ?
+         ORDER BY s.set_number ASC`,
+        [exerciseId, exerciseId],
+      );
+      return rows.map(mapSetRow);
+    } catch (error) {
+      throw new DatabaseError('Error al obtener sets previos del ejercicio', error);
+    }
+  }
+
   async markExerciseSkipped(workoutId: string, exerciseId: string, skipped: boolean): Promise<void> {
     try {
       await this.db.runAsync(
@@ -381,6 +407,8 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
          we.skipped     AS we_skipped,
          we.notes       AS we_notes,
          we.superset_group AS we_superset_group,
+         ex.name        AS ex_name,
+         ex.name_es     AS ex_name_es,
          s.id               AS s_id,
          s.exercise_id      AS s_exercise_id,
          s.set_number       AS s_set_number,
@@ -394,6 +422,7 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
          s.skipped          AS s_skipped,
          s.created_at       AS s_created_at
        FROM workout_exercises we
+       INNER JOIN exercises ex ON ex.id = we.exercise_id
        LEFT JOIN sets s
          ON s.workout_id = we.workout_id AND s.exercise_id = we.exercise_id
        WHERE we.workout_id = ?
@@ -410,6 +439,8 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
         exercise = {
           id: jr.we_id,
           exerciseId: jr.we_exercise_id,
+          name: jr.ex_name,
+          nameEs: jr.ex_name_es,
           orderIndex: jr.we_order_index,
           skipped: Boolean(jr.we_skipped),
           notes: jr.we_notes,

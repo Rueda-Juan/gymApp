@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, Platform } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import Animated, {
   useAnimatedStyle,
@@ -31,7 +31,7 @@ export function Collapsible({ title, children, defaultOpen = false }: Collapsibl
   });
 
   const handlePress = () => {
-    if (process.env.EXPO_OS === 'ios') {
+    if (Platform.OS === 'ios') {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setIsOpen((prev) => !prev);

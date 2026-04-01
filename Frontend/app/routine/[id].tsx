@@ -1,23 +1,23 @@
 import { XStack, YStack, useTheme } from 'tamagui';
 import React, { useEffect, useState, useCallback } from 'react';
-import { Pressable, Alert, ActivityIndicator, Share } from 'react-native';
+import { Pressable, Alert, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Save, Plus, X, Trash2, Share2 } from 'lucide-react-native';
+import { Plus, X, Trash2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { NestableScrollContainer, NestableDraggableFlatList, ScaleDecorator } from 'react-native-draggable-flatlist';
 
 import { AppText } from '@/components/ui/AppText';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { IconButton } from '@/components/ui/AppButton';
+import { AppButton, IconButton } from '@/components/ui/AppButton';
 import { Screen } from '@/components/ui/Screen';
 import { useRoutineStore } from '@/store/routineStore';
-import { RoutineExerciseRow } from '@/components/cards/routine-exercise-row';
+import { RoutineEditorList } from '@/components/routine/RoutineEditorList';
 import { useRoutines } from '@/hooks/useRoutines';
-import { getExerciseName } from '@/utils/exercise';
+import { useSettings } from '@/store/useSettings';
+import { calculateEstimatedDurationMinutes, mapStoreExercisesToPayload } from '@/utils/routine';
 
 export default function EditRoutineScreen() {
-  const { id, payload } = useLocalSearchParams<{ id: string; payload?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   
   const name = useRoutineStore(s => s.name);
@@ -33,24 +33,11 @@ export default function EditRoutineScreen() {
   const loadRoutine = useRoutineStore(s => s.loadRoutine);
   
   const routineService = useRoutines();
+  const restTimerSeconds = useSettings(s => s.restTimerSeconds);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchRoutine = useCallback(async () => {
-    if (payload) {
-      try {
-        const decoded = JSON.parse(decodeURIComponent(payload));
-        loadRoutine(decoded);
-        Alert.alert('Importada', 'Rutina compartida importada correctamente');
-      } catch (error) {
-        console.error('[EditRoutineScreen] parse payload failed', error);
-        Alert.alert('Error', 'No se pudo importar la rutina compartida');
-        router.back();
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
     try {
       const routine = await routineService.getRoutineById(id as string);
       if (routine) {
@@ -64,7 +51,7 @@ export default function EditRoutineScreen() {
     } finally { 
       setLoading(false); 
     }
-  }, [id, payload, routineService, loadRoutine]);
+  }, [id, routineService, loadRoutine]);
 
   useEffect(() => { 
     if (id) fetchRoutine(); 
@@ -75,64 +62,25 @@ export default function EditRoutineScreen() {
       Alert.alert('Error', 'El nombre no puede estar vacío'); 
       return; 
     }
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       await routineService.updateRoutine(id as string, {
-        name, 
+        name,
         notes,
-        exercises: exercises.map((e, index) => ({
-          exerciseId: e.id, 
-          orderIndex: index, 
-          targetSets: e.sets,
-          maxReps: parseInt(e.reps) || 0, 
-          minReps: parseInt(e.reps) || 0,
-        })),
-      } as any);
+        exercises: mapStoreExercisesToPayload(exercises),
+      });
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch { 
       Alert.alert('Error', 'No se pudo actualizar la rutina'); 
+    } finally {
+      setIsSaving(false);
     }
-  }, [name, exercises, id, routineService, notes]);
-
-  const handleShare = useCallback(async () => {
-    if (!id) {
-      Alert.alert('Error', 'ID de rutina inválido');
-      return;
-    }
-
-    const textExercise = exercises
-      .map((ex, ix) => `- ${getExerciseName(ex)}: ${ex.sets} sets x ${ex.reps} reps`)
-      .join('\n');
-
-    const payloadObject = {
-      name,
-      notes,
-      exercises: exercises.map((ex) => ({
-        exerciseId: ex.id,
-        exercise: { name: ex.name, nameEs: ex.nameEs || null, primaryMuscles: [ex.muscle] },
-        targetSets: ex.sets,
-        maxReps: Number(ex.reps.split('-')[1] ?? ex.reps) || 0,
-        supersetGroup: ex.supersetGroup || null,
-      })),
-    };
-
-    const payload = encodeURIComponent(JSON.stringify(payloadObject));
-    const link = `gymapp://routine/${id}?payload=${payload}`;
-    const message = `Rutina: ${name}\n\n${notes ? `${notes}\n\n` : ''}Ejercicios:\n${textExercise}\n\nAbre la rutina: ${link}`;
-
-    try {
-      await Share.share({
-        title: `Rutina: ${name}`,
-        message,
-        url: link,
-      });
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo compartir la rutina');
-      console.error('[EditRoutineScreen] share error:', error);
-    }
-  }, [id, name, notes, exercises]);
+  }, [name, exercises, id, routineService, notes, isSaving]);
 
   const handleDelete = () => {
+    if (loading) return;
     Alert.alert('Eliminar Rutina', '¿Estás seguro de que quieres eliminar esta rutina?', [
       { text: 'Cancelar', style: 'cancel' },
       { 
@@ -167,110 +115,71 @@ export default function EditRoutineScreen() {
         <AppText variant="titleSm" numberOfLines={1} flex={1} textAlign="center" paddingHorizontal="$md">
           {name}
         </AppText>
-        <XStack alignItems="center" gap="$xs">
-          <IconButton
-            icon={<AppIcon icon={Share2} size={20} color="background" />}
-            backgroundColor="$secondary"
-            onPress={handleShare}
-          />
-          <IconButton 
-            icon={<AppIcon icon={Save} size={20} color="background" />} 
-            backgroundColor="$primary" 
-            onPress={handleUpdate} 
-          />
-        </XStack>
+        <AppButton
+          appVariant="primary"
+          size="sm"
+          label="Guardar"
+          fullWidth={false}
+          onPress={handleUpdate}
+        />
       </XStack>
 
-      <NestableScrollContainer contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}>
-        <YStack marginBottom="$xl" marginTop="$md">
-          <AppText variant="label" color="textSecondary" marginBottom="$xs">Nombre</AppText>
-          <AppInput value={name} onChangeText={setName} />
-        </YStack>
+      <RoutineEditorList
+        exercises={exercises}
+        onReorder={reorderExercises}
+        onRemove={removeExercise}
+        onUpdate={updateExercise}
+        onLinkNext={linkExerciseNext}
+        onUnlink={unlinkExercise}
+        listHeaderComponent={
+          <YStack>
+            <YStack marginBottom="$xl" marginTop="$md">
+              <AppText variant="label" color="textSecondary" marginBottom="$xs">Nombre</AppText>
+              <AppInput value={name} onChangeText={setName} />
+              {exercises.length > 0 && (
+                <AppText variant="label" color="textTertiary" marginTop="$xs">
+                  {`~${calculateEstimatedDurationMinutes(exercises, restTimerSeconds)} min estimados · ${exercises.length} ejercicio${exercises.length !== 1 ? 's' : ''}`}
+                </AppText>
+              )}
+            </YStack>
 
-        <YStack marginBottom="$2xl">
-          <AppText variant="label" color="textSecondary" marginBottom="$xs">Notas</AppText>
-          <AppInput
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Escribe alguna nota..."
-            multiline
-            minHeight={80}
-            maxHeight={160}
-            textAlignVertical="top"
-          />
-        </YStack>
+            <YStack marginBottom="$2xl">
+              <AppText variant="label" color="textSecondary" marginBottom="$xs">Notas</AppText>
+              <AppInput
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Escribe alguna nota..."
+                multiline
+                minHeight={80}
+                maxHeight={160}
+                textAlignVertical="top"
+              />
+            </YStack>
 
-        <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
-          <AppText variant="titleSm">Ejercicios</AppText>
-          <Pressable onPress={() => router.push('/(workouts)/exercise-browser?target=routine')}>
-            <XStack alignItems="center" gap="$xs">
-              <AppIcon icon={Plus} size={18} color="primary" />
-              <AppText variant="bodyMd" color="primary" fontWeight="600">Agregar</AppText>
-            </XStack>
-          </Pressable>
-        </XStack>
+            <AppText variant="titleSm" marginBottom="$md">Ejercicios</AppText>
+          </YStack>
+        }
+        listFooterComponent={
+          <YStack>
+            <YStack marginTop="$lg" marginBottom="$md">
+              <AppButton
+                appVariant="outline"
+                size="md"
+                label="Agregar ejercicio"
+                icon={<AppIcon icon={Plus} size={18} color="primary" />}
+                onPress={() => router.push('/(workouts)/exercise-browser?target=routine')}
+              />
+            </YStack>
 
-        <NestableDraggableFlatList
-          data={exercises}
-          keyExtractor={(item) => item.id}
-          onDragEnd={({ data, from, to }) => {
-            reorderExercises(data);
-
-            if (typeof from === 'number' && typeof to === 'number' && from !== to) {
-              const movedIndex = to;
-              const moved = data[movedIndex];
-              if (!moved) return;
-
-              const prev = data[movedIndex - 1];
-              const next = data[movedIndex + 1];
-
-              const isLinkedWithPrev = prev && prev.supersetGroup != null && prev.supersetGroup === moved.supersetGroup;
-              const isLinkedWithNext = next && next.supersetGroup != null && next.supersetGroup === moved.supersetGroup;
-
-              // Si se suelta junto a un ejercicio, converte en superset del vecino si no estaba
-              if (prev && !isLinkedWithPrev) {
-                linkExerciseNext(movedIndex - 1);
-              } else if (next && !isLinkedWithNext && movedIndex < data.length - 1) {
-                linkExerciseNext(movedIndex);
-              }
-            }
-
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }}
-          renderItem={({ item, getIndex, drag, isActive }) => {
-            const index = getIndex() ?? 0;
-            const isLinkedNext = index < exercises.length - 1 && exercises[index]?.supersetGroup != null && exercises[index].supersetGroup === exercises[index + 1]?.supersetGroup;
-            const isLinkedPrev = index > 0 && exercises[index]?.supersetGroup != null && exercises[index].supersetGroup === exercises[index - 1]?.supersetGroup;
-
-            return (
-              <ScaleDecorator>
-                <RoutineExerciseRow
-                  exerciseName={getExerciseName(item)}
-                  muscleGroup={item.muscle}
-                  sets={item.sets}
-                  reps={item.reps}
-                  onRemove={() => removeExercise(item.id)}
-                  onUpdateSets={(s) => updateExercise(item.id, s, item.reps)}
-                  onUpdateReps={(r) => updateExercise(item.id, item.sets, r)}
-                  drag={drag}
-                  isActive={isActive}
-                  isLinkedNext={isLinkedNext}
-                  isLinkedPrev={isLinkedPrev}
-                  onLinkNext={() => linkExerciseNext(index)}
-                  onUnlink={() => unlinkExercise(index)}
-                />
-              </ScaleDecorator>
-            );
-          }}
-        />
-
-        <Pressable onPress={handleDelete}>
-          <XStack alignItems="center" justifyContent="center" marginTop="$xl" padding="$md" gap="$sm">
-            <AppIcon icon={Trash2} size={18} color="danger" />
-            <AppText variant="bodyMd" color="danger" fontWeight="600">Eliminar Rutina</AppText>
-          </XStack>
-        </Pressable>
-      </NestableScrollContainer>
+            <Pressable onPress={handleDelete}>
+              <XStack alignItems="center" justifyContent="center" marginTop="$xl" padding="$md" gap="$sm">
+                <AppIcon icon={Trash2} size={18} color="danger" />
+                <AppText variant="bodyMd" color="danger" fontWeight="600">Eliminar Rutina</AppText>
+              </XStack>
+            </Pressable>
+          </YStack>
+        }
+      />
     </Screen>
   );
 }

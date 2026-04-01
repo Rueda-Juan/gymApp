@@ -1,9 +1,10 @@
 import React from 'react';
 import { Button as TamaguiButton, ButtonProps, XStack, useTheme } from 'tamagui';
 import { AppText } from './AppText';
-import { ActivityIndicator, GestureResponderEvent } from 'react-native';
+import { ActivityIndicator, GestureResponderEvent, Platform } from 'react-native';
 import { ThemeColorKey } from '@/theme/types';
 import * as Haptics from 'expo-haptics';
+import { FONT_SCALE } from '@/tamagui.config';
 
 type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -19,16 +20,16 @@ interface AppButtonProps extends Omit<ButtonProps, 'variant' | 'icon'> {
 }
 
 const BUTTON_CONFIG: Record<ButtonVariant, { bg: string; textColor: ThemeColorKey; borderWidth: number; borderColor: string }> = {
-  primary: { bg: '$primary', textColor: 'color', borderWidth: 0, borderColor: 'transparent' },
+  primary: { bg: '$primary', textColor: 'white', borderWidth: 0, borderColor: 'transparent' },
   outline: { bg: 'transparent', textColor: 'primary', borderWidth: 1, borderColor: '$borderColor' },
   ghost: { bg: '$surfaceSecondary', textColor: 'color', borderWidth: 0, borderColor: 'transparent' },
   danger: { bg: '$danger', textColor: 'color', borderWidth: 0, borderColor: 'transparent' },
 };
 
 const SIZE_CONFIG: Record<ButtonSize, { height: number; borderRadius: number; fontSize: number }> = {
-  sm: { height: 36, borderRadius: 8, fontSize: 14 },
-  md: { height: 44, borderRadius: 12, fontSize: 16 },
-  lg: { height: 56, borderRadius: 16, fontSize: 18 },
+  sm: { height: 36, borderRadius: 8, fontSize: FONT_SCALE.sizes[2] },
+  md: { height: 44, borderRadius: 12, fontSize: FONT_SCALE.sizes[3] },
+  lg: { height: 56, borderRadius: 16, fontSize: FONT_SCALE.sizes[4] },
 };
 
 export function AppButton({ appVariant = 'primary', size = 'lg', label, icon, children, fullWidth = true, loading = false,
@@ -41,9 +42,11 @@ export function AppButton({ appVariant = 'primary', size = 'lg', label, icon, ch
   const leftElement = loading
     ? <ActivityIndicator size="small" color={spinnerColor} />
     : icon;
-  const handlePress = async (e: GestureResponderEvent) => {
+  const handlePress = (e: GestureResponderEvent) => {
     if (!isDisabled) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (Platform.OS !== 'web') {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       props.onPress?.(e);
     }
   };
@@ -71,7 +74,7 @@ export function AppButton({ appVariant = 'primary', size = 'lg', label, icon, ch
         {label ? (
           <AppText variant="bodyMd"
             color={styleToken.textColor}
-            style={{ fontSize: sizeToken.fontSize, fontWeight: '$7' }}>
+            style={{ fontSize: sizeToken.fontSize, fontWeight: '700' }}>
             {label}
           </AppText>
         ) : (

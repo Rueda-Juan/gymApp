@@ -8,9 +8,9 @@ export default function ModalScreen() {
 
   return (
     <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor={theme.background?.val} padding="$xl">
-      <AppText variant="titleLg">This is a modal</AppText>
+      <AppText variant="titleLg">Modal</AppText>
       <Link href="/" dismissTo style={{ marginTop: 15, paddingVertical: 15 }}>
-        <AppText variant="bodyMd" color="primary" style={{ fontWeight: '600' }}>Go to home screen</AppText>
+        <AppText variant="bodyMd" color="primary" fontWeight="600">Ir al inicio</AppText>
       </Link>
     </YStack>
   );

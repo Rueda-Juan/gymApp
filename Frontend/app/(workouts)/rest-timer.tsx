@@ -1,21 +1,29 @@
 ﻿import { XStack, YStack, useTheme } from 'tamagui';
-import React, { useEffect } from 'react';
-import { Pressable } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Square, Play, Plus, Minus } from 'lucide-react-native';
 import Animated, { 
   useAnimatedStyle, 
-  useSharedValue, 
-  withTiming, 
-  Easing, 
-  cancelAnimation 
+  useSharedValue,
+  FadeIn,
+  FadeOut,
+  SlideInUp,
 } from 'react-native-reanimated';
 
 import { useRestTimer } from '@/store/useRestTimer';
 import { useSettings } from '@/store/useSettings';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
+import { FONT_SCALE } from '@/tamagui.config';
+
+const PRESETS = [
+  { label: '30s', value: 30 },
+  { label: '60s', value: 60 },
+  { label: '90s', value: 90 },
+  { label: '2m',  value: 120 },
+  { label: '3m',  value: 180 },
+];
 
 export default function RestTimerScreen() {
   const theme = useTheme();
@@ -30,7 +38,13 @@ export default function RestTimerScreen() {
   const [remaining, setRemaining] = React.useState(getRemainingSeconds());
   const [progressMax, setProgressMax] = React.useState(() => Math.max(restTimerSeconds, durationSeconds || 0));
   const progressMaxRef = React.useRef(progressMax);
+  const hasNavigatedBackRef = useRef(false);
+  const containerWidthSV = useSharedValue(0);
   const progress = useSharedValue(1);
+
+  useEffect(() => {
+    hasNavigatedBackRef.current = false;
+  }, []);
 
   useEffect(() => {
     progressMaxRef.current = progressMax;
@@ -53,6 +67,17 @@ export default function RestTimerScreen() {
     setProgressMax(initialDuration);
     setRemaining(initialDuration);
     progress.value = 1;
+  };
+
+  const handleAdjust = (delta: number) => {
+    adjustTimer(delta);
+    const currentRemaining = getRemainingSeconds();
+    const safeMax = Math.max(progressMaxRef.current, 1);
+    setRemaining(currentRemaining);
+    progress.value = Math.min(1, Math.max(0, currentRemaining / safeMax));
+    if (currentRemaining > progressMaxRef.current) {
+      setProgressMax(currentRemaining);
+    }
   };
 
   useEffect(() => {
@@ -79,7 +104,10 @@ export default function RestTimerScreen() {
         setRemaining(0);
         progress.value = 0;
         stopTimer();
-        router.back();
+        if (!hasNavigatedBackRef.current) {
+          hasNavigatedBackRef.current = true;
+          router.back();
+        }
         clearInterval(interval);
         return;
       }
@@ -91,14 +119,9 @@ export default function RestTimerScreen() {
     };
   }, [isActive, getRemainingSeconds, stopTimer, progress]);
 
-  const animatedProgressStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scaleX: progress.value },
-        { translateX: -0.5 } 
-      ] as any, // El cast a 'any' aquí es la forma más rápida de evitar el conflicto de tipos de TS en transforms de Reanimated
-    };
-  });
+  const animatedProgressStyle = useAnimatedStyle(() => ({
+    width: containerWidthSV.value * progress.value,
+  }));
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -107,23 +130,36 @@ export default function RestTimerScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, justifyContent: 'flex-end' }} edges={['bottom']}>
-      <Pressable
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)' }}
-        onPress={() => router.back()}
-      />
-
-      <YStack
-        backgroundColor="$surface"
-        borderTopLeftRadius="$xl" 
-        borderTopRightRadius="$xl"
-        paddingBottom="$xl"
-        overflow="hidden"
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+      {/* Backdrop */}
+      <Animated.View
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(150)}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       >
-        <YStack height={6} backgroundColor="$surfaceSecondary" width="100%">
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }}
+          onPress={() => router.back()}
+        />
+      </Animated.View>
+
+      {/* Floating card */}
+      <Animated.View
+        entering={SlideInUp.springify().damping(18).stiffness(200)}
+        exiting={FadeOut.duration(150)}
+        style={{ width: '100%', maxWidth: 380 }}
+      >
+        <YStack
+          backgroundColor="$surface"
+          borderRadius="$xl"
+          overflow="hidden"
+        >
+        <YStack height={6} backgroundColor="$surfaceSecondary" width="100%"
+          onLayout={(e) => { containerWidthSV.value = e.nativeEvent.layout.width; }}
+        >
           <Animated.View 
             style={[
-              { height: '100%', backgroundColor: theme.primary?.val as string, width: '100%' },
+              { height: '100%', backgroundColor: theme.primary?.val as string },
               animatedProgressStyle
             ]} 
           />
@@ -134,23 +170,48 @@ export default function RestTimerScreen() {
             DESCANSO
           </AppText>
           
-          <AppText variant="titleLg" fontSize={72} style={{ fontVariant: ['tabular-nums'] }}>
+          <AppText variant="titleLg" fontSize={FONT_SCALE.sizes.hero} style={{ fontVariant: ['tabular-nums'] }}>
             {formatTime(remaining)}
           </AppText>
 
+          <XStack gap="$sm" justifyContent="center" marginBottom="$md">
+            {PRESETS.map(preset => {
+              const isPresetActive = durationSeconds === preset.value;
+              return (
+                <Pressable
+                  key={preset.value}
+                  onPress={() => {
+                    stopTimer();
+                    startTimer(preset.value);
+                    setProgressMax(preset.value);
+                    setRemaining(preset.value);
+                    progress.value = 1;
+                  }}
+                >
+                  <YStack
+                    paddingHorizontal="$sm"
+                    paddingVertical={6}
+                    borderRadius={100}
+                    borderWidth={1}
+                    backgroundColor={isPresetActive ? '$primarySubtle' : '$surfaceSecondary'}
+                    borderColor={isPresetActive ? '$primary' : '$borderColor'}
+                  >
+                    <AppText
+                      variant="label"
+                      fontSize={FONT_SCALE.sizes[1]}
+                      color={isPresetActive ? 'primary' : 'textSecondary'}
+                      fontWeight={isPresetActive ? '700' : '500'}
+                    >
+                      {preset.label}
+                    </AppText>
+                  </YStack>
+                </Pressable>
+              );
+            })}
+          </XStack>
+
           <XStack alignItems="center" gap="$xl" marginTop="$md">
-            <Pressable onPress={() => {
-              adjustTimer(-10);
-
-              const currentRemaining = getRemainingSeconds();
-              const safeMax = Math.max(progressMaxRef.current, 1);
-              setRemaining(currentRemaining);
-              progress.value = Math.min(1, Math.max(0, currentRemaining / safeMax));
-
-              if (currentRemaining > progressMaxRef.current) {
-                setProgressMax(currentRemaining);
-              }
-            }}>
+            <Pressable onPress={() => handleAdjust(-15)}>
               <YStack
                 width={60} 
                 height={60} 
@@ -160,7 +221,7 @@ export default function RestTimerScreen() {
                 backgroundColor="$surfaceSecondary"
               >
                 <AppIcon icon={Minus} color="color" size={24} />
-                <AppText variant="label" color="textSecondary" fontSize={10}>-10s</AppText>
+                <AppText variant="label" color="textSecondary" fontSize={FONT_SCALE.sizes[1]}>-15s</AppText>
               </YStack>
             </Pressable>
 
@@ -192,18 +253,7 @@ export default function RestTimerScreen() {
               </Pressable>
             )}
 
-            <Pressable onPress={() => {
-              adjustTimer(10);
-
-              const currentRemaining = getRemainingSeconds();
-              const safeMax = Math.max(progressMaxRef.current, 1);
-              setRemaining(currentRemaining);
-              progress.value = Math.min(1, Math.max(0, currentRemaining / safeMax));
-
-              if (currentRemaining > progressMaxRef.current) {
-                setProgressMax(currentRemaining);
-              }
-            }}>
+            <Pressable onPress={() => handleAdjust(15)}>
               <YStack
                 width={60} 
                 height={60} 
@@ -213,12 +263,13 @@ export default function RestTimerScreen() {
                 backgroundColor="$surfaceSecondary"
               >
                 <AppIcon icon={Plus} color="color" size={24} />
-                <AppText variant="label" color="textSecondary" fontSize={10}>+10s</AppText>
+                <AppText variant="label" color="textSecondary" fontSize={FONT_SCALE.sizes[1]}>+15s</AppText>
               </YStack>
             </Pressable>
           </XStack>
         </YStack>
       </YStack>
-    </SafeAreaView>
+        </Animated.View>
+      </View>
   );
 }

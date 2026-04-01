@@ -4,23 +4,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface UserProfile {
   name: string;
-  gender: 'male' | 'female' | 'other' | '';
+  gender: 'male' | 'female' | 'other' | null;
   age: number | null;
   createdAt: number | null;
 }
 
 interface UserState {
   user: UserProfile;
-  setUser: (user: UserProfile) => void;
+  setUser: (partial: Partial<UserProfile>) => void;
   resetUser: () => void;
 }
 
 export const useUser = create<UserState>()(
   persist(
     (set) => ({
-      user: { name: '', gender: '', age: null, createdAt: null },
-      setUser: (user) => set({ user }),
-      resetUser: () => set({ user: { name: '', gender: '', age: null, createdAt: null } }),
+      user: { name: '', gender: null, age: null, createdAt: null },
+      setUser: (partial) => set((s) => ({ user: { ...s.user, ...partial } })),
+      resetUser: () => set({ user: { name: '', gender: null, age: null, createdAt: null } }),
     }),
     {
       name: 'gymapp-user',

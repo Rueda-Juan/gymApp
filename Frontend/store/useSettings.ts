@@ -21,7 +21,7 @@ export interface SettingsState {
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      availablePlates: [1.25, 2.5, 5, 10, 15, 20, 25], // Default all on
+      availablePlates: [...STANDARD_PLATES],
       defaultBarWeight: 20,
       restTimerSeconds: 60,
       themeMode: 'system',

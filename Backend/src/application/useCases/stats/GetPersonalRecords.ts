@@ -1,4 +1,4 @@
-import type { PersonalRecord } from '../../../domain/entities/PersonalRecord';
+import type { PersonalRecord, RecordType } from '../../../domain/entities/PersonalRecord';
 import type { StatsRepository } from '../../../domain/repositories/StatsRepository';
 
 /**
@@ -18,7 +18,18 @@ export class GetPersonalRecordsUseCase {
 export class GetBestPersonalRecordUseCase {
   constructor(private readonly statsRepo: StatsRepository) {}
 
-  async execute(exerciseId: string, recordType: string): Promise<PersonalRecord | null> {
+  async execute(exerciseId: string, recordType: RecordType): Promise<PersonalRecord | null> {
     return this.statsRepo.getLatestRecord(exerciseId, recordType);
+  }
+}
+
+/**
+ * GetPRCountSinceUseCase — Counts all personal records logged on or after a given date.
+ */
+export class GetPRCountSinceUseCase {
+  constructor(private readonly statsRepo: StatsRepository) {}
+
+  async execute(since: string): Promise<number> {
+    return this.statsRepo.countRecordsSince(since);
   }
 }

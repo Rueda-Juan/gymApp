@@ -5,7 +5,7 @@
 export interface BodyWeightEntry {
   readonly id: string;
   weight: number;
-  date: Date;
+  date: string;
   notes: string | null;
   createdAt: Date;
 }

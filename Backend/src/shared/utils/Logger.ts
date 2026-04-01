@@ -1,45 +1,52 @@
-import { documentDirectory, getInfoAsync, writeAsStringAsync, readAsStringAsync, deleteAsync, EncodingType } from 'expo-file-system/legacy';
+import { documentDirectory, getInfoAsync, writeAsStringAsync, readAsStringAsync, deleteAsync, moveAsync, EncodingType } from 'expo-file-system/legacy';
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
 type LogLevel = (typeof LOG_LEVELS)[number];
 
 const LOG_FILE_PATH = `${documentDirectory}app_logs.txt`;
+const LOG_FILE_OLD_PATH = `${LOG_FILE_PATH}.old`;
 const MAX_LOG_SIZE_BYTES = 1024 * 1024; // 1 MB
 
-// Buffer para no escribir en disco por cada log individual inmediatamente
 let logBuffer: string[] = [];
 let isWriting = false;
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleFlush() {
+  if (flushTimer) clearTimeout(flushTimer);
+  flushTimer = setTimeout(flushLogs, 2000);
+}
 
 async function flushLogs() {
   if (logBuffer.length === 0 || isWriting) return;
   isWriting = true;
-  
-  const contentToWrite = logBuffer.join('\n') + '\n';
-  logBuffer = []; // Clear buffer
+
+  const pendingEntries = [...logBuffer];
+  const contentToWrite = pendingEntries.join('\n') + '\n';
 
   try {
     const fileInfo = await getInfoAsync(LOG_FILE_PATH);
-    
-    // Si el archivo supera 1MB, lo borramos (o se podría rotar)
+
     if (fileInfo.exists && fileInfo.size > MAX_LOG_SIZE_BYTES) {
-      await deleteAsync(LOG_FILE_PATH, { idempotent: true });
+      await moveAsync({ from: LOG_FILE_PATH, to: LOG_FILE_OLD_PATH });
     }
 
     let existingContent = '';
-    if (fileInfo.exists && fileInfo.size <= MAX_LOG_SIZE_BYTES) {
+    const currentInfo = await getInfoAsync(LOG_FILE_PATH);
+    if (currentInfo.exists) {
       existingContent = await readAsStringAsync(LOG_FILE_PATH, { encoding: EncodingType.UTF8 });
     }
-    
+
     await writeAsStringAsync(LOG_FILE_PATH, existingContent + contentToWrite, {
       encoding: EncodingType.UTF8,
     });
+
+    logBuffer = logBuffer.slice(pendingEntries.length);
   } catch (error) {
     console.error('Failed to write logs to disk', error);
   } finally {
     isWriting = false;
-    // Si entraron más logs mientras escribíamos, volvemos a intentar
     if (logBuffer.length > 0) {
-      setTimeout(flushLogs, 1000);
+      scheduleFlush();
     }
   }
 }
@@ -49,9 +56,7 @@ function queueLog(level: LogLevel, namespace: string, message: string, args: unk
   const argsString = args.length > 0 ? JSON.stringify(args) : '';
   const logEntry = `[${timestamp}] [${level.toUpperCase()}] [${namespace}] ${message} ${argsString}`;
   logBuffer.push(logEntry);
-  
-  // Throttle writes
-  setTimeout(flushLogs, 2000);
+  scheduleFlush();
 }
 
 /**

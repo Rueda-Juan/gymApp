@@ -5,6 +5,7 @@ import type { ExerciseRepository } from '../../domain/repositories/ExerciseRepos
 import type { MuscleGroup } from '../../domain/valueObjects/MuscleGroup';
 import type { Equipment } from '../../domain/valueObjects/Equipment';
 import { DatabaseError } from '../../shared/errors';
+import { safeJsonParse } from '../../shared/utils/safeJsonParse';
 
 interface ExerciseRow {
   id: string;
@@ -26,22 +27,16 @@ interface ExerciseRow {
  * Reads from primary_muscles (JSON array) if available, falls back to primary_muscle (singular).
  */
 function mapRowToExercise(row: ExerciseRow): Exercise {
-  // Parse primary muscles: prefer new JSON array column, fall back to singular
-  let primaryMuscles: MuscleGroup[];
-  if (row.primary_muscles) {
-    primaryMuscles = JSON.parse(row.primary_muscles) as MuscleGroup[];
-  } else {
-    primaryMuscles = [row.primary_muscle as MuscleGroup];
-  }
+  const primaryMuscles: MuscleGroup[] = row.primary_muscles
+    ? safeJsonParse<MuscleGroup[]>(row.primary_muscles, [row.primary_muscle as MuscleGroup])
+    : [row.primary_muscle as MuscleGroup];
 
   return {
     id: row.id,
     name: row.name,
     nameEs: row.name_es,
     primaryMuscles,
-    secondaryMuscles: row.secondary_muscles
-      ? (JSON.parse(row.secondary_muscles) as MuscleGroup[])
-      : [],
+    secondaryMuscles: safeJsonParse<MuscleGroup[]>(row.secondary_muscles, []),
     equipment: (row.equipment ?? 'other') as Equipment,
     exerciseType: (row.exercise_type ?? 'isolation') as ExerciseType,
     weightIncrement: row.weight_increment,

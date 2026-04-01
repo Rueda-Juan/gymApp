@@ -1,30 +1,48 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { router } from 'expo-router';
-import { Calendar, Trophy, Clock, Dumbbell, Share, Plus, Scale } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { TrendingUp } from 'lucide-react-native';
 import { format, subDays } from 'date-fns';
+import BottomSheet, { BottomSheetFlatList, BottomSheetView } from '@gorhom/bottom-sheet';
 
-import { CardBase } from '@/components/ui/card';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { IconButton } from '@/components/ui/AppButton';
 import { Screen } from '@/components/ui/Screen';
+import { CardBase } from '@/components/ui/card';
 import { useStats } from '@/hooks/useStats';
 import { useBodyWeight } from '@/hooks/useBodyWeight';
 import { useWorkout } from '@/hooks/useWorkout';
-import { StatsLineChart, WeeklyVolumeBarChart } from '@/components/charts';
+import { useExercises } from '@/hooks/useExercises';
+import { usePersonalRecords } from '@/hooks/usePersonalRecords';
+import { getExerciseName } from '@/utils/exercise';
+import type { Exercise, Workout, BodyWeightEntry, DailyStats, TrainingFrequencyResult } from 'backend/shared/types';
+import { WeeklyVolumeBarChart, ActivityGrid } from '@/components/charts';
+import { calculateExercisesVolume } from '@/utils/workout';
+import { StatsSummaryGrid } from '@/components/stats/StatsSummaryGrid';
+import { BodyWeightCard } from '@/components/stats/BodyWeightCard';
+import { StrengthProgressCard } from '@/components/stats/StrengthProgressCard';
 
 export default function StatsScreen() {
   const theme = useTheme();
   const statsService = useStats();
   const weightService = useBodyWeight();
   const workoutService = useWorkout();
+  const exerciseService = useExercises();
+  const prService = usePersonalRecords();
 
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-  const [weightHistory, setWeightHistory] = useState<any[]>([]);
+  const [stats, setStats] = useState<{ weeklyStats: DailyStats[]; frequency: TrainingFrequencyResult } | null>(null);
+  const [weightHistory, setWeightHistory] = useState<BodyWeightEntry[]>([]);
   const [summaries, setSummaries] = useState({ workouts: 0, volume: 0, time: 0, prs: 0 });
+
+  const [exerciseList, setExerciseList] = useState<Exercise[]>([]);
+  const [strengthExercise, setStrengthExercise] = useState<Exercise | null>(null);
+  const [strengthHistory, setStrengthHistory] = useState<{ x: string; y: number }[]>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
+  const exerciseSheetRef = useRef<BottomSheet>(null);
+  const sheetSnapPoints = useMemo(() => ['60%'], []);
 
   const loadData = useCallback(async () => {
     try {
@@ -32,42 +50,79 @@ export default function StatsScreen() {
       const now = new Date();
       const thirtyDaysAgo = subDays(now, 30);
 
-      const [weeklyStats, frequency, weightData, history] = await Promise.all([
+      const [weeklyStats, frequency, weightData, fullHistory, prCount] = await Promise.all([
         statsService.getWeeklyStats(thirtyDaysAgo.toISOString(), now.toISOString()),
         statsService.getTrainingFrequency(thirtyDaysAgo.toISOString(), now.toISOString()),
-        weightService.getBodyWeightHistory(thirtyDaysAgo, now),
-        workoutService.getHistory(30),
+        weightService.getBodyWeightHistory(thirtyDaysAgo.toISOString(), now.toISOString()),
+        workoutService.getHistory(365),
+        prService.countSince(thirtyDaysAgo.toISOString()),
       ]);
 
-      const totalVolume = history.reduce((acc: number, w: any) => {
-        let vol = 0;
-        w.exercises?.forEach((ex: any) => {
-          ex.sets?.forEach((s: any) => {
-            if (s.completed) {
-              const weight = Number(s.weight) || 0;
-              const reps = Number(s.reps) || 0;
-              vol += weight * reps;
-            }
-          });
-        });
-        return acc + vol;
-      }, 0);
+      const history = fullHistory.filter((w) => new Date(w.date) >= thirtyDaysAgo);
+      setWorkoutHistory(fullHistory);
 
-      const totalTime = history.reduce((acc: number, w: any) => acc + (w.durationSeconds || 0), 0);
+      const totalVolume = history.reduce(
+        (acc: number, w) =>
+          acc + calculateExercisesVolume(w.exercises ?? [], { completedOnly: true, defaultCompleted: false }),
+        0,
+      );
 
-      setSummaries({ workouts: history.length, volume: totalVolume, time: Math.round(totalTime / 3600), prs: 0 });
-      setWeightHistory(weightData);
+      const totalTime = history.reduce((acc: number, w) => acc + (w.durationSeconds || 0), 0);
+
+      setSummaries({ workouts: history.length, volume: totalVolume, time: Math.round(totalTime / 3600), prs: prCount });
+      setWeightHistory([...weightData].sort((a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ));
       setStats({ weeklyStats, frequency });
+
+      const allExercises = await exerciseService.getAll();
+      setExerciseList(allExercises ?? []);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [statsService, weightService, workoutService, exerciseService, prService]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const selectStrengthExercise = useCallback(async (exercise: Exercise) => {
+    setStrengthExercise(exercise);
+    exerciseSheetRef.current?.close();
+    try {
+      const history = await exerciseService.getExerciseHistory(exercise.id, 20);
+      const oneRMPoints = (history ?? [])
+        .filter((s) => (s.weight ?? 0) > 0 && (s.reps ?? 0) > 0)
+        .map((s) => ({
+          x: s.createdAt instanceof Date ? s.createdAt.toISOString() : String(s.createdAt),
+          y: Number(((s.weight ?? 0) * (1 + (s.reps ?? 0) / 30)).toFixed(1)),
+        }))
+        .filter((p) => p.y > 0 && p.x)
+        .reverse();
+      setStrengthHistory(oneRMPoints);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [exerciseService]);
+
+  const current1RM = strengthHistory.length > 0
+    ? strengthHistory[strengthHistory.length - 1]?.y ?? 0
+    : 0;
+
+  const trainedDates = useMemo(() => new Set(
+    workoutHistory.map((w) => {
+      const d = new Date(w.date);
+      return [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0'),
+      ].join('-');
+    })
+  ), [workoutHistory]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   if (loading) {
     return (
@@ -80,81 +135,27 @@ export default function StatsScreen() {
   }
 
   return (
+    <>
     <Screen safeAreaEdges={['top', 'left', 'right']}>
       <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingTop="$lg" paddingBottom="$md">
         <AppText variant="titleLg">Estadísticas</AppText>
-        <Pressable
-          style={{ padding: 8 }}
-          onPress={() => router.push('/stats/weight' as any)}
-          accessibilityLabel="Compartir estadísticas"
-        >
-          <AppIcon icon={Share} color="textTertiary" size={20} />
-        </Pressable>
       </XStack>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, gap: 16, paddingTop: 8, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
 
-        {/* Summary Grid */}
-        <XStack flexWrap="wrap" justifyContent="space-between" rowGap="$md">
-          {[
-            { icon: Calendar, label: 'WORKOUTS', value: summaries.workouts },
-            { icon: Dumbbell, label: 'VOLUMEN (KG)', value: summaries.volume > 1000 ? `${(summaries.volume / 1000).toFixed(1)}k` : summaries.volume },
-            { icon: Clock, label: 'TIEMPO (H)', value: summaries.time },
-            { icon: Trophy, label: 'PRS', value: summaries.prs },
-          ].map(({ icon: Icon, label, value }) => (
-            <CardBase key={label} width="47%" padding="$md">
-              <XStack alignItems="center" gap="$xs" marginBottom="$xs">
-                <AppIcon icon={Icon} size={16} color="primary" />
-                <AppText variant="label" color="textTertiary">{label}</AppText>
-              </XStack>
-              <AppText variant="titleMd">{value}</AppText>
-            </CardBase>
-          ))}
-        </XStack>
+        <StatsSummaryGrid summaries={summaries} />
 
-        {/* Body Weight Card */}
-        <CardBase padding="$md">
-          <XStack justifyContent="space-between" alignItems="center">
-            <XStack alignItems="center" gap="$sm">
-              <AppIcon icon={Scale} size={20} color="primary" />
-              <AppText variant="titleSm">Peso Corporal</AppText>
-            </XStack>
-            <IconButton
-              icon={<AppIcon icon={Plus} size={16} color="primary" />}
-              size={32}
-              backgroundColor="$primarySubtle"
-              onPress={() => router.push('/stats/weight' as any)}
-            />
-          </XStack>
+        <BodyWeightCard
+          weightHistory={weightHistory}
+          onAddWeight={() => router.push('/stats/weight' as any)}
+        />
 
-          <XStack alignItems="center" marginVertical="$md">
-            <AppText variant="titleLg" fontSize={40}>
-              {weightHistory.length > 0 ? (Number(weightHistory[0].weight) || 0).toFixed(1) : '--'}
-            </AppText>
-            <AppText variant="bodyMd" color="textSecondary" marginLeft="$xs" marginTop="$sm">kg</AppText>
-          </XStack>
-
-          <AppText variant="label" color="textTertiary" marginBottom="$md">ÚLTIMOS 30 DÍAS</AppText>
-          {weightHistory.length > 1 ? (
-            <StatsLineChart
-              data={weightHistory
-                .map((w) => ({ x: w.date, y: Number(w.weight) }))
-                .filter((p) => !isNaN(p.y) && p.y > 0)
-              }
-              xTickFormat={(t) => {
-                try {
-                  return format(new Date(t), 'dd/MM');
-                } catch {
-                  return '';
-                }
-              }}
-            />
-          ) : (
-            <YStack alignItems="center" justifyContent="center" height={120}>
-              <AppText variant="bodyMd" color="textTertiary">Registra más datos para ver el gráfico</AppText>
-            </YStack>
-          )}
-        </CardBase>
+        <StrengthProgressCard
+          strengthExercise={strengthExercise}
+          strengthHistory={strengthHistory}
+          current1RM={current1RM}
+          onOpenExercisePicker={() => exerciseSheetRef.current?.expand()}
+        />
 
         {/* Weekly Volume Chart */}
         <CardBase padding="$none">
@@ -163,7 +164,7 @@ export default function StatsScreen() {
           </AppText>
           <WeeklyVolumeBarChart
             data={(stats?.weeklyStats || [])
-              .map((item: any) => ({ x: item.date, y: Number(item.volume) || 0 }))
+              .map((item) => ({ x: item.date, y: Number(item.totalVolume) || 0 }))
               .filter((p) => !isNaN(p.y))
             }
             xTickFormat={(t) => {
@@ -177,7 +178,47 @@ export default function StatsScreen() {
           />
         </CardBase>
 
+        {/* Activity Grid — Este mes y este año */}
+        <CardBase padding="$md">
+          <ActivityGrid trainedDates={trainedDates} />
+        </CardBase>
+
       </ScrollView>
     </Screen>
+
+    {/* BottomSheet selector de ejercicio */}
+    <BottomSheet
+      ref={exerciseSheetRef}
+      index={-1}
+      snapPoints={sheetSnapPoints}
+      enablePanDownToClose
+      backgroundStyle={{ backgroundColor: theme.surface?.val }}
+      handleIndicatorStyle={{ backgroundColor: theme.textTertiary?.val }}
+    >
+      <BottomSheetView style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
+        <AppText variant="titleSm" marginBottom="$md">Seleccionar ejercicio</AppText>
+      </BottomSheetView>
+      <BottomSheetFlatList
+        data={exerciseList}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+        ItemSeparatorComponent={() => <YStack height={1} backgroundColor="$borderColor" />}
+        renderItem={({ item }: { item: Exercise }) => (
+          <Pressable onPress={() => selectStrengthExercise(item)}>
+            <XStack
+              paddingVertical="$md"
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <AppText variant="bodyMd">{getExerciseName(item)}</AppText>
+              {strengthExercise?.id === item.id && (
+                <AppIcon icon={TrendingUp} size={16} color="primary" />
+              )}
+            </XStack>
+          </Pressable>
+        )}
+      />
+    </BottomSheet>
+    </>
   );
 }

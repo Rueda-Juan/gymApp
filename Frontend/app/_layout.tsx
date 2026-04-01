@@ -3,6 +3,7 @@ import { TamaguiProvider } from '@tamagui/core';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
 
@@ -25,11 +26,20 @@ export default function RootLayout() {
 
   return (
     <TamaguiProvider config={config} defaultTheme={tamaguiTheme}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={styles.flex}>
         <DIProvider>
           <ThemeProvider value={effectiveScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(workouts)" options={{ headerShown: false }} />
+              <Stack.Screen name="exercise/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="history/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="routine/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="routine/create" options={{ headerShown: false }} />
+              <Stack.Screen name="settings/notifications" options={{ headerShown: false }} />
+              <Stack.Screen name="settings/privacy" options={{ headerShown: false }} />
+              <Stack.Screen name="settings/profile" options={{ headerShown: false }} />
+              <Stack.Screen name="stats/weight" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             </Stack>
             <StatusBar style="auto" />
@@ -40,3 +50,7 @@ export default function RootLayout() {
     </TamaguiProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+});

@@ -1,10 +1,13 @@
 import React from 'react';
 import { XStack, YStack } from 'tamagui';
-import { X, Eye, EyeOff } from 'lucide-react-native';
+import { X, PenLine } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { IconButton } from '@/components/ui/AppButton';
-import { Pressable } from 'react-native';
+import { Pressable, useWindowDimensions } from 'react-native';
+import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
+
+const AnimatedYStack = Animated.createAnimatedComponent(YStack);
 
 interface WorkoutHeaderProps {
   formattedTime: string;
@@ -12,9 +15,12 @@ interface WorkoutHeaderProps {
   currentExerciseIndex: number;
   totalExercises: number;
   isFocusMode: boolean;
+  allSetsCompleted?: boolean;
+  sessionNote?: string;
   onToggleFocus: () => void;
   onCancel: () => void;
   onFinish: () => void;
+  onNotePress?: () => void;
 }
 
 export function WorkoutHeader({
@@ -23,14 +29,28 @@ export function WorkoutHeader({
   currentExerciseIndex,
   totalExercises,
   isFocusMode,
+  allSetsCompleted = false,
+  sessionNote,
   onToggleFocus,
   onCancel,
-  onFinish
+  onFinish,
+  onNotePress,
 }: WorkoutHeaderProps) {
-  // Evitamos división por cero o NaN
+  const { width: containerWidth } = useWindowDimensions();
+
   const progressWidth = totalExercises > 0 
     ? ((currentExerciseIndex + 1) / totalExercises) * 100 
     : 0;
+
+  const progressAnim = useSharedValue(progressWidth);
+
+  React.useEffect(() => {
+    progressAnim.value = withSpring(progressWidth, { damping: 20, stiffness: 90 });
+  }, [progressWidth, progressAnim]);
+
+  const progressAnimStyle = useAnimatedStyle(() => ({
+    width: (progressAnim.value / 100) * containerWidth,
+  }));
 
   return (
     <YStack backgroundColor="$background" zIndex={10}>
@@ -45,6 +65,14 @@ export function WorkoutHeader({
           onPress={onCancel} 
         />
 
+        {onNotePress && !isFocusMode && (
+          <IconButton
+            icon={<AppIcon icon={PenLine} color={sessionNote ? 'primary' : 'textTertiary'} size={20} />}
+            backgroundColor="transparent"
+            onPress={onNotePress}
+          />
+        )}
+
         <YStack alignItems="center">
           <AppText variant="bodySm" color="textTertiary" tabularNums fontWeight="600">
             {formattedTime}
@@ -58,24 +86,30 @@ export function WorkoutHeader({
         </YStack>
 
         <XStack alignItems="center" gap="$sm">
-          <IconButton
-            icon={isFocusMode ? <AppIcon icon={Eye} color="primary" size={22} /> : <AppIcon icon={EyeOff} color="textTertiary" size={22} />}
-            backgroundColor={isFocusMode ? "$primarySubtle" : "transparent"}
-            onPress={onToggleFocus}
-          />
           <Pressable onPress={onFinish}>
-            <YStack paddingHorizontal="$md" paddingVertical="$sm" borderRadius="$lg" backgroundColor="$primarySubtle">
-              <AppText variant="bodySm" color="primary" fontWeight="700">Finalizar</AppText>
+            <YStack
+              paddingHorizontal="$md"
+              paddingVertical="$sm"
+              borderRadius="$lg"
+              backgroundColor={allSetsCompleted ? '$primarySubtle' : '$surfaceSecondary'}
+            >
+              <AppText
+                variant="bodySm"
+                color={allSetsCompleted ? 'primary' : 'textSecondary'}
+                fontWeight="700"
+              >
+                {allSetsCompleted ? 'Finalizar' : 'Cerrar'}
+              </AppText>
             </YStack>
           </Pressable>
         </XStack>
       </XStack>
 
       <YStack height={4} backgroundColor="$borderColor" width="100%">
-        <YStack
+        <AnimatedYStack
           height="100%"
           backgroundColor="$primary"
-          width={`${progressWidth}%`}
+          style={progressAnimStyle}
         />
       </YStack>
     </YStack>

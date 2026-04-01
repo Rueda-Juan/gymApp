@@ -1,38 +1,69 @@
-﻿import { XStack, YStack, ScrollView } from 'tamagui';
-import React, { useState, useCallback } from 'react';
-import { TextInput, Pressable } from 'react-native';
+﻿import { XStack, YStack, useTheme } from 'tamagui';
+import React, { useState, useCallback, useMemo } from 'react';
+import { FlatList, Pressable, View, Text, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '@/components/ui/Screen';
-import { Search, Plus, Play } from 'lucide-react-native';
+import { Plus, Play } from 'lucide-react-native';
 import { CardBase } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { IconButton } from '@/components/ui/AppButton';
+import { AppButton, IconButton } from '@/components/ui/AppButton';
 import { useRoutines } from '@/hooks/useRoutines';
 import { useWorkout } from '@/hooks/useWorkout';
-import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { router } from 'expo-router';
 import { RoutineCardSkeleton } from '@/components/feedback/skeleton-loader';
 import { getExerciseName } from '@/utils/exercise';
+import { useStartWorkout } from '@/hooks/useStartWorkout';
+import { SearchBar } from '@/components/ui/SearchBar';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import type { Routine, Workout } from 'backend/shared/types';
+
+interface RoutineWithLastPerformed extends Routine {
+  lastPerformed: string | null;
+}
+
+const FILTER_CHIPS = ['Todos', 'Recientes', 'Push', 'Pull', 'Piernas', 'Full Body'];
+const MAX_ANIMATION_DELAY_MS = 500;
+
+function formatRoutineExerciseNames(exercises: Routine['exercises']) {
+  const segments: string[] = [];
+  let i = 0;
+  while (i < exercises.length) {
+    const ex = exercises[i];
+    const name = ex.exercise ? getExerciseName(ex.exercise) : '';
+    if (ex.supersetGroup != null) {
+      const groupNames = [name];
+      let j = i + 1;
+      while (j < exercises.length && exercises[j].supersetGroup === ex.supersetGroup) {
+        groupNames.push(exercises[j].exercise ? getExerciseName(exercises[j].exercise!) : '');
+        j++;
+      }
+      segments.push(groupNames.filter(Boolean).join(' + '));
+      i = j;
+    } else {
+      if (name) segments.push(name);
+      i++;
+    }
+  }
+  return segments.join(', ');
+}
 
 export default function RoutinesScreen() {
   const routineService = useRoutines();
   const workoutService = useWorkout();
-  const { startWorkout } = useActiveWorkout();
-
-  const [routines, setRoutines] = useState<any[]>([]);
+  const [routines, setRoutines] = useState<RoutineWithLastPerformed[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('Todos');
 
   const formatLastPerformed = useCallback((date: string | Date) =>
     formatDistanceToNow(new Date(date), { addSuffix: true, locale: es }),
-  []);
+    []);
 
-  const attachLastPerformedToRoutine = useCallback((routine: any, history: any[]) => {
+  const attachLastPerformedToRoutine = useCallback((routine: Routine, history: Workout[]): RoutineWithLastPerformed => {
     const routineHistory = history.filter((workout) => workout.routineId === routine.id);
     if (!routineHistory.length) {
       return { ...routine, lastPerformed: null };
@@ -53,10 +84,10 @@ export default function RoutinesScreen() {
       setLoading(true);
       const [data, history] = await Promise.all([
         routineService.getRoutines(),
-        workoutService.getHistory(100),
+        workoutService.getHistory(30),
       ]);
 
-      const routinesWithLastPerformed = data.map((routine: any) =>
+      const routinesWithLastPerformed = data.map((routine) =>
         attachLastPerformedToRoutine(routine, history),
       );
 
@@ -74,34 +105,17 @@ export default function RoutinesScreen() {
     }, [loadRoutines])
   );
 
-  const handleStartWorkout = async (routine: any) => {
-    try {
-      const workout = await workoutService.startWorkout(routine.id);
+  const handleStartWorkout = useStartWorkout();
+  const theme = useTheme();
 
-      const initialExercises = routine.exercises.map((re: any) => ({
-        id: Math.random().toString(36).substr(2, 9),
-        exerciseId: re.exercise.id,
-        name: re.exercise.name,
-        nameEs: re.exercise.nameEs,
-        sets: Array.from({ length: re.targetSets }).map(() => ({
-          id: Math.random().toString(36).substr(2, 9),
-          weight: 0,
-          reps: parseInt(re.maxReps) || 0,
-          isCompleted: false,
-          type: 'normal' as const,
-        })),
-      }));
-
-      startWorkout(workout.id, routine.id, routine.name, initialExercises);
-      router.push({ pathname: '/(workouts)/[active]' as any, params: { active: workout.id } });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const filteredRoutines = routines.filter(r =>
-    r.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredRoutines = useMemo(() => routines.filter(r => {
+    const lowerSearch = search.toLowerCase();
+    const matchesSearch = r.name.toLowerCase().includes(lowerSearch);
+    const matchesFilter = activeFilter === 'Todos' ||
+      (activeFilter === 'Recientes' && r.lastPerformed != null) ||
+      r.muscles?.some((m: string) => m.toLowerCase().includes(activeFilter.toLowerCase()));
+    return matchesSearch && matchesFilter;
+  }), [routines, search, activeFilter]);
 
   return (
     <Screen safeAreaEdges={['top', 'left', 'right']}>
@@ -117,86 +131,139 @@ export default function RoutinesScreen() {
       </XStack>
 
       {/* Barra de búsqueda */}
-      <YStack paddingHorizontal="$lg" paddingBottom="$md">
-        <XStack
-          alignItems="center"
-          gap="$sm"
-          height={48}
-          borderRadius="$lg"
-          borderWidth={1}
-          paddingHorizontal="$md"
-          backgroundColor="$surface"
-          borderColor="$borderColor"
-        >
-          <AppIcon icon={Search} color="textTertiary" size={20} />
-          <TextInput
-            style={{ flex: 1, color: '#FFFFFF', fontSize: 16, fontWeight: '500' }} // Asumiendo color puro en tu tema para el input
-            placeholder="Buscar rutinas..."
-            placeholderTextColor="#808080" // Valor por defecto si theme.textTertiary no está disponible directo en style
-            value={search}
-            onChangeText={setSearch}
-          />
-        </XStack>
+      <YStack paddingHorizontal="$lg" paddingBottom="$sm">
+        <SearchBar
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Buscar rutinas..."
+        />
       </YStack>
 
-      {/* Lista de rutinas */}
+      {/* Chips de filtro */}
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 16, paddingTop: 8, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ height: 52 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          alignItems: 'center',
+        }}
       >
-        {loading ? (
-          <YStack gap="$md">
-            <RoutineCardSkeleton />
-            <RoutineCardSkeleton />
-            <RoutineCardSkeleton />
-          </YStack>
-        ) : (
-          filteredRoutines.map((routine, index) => (
-            <Animated.View key={routine.id} entering={FadeInDown.delay(index * 100).springify()}>
+        {FILTER_CHIPS.map((chip) => {
+          const isActive = activeFilter === chip;
+          return (
+            <Pressable key={chip} onPress={() => setActiveFilter(chip)}>
+              <View
+                style={{
+                  minHeight: 36,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  marginRight: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderColor: isActive ? theme.primary?.val as string : theme.borderColor?.val as string,
+                  backgroundColor: isActive ? theme.primarySubtle?.val as string : theme.surfaceSecondary?.val as string,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '500',
+                    //fontWeight: isActive ? '700' : '500',
+                    color: isActive ? theme.primary?.val as string : theme.textSecondary?.val as string,
+                  }}
+                >
+                  {chip}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* Lista de rutinas */}
+      {loading ? (
+        <YStack gap="$md" paddingHorizontal="$lg" paddingTop="$sm">
+          <RoutineCardSkeleton />
+          <RoutineCardSkeleton />
+          <RoutineCardSkeleton />
+        </YStack>
+      ) : (
+        <FlatList
+          data={filteredRoutines}
+          keyExtractor={(routine) => String(routine.id)}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 100 }}
+          ItemSeparatorComponent={() => <YStack height={16} />}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item: routine, index }) => (
+            <Animated.View entering={FadeInDown.delay(Math.min(index * 100, MAX_ANIMATION_DELAY_MS)).springify()}>
               <CardBase gap="$md" padding="$md">
 
-                <XStack justifyContent="space-between" alignItems="center">
-                  <AppText variant="label" color="textTertiary">
-                    {routine.lastPerformed ? `ÚLTIMA VEZ: ${routine.lastPerformed}` : 'Aún sin datos de último entrenamiento'}
-                  </AppText>
-                </XStack>
-
-                <Pressable onPress={() => router.push({ pathname: '/routine/[id]' as any, params: { id: routine.id } })}>
-                  <XStack alignItems="center" gap="$md" marginBottom="$xs">
-                    <YStack gap="$xs">
+                <XStack justifyContent="space-between" alignItems="stretch" flex={1}>
+                  <Pressable
+                    style={{ flex: 1 }}
+                    onPress={() => router.push({ pathname: '/routine/[id]' as any, params: { id: routine.id } })}
+                  >
+                    <YStack padding="$md" gap="$xs" flex={1}>
+                      <AppText variant="label" color="textTertiary">
+                        {routine.lastPerformed ? `Última vez: ${routine.lastPerformed}` : 'Aún sin datos'}
+                      </AppText>
                       <AppText variant="titleMd">{routine.name}</AppText>
                       <AppText variant="bodyMd" color="textSecondary" numberOfLines={2}>
-                        {routine.exercises.map((e: any) => getExerciseName(e.exercise)).join(', ')}
+                        {formatRoutineExerciseNames(routine.exercises)}
                       </AppText>
-
+                      {routine.muscles && routine.muscles.length > 0 && (
+                        <XStack flexWrap="wrap" gap="$sm" marginTop="$sm">
+                          {routine.muscles.map((muscle: string) => (
+                            <Badge key={muscle} label={muscle} variant="primary" />
+                          ))}
+                        </XStack>
+                      )}
                     </YStack>
-                    <IconButton
-                      icon={<AppIcon icon={Play} color="primary" fill="primary" size={20} />}
-                      backgroundColor="$primarySubtle"
-                      onPress={() => handleStartWorkout(routine)}
-                    />
-                  </XStack>
+                  </Pressable>
 
-                  {routine.muscles && routine.muscles.length > 0 && (
-                    <XStack flexWrap="wrap" gap="$sm" marginTop="$sm">
-                      {routine.muscles.map((muscle: string) => (
-                        <Badge key={muscle} label={muscle} variant="primary" />
-                      ))}
-                    </XStack>
-                  )}
-                </Pressable>
+                  {/* Zona play — área táctil vertical derecha */}
+                  <YStack
+                    width={64}
+                    alignSelf="stretch"
+                    alignItems="center"
+                    justifyContent="center"
+                    borderLeftWidth={1}
+                    borderLeftColor="$borderColor"
+                  >
+                    <Pressable
+                      onPress={() => handleStartWorkout(routine)}
+                      accessibilityLabel={`Iniciar ${routine.name}`}
+                    >
+                      <YStack width={48} height={48} alignItems="center" justifyContent="center">
+                        <AppIcon icon={Play} color="primary" size={24} />
+                      </YStack>
+                    </Pressable>
+                  </YStack>
+                </XStack>
 
               </CardBase>
             </Animated.View>
-          ))
-        )}
-
-        {filteredRoutines.length === 0 && !loading && (
-          <YStack padding="$4xl" alignItems="center" marginTop="$xl">
-            <AppText variant="bodyMd" color="textSecondary">No se encontraron rutinas</AppText>
-          </YStack>
-        )}
-      </ScrollView>
+          )}
+          ListEmptyComponent={
+            <YStack padding="$4xl" alignItems="center" marginTop="$xl">
+              <AppText variant="bodyMd" color="textSecondary" textAlign="center">
+                {routines.length === 0 ? 'Aún no tienes rutinas guardadas.' : 'No se encontraron rutinas'}
+              </AppText>
+              {routines.length === 0 && (
+                <AppButton
+                  label="Crear primera rutina"
+                  onPress={() => router.push('/routine/create')}
+                  marginTop="$lg"
+                />
+              )}
+            </YStack>
+          }
+        />
+      )}
     </Screen>
   );
 }

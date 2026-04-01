@@ -38,4 +38,11 @@ export interface WorkoutRepository {
 
   /** Gets the most recent sets for a specific exercise across workouts */
   getExerciseHistory(exerciseId: string, limit?: number): Promise<WorkoutSet[]>;
+
+  /**
+   * Gets the sets (ordered by set_number) from the single most recent
+   * completed workout in which this exercise was performed.
+   * Returns an empty array if no history exists.
+   */
+  getPreviousSets(exerciseId: string): Promise<WorkoutSet[]>;
 }

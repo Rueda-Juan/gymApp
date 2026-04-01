@@ -162,18 +162,13 @@ export class SQLiteStatsRepository implements StatsRepository {
         return null;
       }
 
-      // Calculate estimated1RM (we need to find the specific set that gives the highest 1RM)
-      // Epley formula: Weight * (1 + Reps/30)
-      const epleyRows = await execDb.getAllAsync<{ weight: number; reps: number }>(
-        'SELECT weight, reps FROM sets WHERE exercise_id = ? AND completed = 1 AND skipped = 0',
-        [exerciseId]
+      // Calculate estimated1RM with Epley formula directly in SQL
+      const epleyRow = await execDb.getFirstAsync<{ max_1rm: number }>(
+        `SELECT MAX(CASE WHEN reps = 1 THEN weight ELSE weight * (1 + CAST(reps AS REAL) / 30.0) END) AS max_1rm
+         FROM sets WHERE exercise_id = ? AND completed = 1 AND skipped = 0`,
+        [exerciseId],
       );
-      
-      let max1RM = 0;
-      for (const row of epleyRows) {
-        const epley = row.reps === 1 ? row.weight : row.weight * (1 + row.reps / 30);
-        if (epley > max1RM) max1RM = epley;
-      }
+      const max1RM = epleyRow?.max_1rm ?? 0;
 
       const stats: ExerciseStats = {
         exerciseId,
@@ -325,7 +320,7 @@ export class SQLiteStatsRepository implements StatsRepository {
     }
   }
 
-  async getLatestRecord(exerciseId: string, recordType: string): Promise<PersonalRecord | null> {
+  async getLatestRecord(exerciseId: string, recordType: RecordType): Promise<PersonalRecord | null> {
     try {
       const row = await this.db.getFirstAsync<PersonalRecordRow>(
         `SELECT * FROM personal_records
@@ -355,6 +350,18 @@ export class SQLiteStatsRepository implements StatsRepository {
       );
     } catch (error) {
       throw new DatabaseError('Error al guardar récord personal', error);
+    }
+  }
+
+  async countRecordsSince(since: string): Promise<number> {
+    try {
+      const result = await this.db.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM personal_records WHERE date >= ?',
+        [since],
+      );
+      return result?.count ?? 0;
+    } catch (error) {
+      throw new DatabaseError('Error al contar récords personales', error);
     }
   }
 

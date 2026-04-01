@@ -17,26 +17,36 @@ export function calculatePlates(
   barWeight: number,
   availablePlates: number[]
 ): PlateCalculation {
+  if (targetWeight < 0) {
+    return { plates: [], actualTotalWeight: barWeight, remainder: targetWeight - barWeight };
+  }
+
   if (targetWeight <= barWeight) {
     return { plates: [], actualTotalWeight: barWeight, remainder: 0 };
   }
 
   const weightToLoad = targetWeight - barWeight;
   const targetPerSide = weightToLoad / 2;
-  
+
   let currentPerSide = 0;
   const platesPerSide: { [key: number]: number } = {};
-  
-  // Ensure plates are sorted descending
-  const sortedPlates = [...availablePlates].sort((a, b) => b - a);
 
-  for (const plate of sortedPlates) {
-    while (currentPerSide + plate <= targetPerSide) {
-      if (!platesPerSide[plate]) {
-        platesPerSide[plate] = 0;
-      }
-      platesPerSide[plate]++;
-      currentPerSide += plate;
+  const plateInventory = availablePlates.reduce<Record<number, number>>((inventory, plate) => {
+    inventory[plate] = (inventory[plate] ?? 0) + 1;
+    return inventory;
+  }, {});
+
+  const sortedPlateWeights = Object.keys(plateInventory)
+    .map(Number)
+    .sort((a, b) => b - a);
+
+  for (const plateWeight of sortedPlateWeights) {
+    const maxCountPerSide = plateInventory[plateWeight];
+    let usedCount = 0;
+    while (currentPerSide + plateWeight <= targetPerSide && usedCount < maxCountPerSide) {
+      platesPerSide[plateWeight] = (platesPerSide[plateWeight] ?? 0) + 1;
+      currentPerSide += plateWeight;
+      usedCount++;
     }
   }
 

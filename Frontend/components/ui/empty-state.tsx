@@ -1,7 +1,8 @@
 import React from 'react';
-import { YStack, useTheme } from 'tamagui';
+import { YStack } from 'tamagui';
 import { LucideIcon } from 'lucide-react-native';
 import { AppText } from './AppText';
+import { AppIcon } from './AppIcon';
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -11,8 +12,6 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
-  const theme = useTheme();
-  const iconColor = theme.textTertiary?.val ?? '#9CA3AF';
 
   return (
     <YStack
@@ -33,7 +32,7 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
         backgroundColor="$surfaceSecondary"
         marginBottom="$sm"
       >
-        <Icon size={40} color={iconColor} strokeWidth={1.5} />
+        <AppIcon icon={Icon} size={40} color="textTertiary" strokeWidth={1.5} />
       </YStack>
 
       <YStack alignItems="center" gap="$xs" paddingHorizontal="$md">

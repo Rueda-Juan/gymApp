@@ -1,6 +1,34 @@
 import { useCallback, useMemo } from 'react';
 import { useDI } from '../context/DIContext';
 import type { WorkoutSet, SessionContext, WarmupStyle } from 'backend/shared/types';
+import type { WorkoutExerciseState } from '@/store/useActiveWorkout';
+
+function mapExerciseStateToBackend(ex: WorkoutExerciseState, orderIndex: number) {
+  return {
+    id: ex.id,
+    exerciseId: ex.exerciseId,
+    orderIndex,
+    skipped: ex.status === 'skipped',
+    notes: null,
+    supersetGroup: ex.supersetGroup ?? null,
+    sets: ex.sets
+      .filter(s => s.isCompleted && s.reps > 0)
+      .map((s, idx) => ({
+        id: s.id,
+        exerciseId: ex.exerciseId,
+        setNumber: idx + 1,
+        weight: s.weight,
+        reps: s.reps,
+        rir: s.rir ?? null,
+        setType: s.type as 'warmup' | 'normal' | 'failure' | 'dropset',
+        restSeconds: null,
+        durationSeconds: 0,
+        completed: true,
+        skipped: false,
+        createdAt: new Date(),
+      })),
+  };
+}
 
 export function useWorkout() {
   const { workoutService } = useDI();
@@ -80,11 +108,24 @@ export function useWorkout() {
     [workoutService]
   );
 
+  const recordAllSets = useCallback(
+    (workoutId: string, exercises: WorkoutExerciseState[]) =>
+      workoutService.recordAllSets(workoutId, exercises.map((ex, idx) => mapExerciseStateToBackend(ex, idx))),
+    [workoutService]
+  );
+
+  const getPreviousSets = useCallback(
+    (exerciseId: string) => workoutService.getPreviousSets(exerciseId),
+    [workoutService]
+  );
+
   return useMemo(() => ({
     startWorkout,
     finishWorkout,
     deleteWorkout,
     recordSet,
+    recordAllSets,
+    getPreviousSets,
     updateSet,
     deleteSet,
     skipExercise,
@@ -97,7 +138,8 @@ export function useWorkout() {
     getHistory,
     getWorkoutById,
   }), [
-    startWorkout, finishWorkout, deleteWorkout, recordSet, updateSet,
+    startWorkout, finishWorkout, deleteWorkout, recordSet, recordAllSets,
+    getPreviousSets, updateSet,
     deleteSet, skipExercise, addExerciseToWorkout, reorderWorkoutExercises,
     deleteWorkoutExercise, updateWorkoutExercise, suggestWeight, suggestWarmup,
     getHistory, getWorkoutById

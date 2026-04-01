@@ -1,8 +1,9 @@
 import { XStack, YStack,useTheme } from 'tamagui';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ChevronLeft, Trophy, Calendar, Dumbbell, PlayCircle, Activity } from 'lucide-react-native';
+import { format } from 'date-fns';
 
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -11,39 +12,66 @@ import { CardBase } from '@/components/ui/card';
 import { Screen } from '@/components/ui/Screen';
 import { useExercises } from '@/hooks/useExercises';
 import { getExerciseName } from '@/utils/exercise';
+import type { Exercise } from 'backend/domain/entities/Exercise';
+import type { WorkoutSet } from 'backend/domain/entities/WorkoutSet';
+import { FONT_SCALE } from '@/tamagui.config';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const exerciseService = useExercises();
 
-  const [exercise, setExercise] = useState<any>(null);
-  const [history, setHistory] = useState<any[]>([]);
+  const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [history, setHistory] = useState<WorkoutSet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoadError(false);
+      const [exData, histData] = await Promise.all([
+        exerciseService.getById(id as string),
+        exerciseService.getExerciseHistory(id as string),
+      ]);
+      setExercise(exData);
+      setHistory(histData);
+    } catch (e) {
+      console.error(e);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, exerciseService]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [exData, histData] = await Promise.all([
-          exerciseService.getById(id as string),
-          exerciseService.getExerciseHistory(id as string),
-        ]);
-        setExercise(exData);
-        setHistory(histData);
-      } catch (e) { 
-        console.error(e); 
-      } finally { 
-        setLoading(false); 
-      }
-    };
     if (id) loadData();
-  }, [id, exerciseService]);
+  }, [id, loadData]);
+
+  const maxWeight = useMemo(() => {
+    if (history.length === 0) return 0;
+    return history.reduce((max, s) => (s.weight > max ? s.weight : max), 0);
+  }, [history]);
 
   if (loading) {
     return (
       <Screen>
         <YStack flex={1} alignItems="center" justifyContent="center">
           <ActivityIndicator size="large" color={theme.primary?.val as string} />
+        </YStack>
+      </Screen>
+    );
+  }
+
+  if (!exercise) {
+    return (
+      <Screen safeAreaEdges={['top', 'left', 'right']}>
+        <XStack alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$sm" gap="$sm">
+          <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} />
+        </XStack>
+        <YStack flex={1} alignItems="center" justifyContent="center" padding="$xl">
+          <AppText variant="titleSm" color="textSecondary">
+            {loadError ? 'Error al cargar el ejercicio' : 'Ejercicio no encontrado'}
+          </AppText>
         </YStack>
       </Screen>
     );
@@ -57,13 +85,14 @@ export default function ExerciseDetailScreen() {
       </XStack>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        {/* Video Placeholder */}
-        <YStack
-          height={200}
-          width="100%"
-          backgroundColor="$surfaceSecondary"
-          borderRadius="$lg"
-          justifyContent="center"
+        {/* Video Placeholder — shown only when animation data is available */}
+        {exercise.animationPath != null && (
+          <YStack
+            height={200}
+            width="100%"
+            backgroundColor="$surfaceSecondary"
+            borderRadius="$lg"
+            justifyContent="center"
           alignItems="center"
           marginBottom="$lg"
           marginTop="$md"
@@ -76,6 +105,7 @@ export default function ExerciseDetailScreen() {
             VIDEO / DEMO DEL EJERCICIO (PRÓXIMAMENTE)
           </AppText>
         </YStack>
+        )}
 
         {/* Info Card */}
         <CardBase padding="$md" marginBottom="$xl">
@@ -88,16 +118,20 @@ export default function ExerciseDetailScreen() {
           </XStack>
         </CardBase>
 
-        {/* Heatmap Placeholder */}
-        <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
-          <AppText variant="titleSm">Músculos Involucrados</AppText>
-          <AppIcon icon={Activity} size={20} color="primary" />
-        </XStack>
-        <CardBase alignItems="center" paddingVertical="$4xl" marginBottom="$xl">
-          <AppText variant="bodySm" color="textTertiary" textAlign="center">
-            MAPA ANATÓMICO INTELIGENTE Y{'\n'}HEATMAP DE ACTIVACIÓN{'\n'}(EN DESARROLLO)
-          </AppText>
-        </CardBase>
+        {/* Anatomical Map — shown only when SVG data is available */}
+        {exercise.anatomicalRepresentationSvg != null && (
+          <>
+            <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
+              <AppText variant="titleSm">Músculos Involucrados</AppText>
+              <AppIcon icon={Activity} size={20} color="primary" />
+            </XStack>
+            <CardBase alignItems="center" paddingVertical="$4xl" marginBottom="$xl">
+              <AppText variant="bodySm" color="textTertiary" textAlign="center">
+                MAPA ANATÓMICO INTELIGENTE Y{'…'}{'…'}HEATMAP DE ACTIVACIÓN{'…'}{'…'}(EN DESARROLLO)
+              </AppText>
+            </CardBase>
+          </>
+        )}
 
         {/* PR Section */}
         <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
@@ -105,8 +139,8 @@ export default function ExerciseDetailScreen() {
           <AppIcon icon={Trophy} size={20} color="primary" />
         </XStack>
         <CardBase alignItems="center" paddingVertical="$2xl" marginBottom="$xl">
-          <AppText variant="titleLg" color="primary" fontSize={40}>
-            {exercise?.personalRecord ? `${exercise.personalRecord} kg` : '--'}
+          <AppText variant="titleLg" color="primary" fontSize={FONT_SCALE.sizes.displayLg}>
+            {history.length > 0 ? `${maxWeight} kg` : '--'}
           </AppText>
           <AppText variant="label" color="textSecondary" marginTop="$xs">ESTIMADO BASADO EN ÚLTIMA SESIÓN</AppText>
         </CardBase>
@@ -116,23 +150,27 @@ export default function ExerciseDetailScreen() {
         
         {history.length > 0 ? (
           <YStack gap="$md">
-            {history.map((record, index) => (
-              <CardBase key={index} padding="$md">
-                <XStack justifyContent="space-between" alignItems="center" marginBottom="$sm">
-                  <XStack alignItems="center" gap="$xs">
-                    <AppIcon icon={Calendar} size={14} color="textTertiary" />
-                    <AppText variant="label" color="textSecondary">{record.date}</AppText>
+            {history.map((set) => (
+              <Pressable
+                key={set.id}
+                onPress={() => set.workoutId && router.push({ pathname: '/history/[id]' as any, params: { id: set.workoutId } })}
+                disabled={!set.workoutId}
+              >
+                <CardBase padding="$md">
+                  <XStack justifyContent="space-between" alignItems="center" marginBottom="$sm">
+                    <XStack alignItems="center" gap="$xs">
+                      <AppIcon icon={Calendar} size={14} color="textTertiary" />
+                      <AppText variant="label" color="textSecondary">
+                        {(() => { try { return format(new Date(set.createdAt), 'dd/MM/yyyy'); } catch { return String(set.createdAt); } })()}
+                      </AppText>
+                    </XStack>
+                    <AppText variant="bodyMd" fontWeight="700">{set.weight} kg</AppText>
                   </XStack>
-                  <AppText variant="bodyMd" fontWeight="700">{record.maxWeight} kg</AppText>
-                </XStack>
-                <YStack gap="$xs">
-                  {record.sets.map((set: any, sIdx: number) => (
-                    <AppText key={sIdx} variant="bodySm" color="textSecondary">
-                      Set {sIdx + 1}: {set.weight}kg x {set.reps}
-                    </AppText>
-                  ))}
-                </YStack>
-              </CardBase>
+                  <AppText variant="bodySm" color="textSecondary">
+                    Set {set.setNumber}: {set.weight} kg × {set.reps} reps
+                  </AppText>
+                </CardBase>
+              </Pressable>
             ))}
           </YStack>
         ) : (

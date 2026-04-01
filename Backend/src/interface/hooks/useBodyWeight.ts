@@ -17,7 +17,7 @@ export function useBodyWeight() {
   );
 
   const getBodyWeightHistory = useCallback(
-    (startDate: Date, endDate: Date) =>
+    (startDate: string, endDate: string) =>
       bodyWeightService.getBodyWeightHistory(startDate, endDate),
     [bodyWeightService],
   );

@@ -24,4 +24,7 @@ export type ThemeColorKey =
   | 'overlay'
   | 'tabBar'
   | 'transparent'
-  | 'darkText';
+  | 'darkText'
+  | 'info'
+  | 'infoSubtle'
+  | 'white';

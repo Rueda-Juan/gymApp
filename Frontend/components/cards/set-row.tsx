@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { TextInput, Pressable } from 'react-native';
-import { XStack, YStack, View, useTheme, Button } from 'tamagui';
-import { Check, Flame, X, Info } from 'lucide-react-native';
+import { TextInput, Pressable, Alert, Keyboard, useWindowDimensions, Platform } from 'react-native';
+import { XStack, YStack, View, useTheme } from 'tamagui';
+import { Check, Flame, Trash2 } from 'lucide-react-native';
+import { useSettings } from '@/store/useSettings';
 import { PlateCalculatorModal } from '../workout/PlateCalculatorModal';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -11,11 +12,16 @@ import Animated, {
   withTiming,
   interpolate,
   interpolateColor,
-  withSequence
+  withSequence,
+  runOnJS,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { WorkoutSetState } from '@/store/useActiveWorkout';
 import { AppText } from '../ui/AppText';
 import { AppIcon } from '../ui/AppIcon';
+import { SetRowNumberInput } from './set-row-number-input';
+import { SetRowRirSelector } from './set-row-rir-selector';
+import { THEME_FALLBACKS } from '@/tamagui.config';
 
 export interface SetRowProps {
   index: number;
@@ -39,8 +45,12 @@ export const SetRow = React.memo(function SetRow({
   autoFocus
 }: SetRowProps) {
   const theme = useTheme();
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [showPlateMath, setShowPlateMath] = useState(false);
   const [showRirSelector, setShowRirSelector] = useState(false);
+
+  const availablePlates = useSettings(s => s.availablePlates);
+  const weightIncrement = availablePlates.length > 0 ? Math.min(...availablePlates) : 2.5;
 
   const weightRef = useRef<TextInput>(null);
   const repsRef = useRef<TextInput>(null);
@@ -65,7 +75,8 @@ export const SetRow = React.memo(function SetRow({
   }, [setRef.isCompleted, completionAnim]);
 
   const handleToggle = useCallback(() => {
-    const isIOS = process.env.EXPO_OS === 'ios';
+    Keyboard.dismiss();
+    const isIOS = Platform.OS === 'ios';
     if (!setRef.isCompleted) {
       if (isIOS) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       if (setRef.rir === null && setRef.type === 'normal') {
@@ -80,8 +91,66 @@ export const SetRow = React.memo(function SetRow({
     onToggleComplete();
   }, [setRef.isCompleted, setRef.rir, setRef.type, onToggleComplete, scale]);
 
+  const DELETE_THRESHOLD = SCREEN_WIDTH * 0.2;
+  const DELETE_BUTTON_WIDTH = 80;
+
+  const translateX = useSharedValue(0);
+
+  const triggerDelete = useCallback(() => {
+    if (!onRemove) return;
+    Alert.alert('Eliminar set', '¿Eliminar este set?', [
+      { text: 'Cancelar', style: 'cancel', onPress: () => { translateX.value = withSpring(0); } },
+      { text: 'Eliminar', style: 'destructive', onPress: () => onRemove() },
+    ]);
+  }, [onRemove, translateX]);
+
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-5, 5])
+    .onUpdate((event) => {
+      if (event.translationX < 0) {
+        translateX.value = Math.max(event.translationX, -DELETE_BUTTON_WIDTH - 20);
+      }
+    })
+    .onEnd((event) => {
+      if (event.translationX < -DELETE_THRESHOLD) {
+        translateX.value = withTiming(-SCREEN_WIDTH, { duration: 200 }, () => {
+          runOnJS(triggerDelete)();
+        });
+      } else {
+        translateX.value = withSpring(0);
+      }
+    });
+
+  const swipeRowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  const deleteButtonOpacity = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [-DELETE_BUTTON_WIDTH, 0], [1, 0]),
+  }));
+
+  const deleteButtonBgStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      translateX.value,
+      [-DELETE_THRESHOLD, -DELETE_BUTTON_WIDTH * 0.3, 0],
+      [
+        theme.danger?.val ?? THEME_FALLBACKS.danger,
+        theme.dangerSubtle?.val ?? THEME_FALLBACKS.dangerSubtle,
+        theme.dangerSubtle?.val ?? THEME_FALLBACKS.dangerSubtle,
+      ],
+    ),
+  }));
+
+  const deleteIconRestStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [-DELETE_THRESHOLD, -DELETE_BUTTON_WIDTH * 0.3], [0, 1]),
+  }));
+
+  const deleteIconActiveStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [-DELETE_THRESHOLD, -DELETE_BUTTON_WIDTH * 0.3], [1, 0]),
+  }));
+
   const parseWeight = useCallback((value: string) => {
-    if (!value) return 0;
     const normalized = value.replace(',', '.').replace(/[^0-9.]/g, '');
     const parsed = parseFloat(normalized);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -115,8 +184,29 @@ export const SetRow = React.memo(function SetRow({
   }));
 
   return (
-    <YStack width="100%" borderRadius="$lg" overflow="hidden" style={isCompletedStyle}>
-      <XStack alignItems="center" height={52} gap="$sm" paddingHorizontal="$md" style={isCompletedStyle}>
+    <YStack width="100%" borderRadius="$lg" overflow="hidden">
+      {/* Delete reveal layer (behind the row) */}
+      {onRemove && (
+        <Animated.View
+          style={[
+            { position: 'absolute', right: 0, top: 0, bottom: 0, width: DELETE_BUTTON_WIDTH, justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
+            deleteButtonBgStyle,
+            deleteButtonOpacity,
+          ]}
+        >
+          <Animated.View style={[{ position: 'absolute' }, deleteIconRestStyle]}>
+            <AppIcon icon={Trash2} color="danger" size={20} />
+          </Animated.View>
+          <Animated.View style={[{ position: 'absolute' }, deleteIconActiveStyle]}>
+            <AppIcon icon={Trash2} color="background" size={20} />
+          </Animated.View>
+        </Animated.View>
+      )}
+
+      {/* Swipeable row */}
+      <GestureDetector gesture={onRemove ? swipeGesture : Gesture.Pan().enabled(false)}>
+        <Animated.View style={swipeRowStyle}>
+          <XStack alignItems="center" height="$setRowHeight" gap="$sm" paddingHorizontal="$md" style={isCompletedStyle}>
         <Pressable
           onPress={() => onUpdate({ type: setRef.type === 'warmup' ? 'normal' : 'warmup' })}
           style={{ width: 32, alignItems: 'center' }}
@@ -135,80 +225,66 @@ export const SetRow = React.memo(function SetRow({
             style={[{ flex: 1, gap: 8 }, inputGroupStyle]}
             pointerEvents={showRirSelector ? 'none' : 'auto'}
           >
-            <Pressable
+            <SetRowNumberInput
+              inputRef={weightRef}
+              flex={1.2}
+              value={setRef.weight > 0 ? String(setRef.weight) : ''}
+              placeholder={previousWeight && previousWeight > 0 ? String(previousWeight) : '0'}
+              editable={!setRef.isCompleted}
+              keyboardType="decimal-pad"
+              textColor={inputTextColor}
+              backgroundColor={inputBgColor}
+              inputPaddingVertical={6}
+              onChangeText={(value) => onUpdate({ weight: parseWeight(value) })}
+              onDecrement={() => {
+                if (!setRef.isCompleted) onUpdate({ weight: Math.max(0, setRef.weight - weightIncrement) });
+              }}
+              onIncrement={() => {
+                if (!setRef.isCompleted) onUpdate({ weight: setRef.weight + weightIncrement });
+              }}
               onLongPress={() => {
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setShowPlateMath(true);
               }}
-              delayLongPress={400}
-              style={{ flex: 1.2, flexDirection: 'row', backgroundColor: inputBgColor, borderRadius: 8, alignItems: 'center' }}
-            >
-              <TextInput
-                ref={weightRef}
-                style={{ flex: 1, color: inputTextColor, textAlign: 'center', fontWeight: '700', fontSize: 16 }}
-                keyboardType="decimal-pad"
-                value={setRef.weight > 0 ? String(setRef.weight) : ''}
-                placeholder={previousWeight && previousWeight > 0 ? String(previousWeight) : '0'}
-                placeholderTextColor={theme.textTertiary?.val}
-                onChangeText={(v) => onUpdate({ weight: parseWeight(v) })}
-                editable={!setRef.isCompleted}
-              />
-              <View paddingRight={8}>
-                <AppIcon icon={Info} size={14} color="textTertiary" />
-              </View>
-            </Pressable>
+            />
 
-            <View flex={1} style={{ backgroundColor: inputBgColor, borderRadius: 8 }}>
-              <TextInput
-                ref={repsRef}
-                style={{ flex: 1, color: inputTextColor, textAlign: 'center', fontWeight: '700', fontSize: 16 }}
-                keyboardType="number-pad"
-                value={setRef.reps > 0 ? String(setRef.reps) : ''}
-                placeholder="0"
-                placeholderTextColor={theme.textTertiary?.val}
-                onChangeText={(v) => onUpdate({ reps: parseInt(v) || 0 })}
-                editable={!setRef.isCompleted}
-              />
-            </View>
+            <SetRowNumberInput
+              inputRef={repsRef}
+              flex={1}
+              value={setRef.reps > 0 ? String(setRef.reps) : ''}
+              placeholder="0"
+              editable={!setRef.isCompleted}
+              keyboardType="number-pad"
+              textColor={inputTextColor}
+              backgroundColor={inputBgColor}
+              onChangeText={(value) => onUpdate({ reps: parseInt(value, 10) || 0 })}
+              onDecrement={() => {
+                if (!setRef.isCompleted) onUpdate({ reps: Math.max(0, setRef.reps - 1) });
+              }}
+              onIncrement={() => {
+                if (!setRef.isCompleted) onUpdate({ reps: setRef.reps + 1 });
+              }}
+            />
           </AnimatedXStack>
 
-          <AnimatedXStack
-            style={[{ position: 'absolute', inset: 0, justifyContent: 'space-between', alignItems: 'center' }, rirGroupStyle]}
+          <SetRowRirSelector
+            value={setRef.rir}
+            style={rirGroupStyle}
             pointerEvents={showRirSelector ? 'auto' : 'none'}
-          >
-            {[0, 1, 2, 3, 4].map((v) => (
-              <Button
-                key={v}
-                size="$2"
-                circular
-                backgroundColor={setRef.rir === v ? '$primary' : '$surfaceSecondary'}
-                onPress={() => {
-                  onUpdate({ rir: v });
-                  setShowRirSelector(false);
-                }}
-              >
-                <AppText color={setRef.rir === v ? "background" : "color"} fontWeight="700" fontSize={12}>
-                  {v}{v === 4 ? '+' : ''}
-                </AppText>
-              </Button>
-            ))}
-            <Pressable onPress={() => setShowRirSelector(false)} style={{ padding: 4 }}>
-              <AppIcon icon={X} size={14} color="textTertiary" />
-            </Pressable>
-          </AnimatedXStack>
+            onSelect={(value) => {
+              onUpdate({ rir: value });
+              setShowRirSelector(false);
+            }}
+            onClose={() => setShowRirSelector(false)}
+          />
         </View>
 
         <Animated.View style={[
-          { borderRadius: 8, width: 44, height: 40 } as const,
-          animatedCheckStyle as any,                        // ← breaks DefaultStyle vs AnimatedStyle conflict
+          { borderRadius: 8, width: 44, height: 40 },
+          animatedCheckStyle,
         ]}>
           <Pressable
             onPress={handleToggle}
-            onLongPress={() => {
-              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-              onRemove?.();
-            }}
-            delayLongPress={1000}
             style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
           >
             <AppIcon
@@ -219,7 +295,10 @@ export const SetRow = React.memo(function SetRow({
             />
           </Pressable>
         </Animated.View>
+
       </XStack>
+        </Animated.View>
+      </GestureDetector>
 
       <PlateCalculatorModal
         visible={showPlateMath}

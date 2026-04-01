@@ -1,9 +1,14 @@
 import type { StatsRepository } from '../../../domain/repositories/StatsRepository';
 
+export interface TrainingFrequencyResult {
+  totalWorkouts: number;
+  workoutsPerDay: Record<string, number>;
+}
+
 export class GetTrainingFrequencyUseCase {
   constructor(private readonly statsRepo: StatsRepository) {}
 
-  async execute(startDate: string, endDate: string) {
+  async execute(startDate: string, endDate: string): Promise<TrainingFrequencyResult> {
     const dailyStats = await this.statsRepo.getWeeklyStats(startDate, endDate);
     const workoutsPerDay = dailyStats.reduce((acc, stat) => {
       acc[stat.date] = stat.workoutCount;

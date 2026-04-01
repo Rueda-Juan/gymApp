@@ -2,7 +2,7 @@ import type * as SQLite from 'expo-sqlite';
 import type { BodyWeightEntry } from '../../domain/entities/BodyWeightEntry';
 import type { BodyWeightRepository } from '../../domain/repositories/BodyWeightRepository';
 import { DatabaseError } from '../../shared/errors';
-import { fromSQLiteDate, fromSQLiteDateTime, toSQLiteDate } from '../../shared/utils/dateUtils';
+import { fromSQLiteDateTime, toSQLiteDateTime } from '../../shared/utils/dateUtils';
 
 interface BodyWeightRow {
   id: string;
@@ -16,7 +16,7 @@ function mapRowToEntry(row: BodyWeightRow): BodyWeightEntry {
   return {
     id: row.id,
     weight: row.weight,
-    date: fromSQLiteDate(row.date),
+    date: row.date,
     notes: row.notes,
     createdAt: fromSQLiteDateTime(row.created_at),
   };
@@ -36,11 +36,23 @@ export class SQLiteBodyWeightRepository implements BodyWeightRepository {
     }
   }
 
-  async getByDateRange(startDate: Date, endDate: Date): Promise<BodyWeightEntry[]> {
+  async getById(id: string): Promise<BodyWeightEntry | null> {
+    try {
+      const row = await this.db.getFirstAsync<BodyWeightRow>(
+        'SELECT * FROM body_weight_log WHERE id = ?',
+        [id],
+      );
+      return row ? mapRowToEntry(row) : null;
+    } catch (error) {
+      throw new DatabaseError('Error al obtener registro de peso por ID', error);
+    }
+  }
+
+  async getByDateRange(startDate: string, endDate: string): Promise<BodyWeightEntry[]> {
     try {
       const rows = await this.db.getAllAsync<BodyWeightRow>(
         'SELECT * FROM body_weight_log WHERE date BETWEEN ? AND ? ORDER BY date DESC',
-        [toSQLiteDate(startDate), toSQLiteDate(endDate)],
+        [startDate, endDate],
       );
       return rows.map(mapRowToEntry);
     } catch (error) {
@@ -56,9 +68,9 @@ export class SQLiteBodyWeightRepository implements BodyWeightRepository {
         [
           entry.id,
           entry.weight,
-          toSQLiteDate(entry.date),
+          entry.date,
           entry.notes,
-          entry.createdAt.toISOString().replace('T', ' ').replace('Z', ''), // Assuming local time or matching fromSQLiteDateTime format
+          toSQLiteDateTime(entry.createdAt),
         ],
       );
     } catch (error) {

@@ -28,4 +28,12 @@ export interface RoutineExercise {
   restSeconds: number | null;
   /** Group ID for supersets/circuits. Exercises with same ID are grouped. Null = standalone. */
   supersetGroup: number | null;
+  /** Enriched exercise data populated by read queries (JOIN). Absent on creation. */
+  exercise?: {
+    id: string;
+    name: string;
+    nameEs: string | null;
+    primaryMuscles?: string[];
+    equipment?: string | null;
+  };
 }

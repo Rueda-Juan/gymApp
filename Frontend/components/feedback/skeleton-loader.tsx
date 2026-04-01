@@ -54,7 +54,7 @@ export function SkeletonLoader({
   );
 }
 
-export function RoutineCardSkeleton() {
+export const RoutineCardSkeleton = React.memo(function RoutineCardSkeleton() {
   return (
     <YStack width={280} padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" marginRight="$md" gap="$sm">
       <SkeletonLoader width="70%" height={24} />
@@ -66,9 +66,9 @@ export function RoutineCardSkeleton() {
       </XStack>
     </YStack>
   );
-}
+});
 
-export function HistoryCardSkeleton() {
+export const HistoryCardSkeleton = React.memo(function HistoryCardSkeleton() {
   return (
     <YStack padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" marginBottom="$md" borderLeftWidth={4} borderLeftColor="$surfaceSecondary" gap="$md">
       <XStack width="100%" justifyContent="space-between" alignItems="flex-start">
@@ -84,4 +84,4 @@ export function HistoryCardSkeleton() {
       </XStack>
     </YStack>
   );
-}
+});

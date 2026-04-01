@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { Input, InputProps} from 'tamagui';
+import { FONT_SCALE } from '@/tamagui.config';
 
 interface AppInputProps extends InputProps {
   variant?: 'default' | 'compact';
@@ -16,8 +17,8 @@ export const AppInput = forwardRef<React.ElementRef<typeof Input>, AppInputProps
       borderRadius="$sm"
       backgroundColor="$surfaceSecondary"
       color="$color"
-      fontSize={isCompact ? '$3' : '$4'}
-      fontWeight='$7'
+      fontSize={isCompact ? FONT_SCALE.sizes[3] : FONT_SCALE.sizes[4]}
+      fontWeight={FONT_SCALE.weights.regular}
       paddingHorizontal="$sm"
       {...props}
     />

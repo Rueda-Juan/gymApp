@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { getExerciseName } from '@/utils/exercise';
 
 interface Exercise {
@@ -7,7 +7,6 @@ interface Exercise {
   nameEs?: string;
   primaryMuscles?: string[];
   equipment?: string;
-  [key: string]: any;
 }
 
 interface FilterState {
@@ -20,7 +19,7 @@ interface ExerciseFilterResult {
   filteredExercises: Exercise[];
   hasActiveFilters: boolean;
   clearFilters: () => void;
-  setFilter: (key: keyof FilterState, value: unknown) => void;
+  setFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
 }
 
 /**
@@ -45,7 +44,7 @@ export function useExerciseFiltering(
   /**
    * Setter de filtros que permite actualizar cualquier propiedad.
    */
-  const setFilter = useCallback((key: keyof FilterState, value: unknown) => {
+  const setFilter = useCallback(<K extends keyof FilterState>(key: K, value: FilterState[K]) => {
     setFiltersState(prev => ({
       ...prev,
       [key]: value,
@@ -89,8 +88,8 @@ export function useExerciseFiltering(
    * Detecta si hay filtros activos (no solo search).
    */
   const hasActiveFilters = useMemo(() => {
-    return !!(filters.muscleFilter || filters.equipmentFilter);
-  }, [filters.muscleFilter, filters.equipmentFilter]);
+    return !!(filters.search || filters.muscleFilter || filters.equipmentFilter);
+  }, [filters.search, filters.muscleFilter, filters.equipmentFilter]);
 
   /**
    * Agrupa ejercicios filtrados por músculo (útil para render por sección).
@@ -119,5 +118,3 @@ export function useExerciseFiltering(
   };
 }
 
-// Import React al inicio del archivo
-import React from 'react';

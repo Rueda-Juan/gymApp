@@ -1,5 +1,6 @@
 // CardBase.tsx
 import React from 'react';
+import { Platform } from 'react-native';
 import { YStack, YStackProps } from 'tamagui';
 
 type CardVariant = 'default' | 'outlined' | 'ghost';
@@ -31,10 +32,11 @@ export function CardBase({
       borderColor={isOutlined ? '$borderColor' : 'transparent'}
       borderWidth={isOutlined ? 1 : 0}
       padding={padding}
-      shadowColor={isDefault ? '$overlay' : 'transparent'}
+      shadowColor={isDefault ? '#000000' : 'transparent'}
       shadowOffset={{ width: 0, height: 2 }}
       shadowOpacity={isDefault ? 0.05 : 0}
       shadowRadius={8}
+      elevation={isDefault && Platform.OS === 'android' ? 2 : 0}
       {...props}
     >
       {children}

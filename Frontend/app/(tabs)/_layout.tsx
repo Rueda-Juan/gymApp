@@ -6,23 +6,30 @@ import { BlurView } from 'expo-blur';
 import { Home, ClipboardList, History, BarChart3, Settings } from 'lucide-react-native';
 import { HapticTab } from '@/components/haptic-tab';
 import { MiniPlayer } from '@/components/ui/mini-player';
+import { useSettings } from '@/store/useSettings';
+import { FONT_SCALE } from '@/tamagui.config';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const theme = useTheme();
+  const systemScheme = useColorScheme();
+  const themeMode = useSettings(s => s.themeMode);
+  const effectiveScheme = themeMode === 'system' ? systemScheme : themeMode;
 
   return (
     <>
       <Tabs
+        key={effectiveScheme}
         screenOptions={{
           tabBarActiveTintColor: theme.primary?.val,
           tabBarInactiveTintColor: theme.textTertiary?.val,
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarBackground: () => {
-            if (process.env.EXPO_OS === 'ios') {
+            if (Platform.OS === 'ios') {
               return (
                 <BlurView
-                  tint={theme.background?.val === '#0F0F14' ? 'dark' : 'light'}
+                  tint={effectiveScheme === 'dark' ? 'dark' : 'light'}
                   intensity={80}
                   style={StyleSheet.absoluteFill}
                 />
@@ -51,7 +58,7 @@ export default function TabLayout() {
             },
           }),
           tabBarLabelStyle: {
-            fontSize: 10,
+            fontSize: FONT_SCALE.sizes['micro'],
             fontWeight: '600',
             textTransform: 'uppercase',
             letterSpacing: 0.5,

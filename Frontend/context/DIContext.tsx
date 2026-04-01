@@ -1,12 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Text, View, StyleSheet } from 'react-native';
 import { YStack, useTheme } from 'tamagui';
-import { Database } from 'lucide-react-native';
 import { createContainer, AppContainer } from 'backend/shared/container';
 import { getDatabase } from 'backend/infrastructure/database/connection';
 import { runMigrations } from 'backend/infrastructure/database/migrations';
-import { EmptyState } from '@/components/ui/empty-state';
-import { AppText } from '@/components/ui/AppText';
 
 const DIContext = createContext<AppContainer | null>(null);
 
@@ -44,16 +41,13 @@ export const DIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   if (error) {
     return (
-      <EmptyState
-        icon={Database}
-        title="Error de inicialización"
-        description="No pudimos cargar la base de datos local. Por favor, reiniciá la aplicación."
-        action={
-          <AppText variant="bodySm" color="danger">
-            {error.message}
-          </AppText>
-        }
-      />
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>Error de inicialización</Text>
+        <Text style={styles.errorDescription}>
+          No pudimos cargar la base de datos local. Por favor, reiniciá la aplicación.
+        </Text>
+        <Text style={styles.errorMessage}>{error.message}</Text>
+      </View>
     );
   }
 
@@ -79,3 +73,29 @@ export const useDI = () => {
   }
   return context;
 };
+
+const styles = StyleSheet.create({
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#000',
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  errorDescription: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  errorMessage: {
+    fontSize: 12,
+    color: '#ef4444',
+  },
+});

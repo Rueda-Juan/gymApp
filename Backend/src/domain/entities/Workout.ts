@@ -20,6 +20,8 @@ export interface Workout {
 export interface WorkoutExercise {
   readonly id: string;
   exerciseId: string;
+  name?: string;
+  nameEs?: string | null;
   orderIndex: number;
   skipped: boolean;
   notes: string | null;

@@ -32,6 +32,7 @@ import { StartWorkoutUseCase } from '../application/useCases/workouts/StartWorko
 import { FinishWorkoutUseCase } from '../application/useCases/workouts/FinishWorkout';
 import { DeleteWorkoutUseCase } from '../application/useCases/workouts/DeleteWorkoutUseCase';
 import { RecordSetUseCase } from '../application/useCases/workouts/RecordSet';
+import { RecordAllSetsUseCase } from '../application/useCases/workouts/RecordAllSetsUseCase';
 import { UpdateSetUseCase } from '../application/useCases/workouts/UpdateSetUseCase';
 import { DeleteSetUseCase } from '../application/useCases/workouts/DeleteSetUseCase';
 import { SkipExerciseUseCase } from '../application/useCases/workouts/SkipExercise';
@@ -42,6 +43,7 @@ import { UpdateWorkoutExerciseUseCase } from '../application/useCases/workouts/U
 import { SuggestWeightUseCase } from '../application/useCases/exercises/SuggestWeight';
 import { GetWorkoutHistoryUseCase } from '../application/useCases/workouts/GetWorkoutHistoryUseCase';
 import { GetWorkoutByIdUseCase } from '../application/useCases/workouts/GetWorkoutByIdUseCase';
+import { GetPreviousSetsUseCase } from '../application/useCases/exercises/GetPreviousSetsUseCase';
 
 // --- Use Cases: Stats ---
 import { GetWeeklyStatsUseCase } from '../application/useCases/stats/GetWeeklyStatsUseCase';
@@ -70,7 +72,7 @@ import { BodyWeightService } from '../interface/services/BodyWeightService';
 import { PersonalRecordService } from '../interface/services/PersonalRecordService';
 
 // --- Records Use Cases ---
-import { GetPersonalRecordsUseCase, GetBestPersonalRecordUseCase } from '../application/useCases/stats/GetPersonalRecords';
+import { GetPersonalRecordsUseCase, GetBestPersonalRecordUseCase, GetPRCountSinceUseCase } from '../application/useCases/stats/GetPersonalRecords';
 
 export interface AppContainer {
   readonly exerciseService: ExerciseService;
@@ -119,6 +121,7 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     new FinishWorkoutUseCase(workoutRepo),
     new DeleteWorkoutUseCase(workoutRepo, statsRepo, db),
     new RecordSetUseCase(workoutRepo, statsRepo, db),
+    new RecordAllSetsUseCase(workoutRepo, statsRepo, db),
     new UpdateSetUseCase(workoutRepo, statsRepo),
     new DeleteSetUseCase(workoutRepo, statsRepo),
     new SkipExerciseUseCase(workoutRepo),
@@ -128,7 +131,8 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     new UpdateWorkoutExerciseUseCase(workoutRepo),
     new SuggestWeightUseCase(workoutRepo, statsRepo, exerciseRepo),
     new GetWorkoutHistoryUseCase(workoutRepo),
-    new GetWorkoutByIdUseCase(workoutRepo)
+    new GetWorkoutByIdUseCase(workoutRepo),
+    new GetPreviousSetsUseCase(workoutRepo),
   );
 
   const statsService = new StatsService(
@@ -157,7 +161,8 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
 
   const personalRecordService = new PersonalRecordService(
     new GetPersonalRecordsUseCase(statsRepo),
-    new GetBestPersonalRecordUseCase(statsRepo)
+    new GetBestPersonalRecordUseCase(statsRepo),
+    new GetPRCountSinceUseCase(statsRepo),
   );
 
   return {

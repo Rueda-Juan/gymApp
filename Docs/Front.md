@@ -37,16 +37,16 @@ El frontend es responsable de:
 | **TypeScript**                     | Lenguaje (modo `strict`)                                                                   |
 | **Expo Router**                    | Navegación file-based                                                                      |
 | **Zustand**                        | Estado global                                                                              |
-| **Tamagui / NativeWind**           | **NUEVO:** Sistema de UI y estilos (Plantillas/Componentes gratis y de alto rendimiento)   |
-| **@gorhom/bottom-sheet**           | **NUEVO:** Bottom sheets nativos a 60fps (Buscador, Ajustes)                               |
-| **React Native Reanimated**        | Animaciones UI thread                                                                      |
-| **lottie-react-native**            | **NUEVO:** Animaciones complejas (celebración de PRs, onboarding)                          |
-| **FlashList**                      | Listas de alto rendimiento                                                                 |
-| **Victory Native**                 | Gráficos de estadísticas                                                                   |
-| **Lucide React Native**            | Sistema de iconos (SVG consistente)                                                        |
-| **expo-haptics**                   | Feedback háptico                                                                           |
-| **expo-image**                     | Imágenes optimizadas + WebP animado                                                        |
-| **react-native-toast-message**     | Notificaciones toast                                                                       |
+| **Tamagui v1**                     | Sistema de UI. Design tokens en `tamagui.config.ts`. Paleta Iron Log v2: Carbón + Cobre + Brasa. Cero hex en JSX. |
+| **@gorhom/bottom-sheet**           | Bottom sheets nativos a 60fps (Buscador de ejercicios, opciones, nota de sesión)          |
+| **React Native Reanimated**        | Animaciones UI thread (microinteracciones, barras de progreso, celebraciones)              |
+| **React Native Gesture Handler**   | Gestos swipe (delete reveal en SetRow via Swipeable)                                       |
+| **react-native-draggable-flatlist**| Drag & Drop en listas de ejercicios de rutinas                                             |
+| **FlashList / FlatList**           | Listas de alto rendimiento (history, exercise browser)                                     |
+| **Lucide React Native**            | Sistema de iconos SVG —única fuente de íonos                                              |
+| **expo-haptics**                   | Feedback háptico en momentos clave                                                         |
+| **react-native-toast-message**     | Notificaciones toast (guardado, error)                                                     |
+| **date-fns**                       | Formateo y cálculo de fechas                                                               |
 
 > [!NOTE]
 > **Preferencias de librería** según skill `building-native-ui`:
@@ -143,6 +143,14 @@ graph TD
 | **View**       | Renderizar UI, capturar input del usuario    | Lógica de negocio, SQL           |
 | **ViewModel**  | Gestionar estado, transformar datos para UI  | Acceso directo a BD              |
 | **Service**    | Puente al backend local                      | Renderizar componentes           |
+
+### Descomposición relevante del flujo de workout activo
+
+- `app/(workouts)/[active].tsx`: Orquesta estado, navegación, animaciones globales y coordinación entre stores/hooks.
+- `components/workout/ActiveWorkoutExerciseDetail.tsx`: Renderiza el detalle del ejercicio actual y la tabla de sets.
+- `components/workout/ActiveWorkoutRestTimerChip.tsx`: Encapsula el chip del descanso con su barra de progreso.
+- `components/workout/ActiveWorkoutBottomBar.tsx`: Agrupa acciones persistentes de navegación, nota y acceso al timer.
+- `components/workout/ActiveWorkoutExercisePickerSheet.tsx`, `ActiveWorkoutOptionsSheet.tsx`, `WorkoutSessionNoteSheet.tsx`: Separan los tres bottom sheets del screen principal para mantener responsabilidades acotadas.
 
 ---
 
@@ -367,12 +375,12 @@ flowchart TD
 
 | # | Componente | Descripción |
 | - | - | - |
-| 1 | **Header sticky** | Botón `←` (back con confirmación). Centro: Timer general del workout (`MM:SS`, `fontVariant: 'tabular-nums'`). Botón der: `•••` (menú overflow). |
+| 1 | **Header sticky** | Botón `X` (cancelar con confirmación). Centro: nombre de rutina + índice ejercicio. Botón der: `Focus` (modo focus). |
 | 2 | **Progress indicator** | Barra de progreso horizontal: ejercicio actual / total ejercicios. Color `primary`. |
-| 3 | **Exercise Section** | Sección por cada ejercicio (ver detalle abajo). El ejercicio actual está expandido, los demás colapsados. |
-| 4 | **Bottom bar sticky** | 3 botones: "Anterior" ← , "Siguiente" → , "Finalizar" (solo visible en último ejercicio). |
-| 5 | **Rest Timer overlay** | Timer de descanso entre sets. Aparece como overlay/bottom sheet con: countdown circular, botones `+15s`, `-15s`, `Skip`. Haptic `Notification` al terminar. |
-| 6 | **PR Alert** | Overlay animado (Lottie confetti) cuando se rompe un record personal. Haptic `Heavy`. Auto-dismiss 3s. |
+| 3 | **Rest Timer chip** | Chip superior `"DESCANSO: Xs"` visible solo cuando el temporizador está activo. |
+| 4 | **Exercise Section** | Para no-superset: ejercicio único con animación slide (FadeInRight/Left). Para superset: carrusel horizontal con tabs. Ver detalle abajo. |
+| 5 | **Bottom bar sticky** | 4 botones: `←` Anterior, `+` Añadir ejercicio, `⏳` Rest timer (Hourglass animado cuando activo), `→` "Sig. Ejercicio" / "Finalizar". Al finalizar: `isFinishing=true` → botón muestra "Guardando..." y se deshabilita. |
+| 6 | **PR detection** | Los PRs se detectan en batch al finalizar en `RecordAllSetsUseCase`. Los resultados se pasan como params JSON a `summary.tsx` para mostrar badges. |
 
 #### Detalle de `ExerciseSection`
 
@@ -409,24 +417,37 @@ flowchart TD
 
 | Elemento | Comportamiento |
 | - | - |
-| **#** | Número de set (auto-incrementa) |
-| **PESO** | Input numérico, teclado decimal. Pre-rellenado con peso sugerido. Stepper ±2.5kg. `fontVariant: 'tabular-nums'` |
+| **#** | Número de set (auto-incrementa). Tap → alterna entre Normal y Warmup. |
+| **PESO** | Input numérico, teclado decimal. Placeholder: peso histórico de ese índice de set (del último workout). Long-press → Plate Calculator modal. `fontVariant: 'tabular-nums'` |
 | **REPS** | Input numérico, teclado entero. Pre-rellenado con target reps de la rutina |
-| **TIPO** | Chip selector: `Normal` · `Warmup` · `Dropset` · `Failure`. Tap → cicla entre tipos. Color-coded. |
-| **RIR** | Input numérico 0-10. Tooltip "Reps In Reserve". Opcional |
-| **✔** | Checkbox. Tap → marcar set completado. Animación: scale 0.95→1 (150ms spring). Haptic `Medium`. Inicia rest timer |
+| **✔** | Checkbox. Tap → `Keyboard.dismiss()` + marcar set completado en Zustand (sin llamada al backend). Animación: scale 0.95→1 (150ms spring). Haptic `Medium`. Inicia rest timer. Los datos se persisten solo al finalizar el entrenamiento. |
+| **Swipe-to-delete** | Swipe hacia la izquierda revela botón rojo "Eliminar" detrás del row (PanGestureHandler + Reanimated). Si supera el 40% del ancho → trigger `Alert.alert` de confirmación. Si no supera → snap back. Trash button visible como fallback de accesibilidad. |
 
-##### Superset visual
+> [!IMPORTANT]
+> **Persistencia diferida**: Los sets completados se almacenan en el store Zustand (`useActiveWorkout`). La escritura a la base de datos ocurre **únicamente al presionar "Finalizar"** mediante `RecordAllSetsUseCase` en una transacción atómica. Esto elimina los "repeticiones fantasma" por toggle rápido y mejora la consistencia de datos.
 
-Cuando un ejercicio pertenece a un superset group, el indicador visual es:
+##### Superset visual — Carrusel horizontal
+
+Cuando `currentExercise.supersetGroup != null`, la pantalla cambia el layout de ejercicio único a un **carrusel horizontal con tabs**:
 
 ```text
-│  🔗 Superset A                                │
-│  ┌──────────────────────────────────────────┐ │
-│  │ 1A  Bench Press       Set 1: ☑  Set 2: ☐│ │
-│  │ 1B  Incline Fly       Set 1: ☑  Set 2: ☐│ │
-│  └──────────────────────────────────────────┘ │
+┌─ Tabs ──────────────────────────────────────┐
+│  [Bench Press ●]  [Incline Fly]  [Cable Fly] │
+└─────────────────────────────────────────────┘
+┌─ Página del ejercicio activo ───────────────┐
+│  Bench Press                                 │
+│  #   KG     REPS   ✔                        │
+│  1  [80]   [10]   ☑                        │
+│  2  [80]   [ _]   ☐                        │
+└─────────────────────────────────────────────┘
 ```
+
+**Comportamiento del carrusel:**
+- Tabs superiores indican qué ejercicio del superset está visible. Tab activo con fondo `$primary`.
+- Tap en tab → scroll programático a esa página.
+- Al completar el **último set** de un ejercicio: rotación circular automática — el ejercicio actual se mueve al final del orden visual; el siguiente queda en primer plano. Scroll automático a posición 0.
+- Estado local `supersetOrder: string[]` controla el orden visual sin modificar el store global `exercises`.
+- La rotación solo ocurre al completar el último set (no en sets intermedios).
 
 #### Menú overflow (•••)
 

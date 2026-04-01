@@ -2,6 +2,16 @@ import { RestoreBackupUseCase } from '../backup/RestoreBackupUseCase';
 import type { BackupRepository } from '../../../domain/repositories/BackupRepository';
 import { ValidationError } from '../../../shared/errors';
 
+const VALID_BACKUP = {
+  version: 1,
+  timestamp: '2026-03-24T18:00:00.000Z',
+  data: {
+    exercises: [{ id: 'ex-1', name: 'Bench Press' }],
+    routines: [],
+    sets: [],
+  },
+};
+
 describe('RestoreBackupUseCase', () => {
   let useCase: RestoreBackupUseCase;
   let mockBackupRepo: jest.Mocked<BackupRepository>;
@@ -14,59 +24,186 @@ describe('RestoreBackupUseCase', () => {
     useCase = new RestoreBackupUseCase(mockBackupRepo);
   });
 
-  const validBackup = {
-    version: 1,
-    timestamp: '2026-03-24T18:00:00.000Z',
-    data: {
-      exercises: [{ id: 'ex-1', name: 'Bench Press' }],
-      routines: [],
-      sets: [],
-    },
-  };
+  // ─── Happy Path ──────────────────────────────────────────────
 
-  it('debería restaurar un backup con formato válido', async () => {
-    await useCase.execute(JSON.stringify(validBackup));
+  describe('happy path', () => {
+    it('restaura un backup con formato válido', async () => {
+      await useCase.execute(JSON.stringify(VALID_BACKUP));
 
-    expect(mockBackupRepo.importData).toHaveBeenCalledTimes(1);
+      expect(mockBackupRepo.importData).toHaveBeenCalledTimes(1);
+    });
+
+    it('pasa el JSON string original al repositorio (no el objeto parseado)', async () => {
+      // Previene: pasar el objeto parseado pierde precision numérica o formato
+      const jsonStr = JSON.stringify(VALID_BACKUP);
+      await useCase.execute(jsonStr);
+
+      expect(mockBackupRepo.importData).toHaveBeenCalledWith(jsonStr);
+    });
+
+    it('acepta data con múltiples tablas pobladas', async () => {
+      const richBackup = {
+        ...VALID_BACKUP,
+        data: {
+          exercises: [{ id: 'ex-1', name: 'Bench' }],
+          routines: [{ id: 'r-1', name: 'Push Day' }],
+          sets: [{ id: 's-1', weight: 100 }],
+          workouts: [{ id: 'w-1', date: '2026-01-01' }],
+        },
+      };
+
+      await useCase.execute(JSON.stringify(richBackup));
+
+      expect(mockBackupRepo.importData).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('debería rechazar JSON malformado (no parseable)', async () => {
-    await expect(useCase.execute('not-valid-json{')).rejects.toThrow(SyntaxError);
-    expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+  // ─── JSON Malformado ─────────────────────────────────────────
+
+  describe('JSON malformado', () => {
+    it('rechaza string no parseable como JSON', async () => {
+      await expect(useCase.execute('not-valid-json{')).rejects.toThrow();
+      expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+    });
+
+    it('rechaza string vacío', async () => {
+      // Previene: JSON.parse('') lanza SyntaxError no capturado
+      await expect(useCase.execute('')).rejects.toThrow();
+      expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+    });
+
+    it('rechaza JSON truncado', async () => {
+      await expect(useCase.execute('{"version": 1, ')).rejects.toThrow();
+      expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+    });
   });
 
-  it('debería rechazar un backup sin campo "version"', async () => {
-    const noVersion = { timestamp: '2026-03-24T18:00:00.000Z', data: {} };
+  // ─── Campos Requeridos ───────────────────────────────────────
 
-    await expect(useCase.execute(JSON.stringify(noVersion))).rejects.toThrow(ValidationError);
-    expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+  describe('campos requeridos', () => {
+    it('rechaza backup sin campo "version"', async () => {
+      const noVersion = { timestamp: '2026-03-24T18:00:00.000Z', data: {} };
+
+      await expect(useCase.execute(JSON.stringify(noVersion))).rejects.toThrow(ValidationError);
+      expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+    });
+
+    it('rechaza backup sin campo "data"', async () => {
+      const noData = { version: 1, timestamp: '2026-03-24T18:00:00.000Z' };
+
+      await expect(useCase.execute(JSON.stringify(noData))).rejects.toThrow(ValidationError);
+      expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+    });
+
+    it('rechaza backup sin campo "timestamp"', async () => {
+      const noTimestamp = { version: 1, data: {} };
+
+      await expect(useCase.execute(JSON.stringify(noTimestamp))).rejects.toThrow(ValidationError);
+      expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+    });
   });
 
-  it('debería rechazar un backup sin campo "data"', async () => {
-    const noData = { version: 1, timestamp: '2026-03-24T18:00:00.000Z' };
+  // ─── Wrong Data Types ────────────────────────────────────────
 
-    await expect(useCase.execute(JSON.stringify(noData))).rejects.toThrow(ValidationError);
-    expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+  describe('tipos de datos incorrectos', () => {
+    it('rechaza version como string', async () => {
+      const badVersion = { ...VALID_BACKUP, version: 'abc' };
+
+      await expect(useCase.execute(JSON.stringify(badVersion))).rejects.toThrow(ValidationError);
+      expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+    });
+
+    it('rechaza version como boolean', async () => {
+      const boolVersion = { ...VALID_BACKUP, version: true };
+
+      await expect(useCase.execute(JSON.stringify(boolVersion))).rejects.toThrow(ValidationError);
+    });
+
+    it('rechaza version como null', async () => {
+      const nullVersion = { ...VALID_BACKUP, version: null };
+
+      await expect(useCase.execute(JSON.stringify(nullVersion))).rejects.toThrow(ValidationError);
+    });
+
+    it('rechaza timestamp inválido (no ISO 8601)', async () => {
+      // Previene: timestamp "ayer" pasa y corrompe comparaciones de fecha
+      const badTimestamp = { ...VALID_BACKUP, timestamp: 'ayer por la tarde' };
+
+      await expect(useCase.execute(JSON.stringify(badTimestamp))).rejects.toThrow(ValidationError);
+    });
+
+    it('rechaza data como array en vez de record', async () => {
+      const arrayData = { ...VALID_BACKUP, data: [1, 2, 3] };
+
+      await expect(useCase.execute(JSON.stringify(arrayData))).rejects.toThrow(ValidationError);
+    });
+
+    it('rechaza data como string', async () => {
+      const stringData = { ...VALID_BACKUP, data: 'not-an-object' };
+
+      await expect(useCase.execute(JSON.stringify(stringData))).rejects.toThrow(ValidationError);
+    });
   });
 
-  it('debería rechazar un backup sin campo "timestamp"', async () => {
-    const noTimestamp = { version: 1, data: {} };
+  // ─── Invalid Inputs ──────────────────────────────────────────
 
-    await expect(useCase.execute(JSON.stringify(noTimestamp))).rejects.toThrow(ValidationError);
-    expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+  describe('invalid inputs extremos', () => {
+    it('rechaza JSON con solo un primitivo (número)', async () => {
+      await expect(useCase.execute('42')).rejects.toThrow(ValidationError);
+    });
+
+    it('rechaza JSON con solo null', async () => {
+      await expect(useCase.execute('null')).rejects.toThrow(ValidationError);
+    });
+
+    it('rechaza JSON con solo un array', async () => {
+      await expect(useCase.execute('[]')).rejects.toThrow(ValidationError);
+    });
+
+    it('rechaza JSON con solo un string', async () => {
+      await expect(useCase.execute('"hello"')).rejects.toThrow(ValidationError);
+    });
+
+    it('rechaza objeto vacío {}', async () => {
+      await expect(useCase.execute('{}')).rejects.toThrow(ValidationError);
+    });
   });
 
-  it('debería rechazar si "version" no es un número', async () => {
-    const badVersion = { ...validBackup, version: 'abc' };
+  // ─── Async Failures ──────────────────────────────────────────
 
-    await expect(useCase.execute(JSON.stringify(badVersion))).rejects.toThrow(ValidationError);
-    expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+  describe('async failures', () => {
+    it('propaga error si importData falla (disco lleno, permisos)', async () => {
+      mockBackupRepo.importData.mockRejectedValue(new Error('SQLITE_FULL'));
+
+      await expect(useCase.execute(JSON.stringify(VALID_BACKUP))).rejects.toThrow('SQLITE_FULL');
+    });
+
+    it('no llama a importData si la validación falla', async () => {
+      // Previene: importar datos corruptos que pasaron parsing pero no validación
+      await expect(useCase.execute(JSON.stringify({ version: 'bad' }))).rejects.toThrow();
+
+      expect(mockBackupRepo.importData).not.toHaveBeenCalled();
+    });
   });
 
-  it('debería pasar el JSON original al repositorio (no el objeto parseado)', async () => {
-    const jsonStr = JSON.stringify(validBackup);
-    await useCase.execute(jsonStr);
+  // ─── Regression ──────────────────────────────────────────────
 
-    expect(mockBackupRepo.importData).toHaveBeenCalledWith(jsonStr);
+  describe('regresión', () => {
+    it('data con tablas vacías es válido', async () => {
+      // Regresión: backup inicial sin datos debería poder restaurarse
+      const emptyData = { ...VALID_BACKUP, data: { exercises: [], routines: [] } };
+
+      await useCase.execute(JSON.stringify(emptyData));
+
+      expect(mockBackupRepo.importData).toHaveBeenCalledTimes(1);
+    });
+
+    it('acepta version como float (1.5 es un número válido para Zod)', async () => {
+      const floatVersion = { ...VALID_BACKUP, version: 1.5 };
+
+      await useCase.execute(JSON.stringify(floatVersion));
+
+      expect(mockBackupRepo.importData).toHaveBeenCalledTimes(1);
+    });
   });
 });

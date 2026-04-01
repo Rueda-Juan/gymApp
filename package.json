@@ -3,6 +3,12 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "cd Frontend && npx expo start"
+    "start": "cd Frontend && npx expo start",
+    "typecheck": "cd Backend && npx tsc --noEmit && cd ../Frontend && npx tsc --noEmit",
+    "typecheck:back": "cd Backend && npx tsc --noEmit",
+    "typecheck:front": "cd Frontend && npx tsc --noEmit",
+    "test": "cd Backend && npx jest && cd ../Frontend && npx jest",
+    "test:back": "cd Backend && npx jest",
+    "test:front": "cd Frontend && npx jest"
   }
 }

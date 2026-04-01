@@ -1,21 +1,40 @@
 import type * as SQLite from 'expo-sqlite';
 import type { BackupRepository } from '../../domain/repositories/BackupRepository';
+import { DatabaseError } from '../../shared/errors';
+
+const TABLES_IN_FK_ORDER = [
+  'user_preferences',
+  'body_weight_log',
+  'exercises',
+  'routines',
+  'routine_exercises',
+  'workouts',
+  'workout_exercises',
+  'sets',
+  'exercise_stats',
+  'daily_stats',
+  'personal_records',
+] as const;
+
+const TABLES_DELETE_ORDER = [...TABLES_IN_FK_ORDER].reverse();
+
+interface BackupPayload {
+  version: number;
+  timestamp: string;
+  data: Record<string, Record<string, unknown>[]>;
+}
 
 export class SQLiteBackupRepository implements BackupRepository {
   constructor(private readonly db: SQLite.SQLiteDatabase) {}
 
   async exportData(): Promise<string> {
-    // Basic implementation that would query tables and serialize them
-    // For simplicity, we just return a stub JSON structure
-    const tables = ['exercises', 'routines', 'routine_exercises', 'workouts', 'workout_exercises', 'sets', 'exercise_stats', 'daily_stats', 'personal_records', 'user_preferences', 'body_weight_log'];
-    const data: Record<string, any[]> = {};
+    const data: Record<string, Record<string, unknown>[]> = {};
 
-    for (const table of tables) {
-      const rows = await this.db.getAllAsync(`SELECT * FROM ${table}`);
-      data[table] = rows;
+    for (const table of TABLES_IN_FK_ORDER) {
+      data[table] = await this.db.getAllAsync<Record<string, unknown>>(`SELECT * FROM ${table}`);
     }
 
-    const backup = {
+    const backup: BackupPayload = {
       version: 1,
       timestamp: new Date().toISOString(),
       data,
@@ -25,22 +44,36 @@ export class SQLiteBackupRepository implements BackupRepository {
   }
 
   async importData(jsonData: string): Promise<void> {
-    const backup = JSON.parse(jsonData);
-    if (!backup.data || !backup.version) {
-      throw new Error('Formato de backup inválido');
+    let backup: BackupPayload;
+    try {
+      backup = JSON.parse(jsonData) as BackupPayload;
+    } catch {
+      throw new DatabaseError('El JSON de backup no es válido');
     }
 
-    try {
-      await this.db.execAsync('BEGIN TRANSACTION;');
-      
-      // In a real scenario, we'd clear tables and insert the new data,
-      // handling foreign key constraints.
-      
-      await this.db.execAsync('COMMIT;');
-    } catch (e) {
-      await this.db.execAsync('ROLLBACK;');
-      throw e;
+    if (!backup.data || !backup.version) {
+      throw new DatabaseError('Formato de backup inválido');
     }
+
+    await this.db.withTransactionAsync(async () => {
+      for (const table of TABLES_DELETE_ORDER) {
+        await this.db.execAsync(`DELETE FROM ${table};`);
+      }
+
+      for (const table of TABLES_IN_FK_ORDER) {
+        const rows = backup.data[table];
+        if (!rows?.length) continue;
+        const firstRow = rows[0]!;
+        const columns = Object.keys(firstRow);
+        const placeholders = columns.map(() => '?').join(', ');
+        const insertSQL = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+
+        for (const row of rows) {
+          const values = columns.map(col => row[col] ?? null);
+          await this.db.runAsync(insertSQL, values as (string | number | null)[]);
+        }
+      }
+    });
   }
 
   async exportCSV(): Promise<string> {

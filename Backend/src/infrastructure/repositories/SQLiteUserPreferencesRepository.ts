@@ -12,11 +12,10 @@ export class SQLiteUserPreferencesRepository implements UserPreferencesRepositor
         'SELECT key, value FROM user_preferences',
       );
 
-      // Defaults in case the table is somehow empty
       const prefs: UserPreferences = {
         weightUnit: 'kg',
-        theme: 'dark',
-        defaultRestSeconds: 90,
+        theme: 'system',
+        defaultRestSeconds: 60,
       };
 
       for (const row of rows) {

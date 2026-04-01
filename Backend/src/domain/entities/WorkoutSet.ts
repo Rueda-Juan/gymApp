@@ -7,6 +7,7 @@ import type { SetType } from '../valueObjects/SetType';
 export interface WorkoutSet {
   readonly id: string;
   exerciseId: string;
+  workoutId?: string;
   setNumber: number;
   weight: number;
   reps: number;

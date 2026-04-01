@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClientId } from '@/utils/clientId';
+import { useRestTimer } from '@/store/useRestTimer';
 
 export interface WorkoutSetState {
   id: string;
@@ -17,7 +19,7 @@ export interface WorkoutExerciseState {
   name: string;
   nameEs?: string | null;
   sets: WorkoutSetState[];
-  status?: 'active' | 'completed' | 'skipped';
+  status?: 'active' | 'pending' | 'completed' | 'skipped';
   supersetGroup?: number | null;
 }
 
@@ -29,11 +31,14 @@ interface ActiveWorkoutStore {
   routineName: string | null;
   exercises: WorkoutExerciseState[];
   currentExerciseIndex: number;
-  
+  sessionNote?: string;
+  lastSessionOutcome: 'finished' | 'cancelled' | null;
+
   // Actions
   startWorkout: (workoutId: string, routineId: string | null, name: string | null, initialExercises: WorkoutExerciseState[]) => void;
   finishWorkout: () => void;
   cancelWorkout: () => void;
+  setSessionNote: (note: string) => void;
   
   // Sets Actions
   toggleSetComplete: (exerciseId: string, setId: string) => void;
@@ -50,9 +55,7 @@ interface ActiveWorkoutStore {
   replaceExercise: (oldExerciseId: string, newExercise: WorkoutExerciseState) => void;
 }
 
-export const useActiveWorkout = create<ActiveWorkoutStore>()(
-  persist(
-    (set, get) => ({
+const createInactiveWorkoutState = (lastSessionOutcome: 'finished' | 'cancelled' | null = null) => ({
   isActive: false,
   workoutId: null,
   startTime: null,
@@ -60,6 +63,16 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
   routineName: null,
   exercises: [],
   currentExerciseIndex: 0,
+  sessionNote: undefined,
+  lastSessionOutcome,
+});
+
+const staleWorkoutThresholdMs = 1000 * 60 * 60 * 12;
+
+export const useActiveWorkout = create<ActiveWorkoutStore>()(
+  persist(
+    (set, get) => ({
+  ...createInactiveWorkoutState(),
 
   startWorkout: (workoutId, routineId, name, initialExercises) => 
     set({
@@ -68,13 +81,22 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
       startTime: Date.now(),
       routineId,
       routineName: name || 'Entrenamiento Libre',
-      exercises: initialExercises.map((ex, i) => ({ ...ex, status: i === 0 ? 'active' : 'completed' })),
+      exercises: initialExercises.map((ex, i) => ({ ...ex, status: i === 0 ? 'active' : 'pending' })),
       currentExerciseIndex: 0,
+      lastSessionOutcome: null,
     }),
 
-  finishWorkout: () => set({ isActive: false, workoutId: null, startTime: null, routineId: null, routineName: null, exercises: [], currentExerciseIndex: 0 }),
-  
-  cancelWorkout: () => set({ isActive: false, workoutId: null, startTime: null, routineId: null, routineName: null, exercises: [], currentExerciseIndex: 0 }),
+  finishWorkout: () => {
+    useRestTimer.getState().stopTimer();
+    set(createInactiveWorkoutState('finished'));
+  },
+
+  cancelWorkout: () => {
+    useRestTimer.getState().stopTimer();
+    set(createInactiveWorkoutState('cancelled'));
+  },
+
+  setSessionNote: (note) => set({ sessionNote: note }),
 
   toggleSetComplete: (exerciseId, setId) => 
     set((state) => ({
@@ -104,7 +126,7 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
         if (ex.id !== exerciseId) return ex;
         const lastSet = ex.sets[ex.sets.length - 1];
         const newSet: WorkoutSetState = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: createClientId(),
           weight: lastSet ? lastSet.weight : 0,
           reps: lastSet ? lastSet.reps : 0,
           isCompleted: false,
@@ -127,13 +149,21 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
 
   addExercise: (exercise) =>
     set((state) => ({
-      exercises: [...state.exercises, { ...exercise, status: 'completed' }]
+      exercises: [...state.exercises, { ...exercise, status: 'pending' }]
     })),
 
   removeExercise: (exerciseId) =>
-    set((state) => ({
-      exercises: state.exercises.filter(ex => ex.id !== exerciseId)
-    })),
+    set((state) => {
+      const removedIdx = state.exercises.findIndex(ex => ex.id === exerciseId);
+      const newExercises = state.exercises.filter(ex => ex.id !== exerciseId);
+      const adjustedIndex = removedIdx !== -1 && removedIdx <= state.currentExerciseIndex
+        ? Math.max(0, state.currentExerciseIndex - 1)
+        : state.currentExerciseIndex;
+      return {
+        exercises: newExercises,
+        currentExerciseIndex: Math.min(adjustedIndex, Math.max(0, newExercises.length - 1)),
+      };
+    }),
 
   skipExercise: (exerciseId) =>
     set((state) => ({
@@ -152,7 +182,10 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
       const newExercises = [...state.exercises];
       newExercises.splice(idx, 1);
       newExercises.push(ex);
-      return { exercises: newExercises };
+      const adjustedIndex = idx < state.currentExerciseIndex
+        ? state.currentExerciseIndex - 1
+        : state.currentExerciseIndex;
+      return { exercises: newExercises, currentExerciseIndex: adjustedIndex };
     }),
 
   replaceExercise: (oldExerciseId, newExercise) =>
@@ -166,4 +199,14 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
 }), {
   name: 'active-workout-storage',
   storage: createJSONStorage(() => AsyncStorage),
+  onRehydrateStorage: () => (state) => {
+    if (!state?.isActive) return;
+
+    const hasMissingIdentity = !state.workoutId || !state.startTime;
+    const isStaleWorkout = !hasMissingIdentity && (Date.now() - state.startTime! > staleWorkoutThresholdMs);
+
+    if (hasMissingIdentity || isStaleWorkout) {
+      state.cancelWorkout();
+    }
+  },
 }));

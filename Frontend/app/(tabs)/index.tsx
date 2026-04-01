@@ -1,9 +1,10 @@
 ﻿import React, { useState, useCallback } from 'react';
-import { View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { Pressable, ScrollView, View, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link, router } from 'expo-router';
-import { Play, Flame, Dumbbell, Clock, Activity, MoreHorizontal } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { FONT_SCALE } from '@/tamagui.config';
+import { Play, Flame, Dumbbell, Clock, Activity } from 'lucide-react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,20 +13,25 @@ import { es } from 'date-fns/locale';
 import { CardBase as Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppText } from '@/components/ui/AppText';
-import { AppInput } from '@/components/ui/AppInput';
-import { AppButton, IconButton } from '@/components/ui/AppButton';
+import { AppButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { useWorkout } from '@/hooks/useWorkout';
 import { useRoutines } from '@/hooks/useRoutines';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useUser } from '@/store/useUser';
 import { getExerciseName } from '@/utils/exercise';
+import { getWeeklyTrainingDays, calculateWeeklyStreak } from '@/utils/trainingWeek';
+import { useStartWorkout } from '@/hooks/useStartWorkout';
+import { ProfileSetupForm } from '@/components/onboarding/ProfileSetupForm';
+
+const WEEK_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 export default function HomeScreen() {
   const theme = useTheme();
   const workoutService = useWorkout();
   const routineService = useRoutines();
-  const activeWorkout = useActiveWorkout();
+  const isActive = useActiveWorkout(s => s.isActive);
+  const routineName = useActiveWorkout(s => s.routineName);
   const user = useUser((s) => s.user);
   const setUser = useUser((s) => s.setUser);
 
@@ -44,14 +50,27 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       const [history, routines] = await Promise.all([
-        workoutService.getHistory(5),
+        workoutService.getHistory(30),
         routineService.getRoutines(),
       ]);
+
+      const routinesWithLastPerformed = routines.map((routine: any) => {
+        const routineHistory = history.filter((w: any) => w.routineId === routine.id);
+        if (!routineHistory.length) return { ...routine, lastPerformed: null };
+        const latest = routineHistory.reduce((a: any, b: any) =>
+          new Date(a.date) > new Date(b.date) ? a : b
+        );
+        return {
+          ...routine,
+          lastPerformed: formatDistanceToNow(new Date(latest.date), { addSuffix: true, locale: es }),
+        };
+      });
+
       setData({
-        history,
-        routines,
+        history: history.slice(0, 5),
+        routines: routinesWithLastPerformed,
         stats: {
-          streak: history.length > 0 ? history.length : 0,
+          streak: calculateWeeklyStreak(history),
           weeklyCount: history.filter((w: any) => new Date(w.date) > new Date(Date.now() - 7 * 86400000)).length,
         },
       });
@@ -68,6 +87,8 @@ export default function HomeScreen() {
     }, [loadData])
   );
 
+  const handleStartWorkout = useStartWorkout();
+
   if (loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.background?.val }}>
@@ -78,35 +99,26 @@ export default function HomeScreen() {
 
   if (!user?.name) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val }}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}>
-          <YStack alignItems="center" gap="$md">
-            <AppText variant="titleLg" textAlign="center">Bienvenido a GymApp</AppText>
-            <AppText variant="bodyMd" color="textSecondary" textAlign="center">Completa tu perfil antes de empezar</AppText>
-
-            <AppInput placeholder="Nombre" value={name} onChangeText={setName} />
-            <AppInput placeholder="Sexo (male/female/other)" value={gender} onChangeText={(value) => setGender(value as 'male' | 'female' | 'other' | '')} />
-            <AppInput placeholder="Edad" keyboardType="numeric" value={age} onChangeText={setAge} />
-
-            <AppButton
-              label="Guardar perfil"
-              onPress={() => {
-                if (!name.trim()) {
-                  Alert.alert('Datos incompletos', 'Por favor, ingresa tu nombre.');
-                  return;
-                }
-
-                setUser({
-                  name: name.trim(),
-                  gender: gender || 'other',
-                  age: parseInt(age, 10) || null,
-                  createdAt: Date.now(),
-                });
-              }}
-            />
-          </YStack>
-        </ScrollView>
-      </SafeAreaView>
+      <ProfileSetupForm
+        name={name}
+        setName={setName}
+        gender={gender}
+        setGender={setGender}
+        age={age}
+        setAge={setAge}
+        onSubmit={() => {
+          if (!name.trim()) {
+            Alert.alert('Datos incompletos', 'Por favor, ingresa tu nombre.');
+            return;
+          }
+          setUser({
+            name: name.trim(),
+            gender: gender || 'other',
+            age: parseInt(age, 10) || null,
+            createdAt: Date.now(),
+          });
+        }}
+      />
     );
   }
 
@@ -124,19 +136,20 @@ export default function HomeScreen() {
               <AppText variant="titleLg">{user.name}</AppText>
             </YStack>
           </Pressable>
-          <IconButton icon={<AppIcon icon={Dumbbell} color="primary" size={24} />} />
         </XStack>
 
         {/* CTA */}
         <YStack paddingHorizontal="$xl" paddingBottom="$xl">
-          {activeWorkout.isActive ? (
+          {isActive ? (
             <Animated.View entering={FadeInUp.springify()}>
               <Pressable
                 onPress={() => router.push('/(workouts)/active')}
                 accessibilityLabel="Continuar entrenamiento en curso"
               >
                 <YStack
-                  backgroundColor="$primary"
+                  backgroundColor="$primarySubtle"
+                  borderWidth={1.5}
+                  borderColor="$primary"
                   height={80}
                   borderRadius="$lg"
                   borderCurve="continuous"
@@ -144,13 +157,13 @@ export default function HomeScreen() {
                   justifyContent="center"
                 >
                   <XStack alignItems="center" gap="$sm">
-                    <AppIcon icon={Activity} color="surface" size={20} />
-                    <AppText variant="bodySm" color="surface" opacity={0.8} fontWeight="$7">
+                    <AppIcon icon={Activity} color="primary" size={20} />
+                    <AppText variant="bodySm" color="primary" fontWeight="700">
                       ENTRENAMIENTO EN CURSO
                     </AppText>
                   </XStack>
-                  <AppText variant="titleSm" color="surface" marginTop="$xs">
-                    Continuar {activeWorkout.routineName}
+                  <AppText variant="titleSm" color="primary" marginTop="$xs">
+                    Continuar {routineName}
                   </AppText>
                 </YStack>
               </Pressable>
@@ -166,7 +179,7 @@ export default function HomeScreen() {
 
         {/* Stats Row */}
         <XStack paddingHorizontal="$xl" gap="$md">
-          <Card flex={1} padding="$md">
+          <Card variant="outlined" flex={1} padding="$md">
             <XStack alignItems="center" gap="$xs" marginBottom="$sm">
               <AppIcon icon={Flame} color="primary" size={16} />
               <AppText variant="label" color="textSecondary">RACHA</AppText>
@@ -176,7 +189,7 @@ export default function HomeScreen() {
             </AppText>
           </Card>
 
-          <Card flex={1} padding="$md">
+          <Card variant="outlined" flex={1} padding="$md">
             <XStack alignItems="center" gap="$xs" marginBottom="$sm">
               <AppIcon icon={Activity} color="primary" size={16} />
               <AppText variant="label" color="textSecondary">ESTA SEMANA</AppText>
@@ -187,13 +200,34 @@ export default function HomeScreen() {
           </Card>
         </XStack>
 
+        {/* Weekly Streak Circles */}
+        <YStack paddingHorizontal="$xl" marginTop="$lg" marginBottom="$lg">
+          <XStack justifyContent="center" gap="$sm">
+            {getWeeklyTrainingDays(data.history).map((trained, i) => (
+              <YStack key={i} alignItems="center" gap={4}>
+                <YStack
+                  width={28}
+                  height={28}
+                  borderRadius={14}
+                  backgroundColor={trained ? '$primary' : '$surfaceSecondary'}
+                  borderWidth={trained ? 0 : 1}
+                  borderColor="$borderColor"
+                />
+                <AppText variant="label" color="textTertiary" fontSize={FONT_SCALE.sizes[1]}>
+                  {WEEK_LABELS[i]}
+                </AppText>
+              </YStack>
+            ))}
+          </XStack>
+        </YStack>
+
         {/* Last Workout */}
         {lastWorkout && (
           <YStack gap="$md" marginBottom="$xl" paddingHorizontal="$xl" marginTop="$xl">
             <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
               <AppText variant="titleSm">Último Entrenamiento</AppText>
               <Pressable onPress={() => router.push('/history')}>
-                <AppText variant="bodyMd" color="primary" fontWeight="$6">Ver todo</AppText>
+                <AppText variant="bodyMd" color="primary" fontWeight="600">Ver todo</AppText>
               </Pressable>
             </XStack>
 
@@ -201,8 +235,8 @@ export default function HomeScreen() {
               <Card padding="$none">
                 <XStack justifyContent="space-between" alignItems="center" padding="$md" borderBottomWidth={1} borderBottomColor="$borderColor">
                   <YStack>
-                    <AppText fontSize="$4" fontWeight="$7">Sesión de Entrenamiento</AppText>
-                    <AppText fontSize="$2" color="textTertiary" marginTop="$xs">
+                    <AppText variant="subtitle">Sesión de Entrenamiento</AppText>
+                    <AppText variant="bodySm" color="textTertiary" marginTop="$xs">
                       {formatDistanceToNow(new Date(lastWorkout.date), { addSuffix: true, locale: es })}
                     </AppText>
                   </YStack>
@@ -237,11 +271,9 @@ export default function HomeScreen() {
         <YStack marginTop="$xl">
           <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" marginBottom="$md">
             <AppText variant="titleSm">Mis Rutinas</AppText>
-            <Link href="/routines" asChild>
-              <Pressable accessibilityLabel="Ver todas las rutinas">
-                <AppText variant="bodyMd" color="primary" fontWeight="$6">Ver todas</AppText>
-              </Pressable>
-            </Link>
+            <Pressable onPress={() => router.push('/routines')} accessibilityLabel="Ver todas las rutinas">
+              <AppText variant="bodyMd" color="primary" fontWeight="600">Ver todas</AppText>
+            </Pressable>
           </XStack>
 
           {data.routines.length === 0 ? (
@@ -251,45 +283,43 @@ export default function HomeScreen() {
               </AppText>
               <AppButton
                 label="Crear primera rutina"
-                onPress={() => router.push('/routines/create')}
+                onPress={() => router.push('/routine/create')}
               />
             </YStack>
           ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-              snapToInterval={292}
-              decelerationRate="fast"
-            >
+            <YStack paddingHorizontal="$lg" paddingBottom="$md" gap="$md">
               {data.routines.map((routine: any) => (
-                <Card key={routine.id} width={280} padding="$md">
-                  <XStack justifyContent="space-between" alignItems="center" marginBottom="$xs">
-                    <AppText variant="titleSm" fontWeight="$7" flex={1} numberOfLines={1}>{routine.name}</AppText>
-                    <IconButton
-                      icon={<AppIcon icon={MoreHorizontal} color="darkText" size={25} />}
-                      size={44}
-                      backgroundColor="$transparent"
-                      onPress={() => router.push(`/routine/${routine.id}`)}
-                    />
-                  </XStack>
-
-                  <AppText variant="bodySm" color="textSecondary" marginBottom="$md" numberOfLines={2}>
-                    {routine.exercises.map((e: any) => getExerciseName(e.exercise || e)).join(' • ')}
-                  </AppText>
-
-                  <XStack justifyContent="space-between" alignItems="center" marginTop="auto">
-                    <AppText variant="label" color="textTertiary">{routine.exercises.length} Ejercicios</AppText>
-                    <IconButton
-                      icon={<AppIcon icon={Play} color="primary" strokeWidth={3} size={22} />}
-                      size={44}
-                      backgroundColor="transparent"
-                      onPress={() => router.push({ pathname: '/(workouts)/active', params: { routineId: routine.id } } as any)}
-                    />
-                  </XStack>
-                </Card>
+                <Pressable
+                  key={routine.id}
+                  onPress={() => handleStartWorkout(routine)}
+                  accessibilityLabel={`Iniciar rutina ${routine.name}`}
+                >
+                  <Card padding="$md" minHeight={88} borderWidth={1} borderColor="$borderColor">
+                    <XStack alignItems="center" gap="$md">
+                      <YStack flex={1}>
+                        <AppText variant="titleSm" numberOfLines={1}>{routine.name}</AppText>
+                        <AppText variant="label" color="textTertiary" marginTop="$xs">
+                          {routine.lastPerformed ? `Hace ${routine.lastPerformed}` : 'Nunca'}
+                        </AppText>
+                        <AppText variant="bodySm" color="textSecondary" marginTop="$xs" numberOfLines={1}>
+                          {routine.exercises.map((e: any) => getExerciseName(e.exercise || e)).join(' · ')}
+                        </AppText>
+                      </YStack>
+                      <YStack
+                        width={64}
+                        alignSelf="stretch"
+                        alignItems="center"
+                        justifyContent="center"
+                        borderLeftWidth={1}
+                        borderLeftColor="$borderColor"
+                      >
+                        <AppIcon icon={Play} color="primary" size={24} />
+                      </YStack>
+                    </XStack>
+                  </Card>
+                </Pressable>
               ))}
-            </ScrollView>
+            </YStack>
           )}
         </YStack>
 

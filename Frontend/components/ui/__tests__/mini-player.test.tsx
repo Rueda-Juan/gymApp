@@ -1,12 +1,14 @@
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from 'tamagui';
 import config from '@/tamagui.config';
 import { MiniPlayer } from '../mini-player';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
+import { useRestTimer } from '@/store/useRestTimer';
 
 jest.mock('@/store/useActiveWorkout');
+jest.mock('@/store/useRestTimer');
 
 jest.mock('lucide-react-native', () => ({
   ChevronRight: jest.fn(() => null),
@@ -22,6 +24,8 @@ jest.mock('expo-router', () => ({
 jest.mock('@/utils/exercise', () => ({
   getExerciseName: jest.fn(() => 'Bench Press')
 }));
+
+const mockInactiveRestTimer = { isActive: false, endTime: null };
 
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
@@ -41,48 +45,40 @@ const renderWithProviders = (component: React.ReactElement) => {
 describe('MiniPlayer', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
+    (useRestTimer as unknown as jest.Mock).mockImplementation((selector) =>
+      selector(mockInactiveRestTimer)
+    );
   });
 
   it('no renderiza cuando el entrenamiento esta inactivo', () => {
     (useActiveWorkout as unknown as jest.Mock).mockImplementation((selector) => {
-      const state = { isActive: false };
+      const state = {
+        isActive: false,
+        workoutId: null,
+        currentExerciseIndex: 0,
+        exercises: [],
+      };
       return selector(state);
     });
 
     const { queryByText } = renderWithProviders(<MiniPlayer />);
-    expect(queryByText('Sesión actual')).toBeNull();
     expect(queryByText('Bench Press')).toBeNull();
+    expect(queryByText('Retomar')).toBeNull();
   });
 
-  it('renderiza la rutina activa y calcula el tiempo transcurrido', () => {
-    const mockStartTime = Date.now() - 5000;
-
+  it('renderiza el ejercicio activo cuando hay un workout en curso', () => {
     (useActiveWorkout as unknown as jest.Mock).mockImplementation((selector) => {
       const state = {
         isActive: true,
-        routineName: 'Push Day',
-        startTime: mockStartTime,
+        workoutId: 'workout-1',
         currentExerciseIndex: 0,
-        exercises: [{ exerciseId: '123' }]
+        exercises: [{ exerciseId: '123' }],
       };
       return selector(state);
     });
 
     const { getByText } = renderWithProviders(<MiniPlayer />);
-
-    expect(getByText('Push Day')).toBeTruthy();
     expect(getByText('Bench Press')).toBeTruthy();
-    expect(getByText('00:05')).toBeTruthy();
-
-    act(() => {
-      jest.advanceTimersByTime(1000);
-    });
-
-    expect(getByText('00:06')).toBeTruthy();
+    expect(getByText('Retomar')).toBeTruthy();
   });
 });

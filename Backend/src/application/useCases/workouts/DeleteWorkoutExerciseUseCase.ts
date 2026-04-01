@@ -24,7 +24,7 @@ export class DeleteWorkoutExerciseUseCase {
     }
 
     const exerciseId = workoutExercise.exerciseId;
-    const dateStr = workout.date.toISOString().split('T')[0];
+    const dateStr = workout.date.toISOString().split('T')[0] ?? '';
 
     // Delete the exercise
     await this.workoutRepo.deleteExercise(workoutId, workoutExerciseId);

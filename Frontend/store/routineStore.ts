@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 
+const DEFAULT_SETS = 3;
+const DEFAULT_REP_RANGE = '8-12';
+
 interface RoutineExercise {
   id: string;
   name: string;
@@ -8,6 +11,24 @@ interface RoutineExercise {
   sets: number;
   reps: string;
   supersetGroup?: number | null;
+}
+
+interface LoadableRoutine {
+  name: string;
+  notes?: string | null;
+  exercises: Array<{
+    exerciseId?: string;
+    id?: string;
+    exercise?: { name: string; nameEs?: string | null; primaryMuscles?: string[] };
+    targetSets?: number;
+    maxReps?: string | number;
+    name?: string;
+    nameEs?: string | null;
+    muscle?: string;
+    sets?: number;
+    reps?: string;
+    supersetGroup?: number | null;
+  }>;
 }
 
 interface RoutineState {
@@ -22,7 +43,7 @@ interface RoutineState {
   linkExerciseNext: (index: number) => void;
   unlinkExercise: (index: number) => void;
   reorderExercises: (newExercises: RoutineExercise[]) => void;
-  loadRoutine: (routine: any) => void;
+  loadRoutine: (routine: LoadableRoutine) => void;
   reset: () => void;
 }
 
@@ -33,7 +54,7 @@ export const useRoutineStore = create<RoutineState>((set) => ({
   setName: (name) => set({ name }),
   setNotes: (notes) => set({ notes }),
   addExercise: (exercise) => set((state) => ({
-    exercises: [...state.exercises, { ...exercise, sets: 3, reps: '8-12' }]
+    exercises: [...state.exercises, { ...exercise, sets: DEFAULT_SETS, reps: DEFAULT_REP_RANGE }]
   })),
   removeExercise: (id) => set((state) => ({
     exercises: state.exercises.filter(e => e.id !== id)
@@ -44,10 +65,19 @@ export const useRoutineStore = create<RoutineState>((set) => ({
   linkExerciseNext: (index) => set((state) => {
     const ex = [...state.exercises];
     if (index >= ex.length - 1) return state;
-    const groupId = ex[index].supersetGroup || ex[index + 1].supersetGroup || Date.now();
-    ex[index] = { ...ex[index], supersetGroup: groupId };
-    ex[index + 1] = { ...ex[index + 1], supersetGroup: groupId };
-    return { exercises: ex };
+    const current = ex[index];
+    const next = ex[index + 1];
+    const existingGroup = current.supersetGroup ?? next.supersetGroup ?? null;
+    const groupId = existingGroup ?? (Math.max(0, ...ex.map(e => e.supersetGroup ?? 0)) + 1);
+
+    return {
+      exercises: ex.map((e, i) => {
+        if (i === index || i === index + 1) return { ...e, supersetGroup: groupId };
+        if (e.supersetGroup === current.supersetGroup && current.supersetGroup != null) return { ...e, supersetGroup: groupId };
+        if (e.supersetGroup === next.supersetGroup && next.supersetGroup != null) return { ...e, supersetGroup: groupId };
+        return e;
+      }),
+    };
   }),
   unlinkExercise: (index) => set((state) => {
     const ex = [...state.exercises];
@@ -55,8 +85,8 @@ export const useRoutineStore = create<RoutineState>((set) => ({
     const currentGroup = ex[index].supersetGroup;
     if (currentGroup == null) return { exercises: ex };
 
-    const resetLinked = ex.map((exercise) =>
-      exercise.supersetGroup === currentGroup ? { ...exercise, supersetGroup: null } : exercise
+    const resetLinked = ex.map((exercise, i) =>
+      i === index ? { ...exercise, supersetGroup: null } : exercise
     );
 
     return { exercises: resetLinked };
@@ -67,25 +97,26 @@ export const useRoutineStore = create<RoutineState>((set) => ({
   loadRoutine: (routine) => set({
     name: routine.name,
     notes: routine.notes || '',
-    exercises: (routine.exercises || []).map((e: any) => {
-      if (e.exercise) {
+    exercises: (routine.exercises || []).map((e) => {
+      const hasNestedExercise = 'exercise' in e && e.exercise != null;
+      if (hasNestedExercise) {
         return {
-          id: e.exerciseId,
-          name: e.exercise.name,
-          nameEs: e.exercise.nameEs,
-          muscle: e.exercise.primaryMuscles?.[0] || 'other',
-          sets: e.targetSets,
-          reps: e.maxReps.toString(),
-          supersetGroup: e.supersetGroup,
+          id: e.exerciseId ?? e.id ?? '',
+          name: e.exercise!.name,
+          nameEs: e.exercise!.nameEs,
+          muscle: e.exercise!.primaryMuscles?.[0] || 'other',
+          sets: e.targetSets ?? e.sets ?? DEFAULT_SETS,
+          reps: String(e.maxReps ?? e.reps ?? DEFAULT_REP_RANGE),
+          supersetGroup: e.supersetGroup ?? null,
         };
       }
       return {
-        id: e.exerciseId,
-        name: e.name,
+        id: e.exerciseId ?? e.id ?? '',
+        name: e.name ?? '',
         nameEs: e.nameEs || null,
         muscle: e.muscle || 'other',
-        sets: e.sets || 3,
-        reps: e.reps || '8-12',
+        sets: e.sets || DEFAULT_SETS,
+        reps: e.reps || DEFAULT_REP_RANGE,
         supersetGroup: e.supersetGroup || null,
       };
     })

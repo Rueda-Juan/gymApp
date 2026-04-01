@@ -1,10 +1,11 @@
-import React from 'react';
-import { XStack, YStack} from 'tamagui';
+import React, { useMemo } from 'react';
+import { XStack, YStack, useTheme } from 'tamagui';
 import { X } from 'lucide-react-native';
 import { Modal, Pressable } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { calculatePlates } from '@/utils/plateMath';
+import { useSettings } from '@/store/useSettings';
 
 export function PlateCalculatorModal({ 
   visible, 
@@ -16,25 +17,28 @@ export function PlateCalculatorModal({
   targetWeight: number 
 }) {
   
-  // Estos valores podrían venir de los ajustes del usuario en el futuro
-  const barWeight = 20; 
-  const availablePlates = [25, 20, 15, 10, 5, 2.5, 1.25];
+  const barWeight = useSettings(s => s.defaultBarWeight);
+  const availablePlates = useSettings(s => s.availablePlates);
+  const theme = useTheme();
   
-  const calculation = calculatePlates(targetWeight, barWeight, availablePlates);
+  const calculation = useMemo(
+    () => calculatePlates(targetWeight, barWeight, availablePlates),
+    [targetWeight, barWeight, availablePlates]
+  );
 
   return (
     <Modal visible={visible} transparent animationType="fade">
       <Pressable 
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 }}
+        style={{ flex: 1, backgroundColor: theme.overlay?.val ?? 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 }}
         onPress={onClose}
       >
-        <YStack 
-          backgroundColor="$surface" 
-          borderRadius="$xl" 
-          padding="$xl" 
-          gap="$lg"
-          onPress={(e) => e.stopPropagation()} // Evita cerrar al tocar la tarjeta
-        >
+        <Pressable>
+          <YStack 
+            backgroundColor="$surface" 
+            borderRadius="$xl" 
+            padding="$xl" 
+            gap="$lg"
+          >
           <XStack justifyContent="space-between" alignItems="center">
             <AppText variant="titleSm">Calculadora de Discos</AppText>
             <Pressable onPress={onClose}>
@@ -50,8 +54,8 @@ export function PlateCalculatorModal({
                   Array.from({ length: p.count }).map((_, i) => (
                     <YStack 
                       key={`l-${p.weight}-${i}`}
-                      width={6 + p.weight * 0.2} 
-                      height={30 + p.weight * 2} 
+                      width={Math.min(20, 6 + p.weight * 0.2)} 
+                      height={Math.min(70, 30 + p.weight * 2)} 
                       backgroundColor="$primary" 
                       borderRadius={2}
                     />
@@ -60,7 +64,7 @@ export function PlateCalculatorModal({
               </XStack>
 
               {/* Centro de la barra */}
-              <YStack width={40} height={10} backgroundColor="$textTertiary" borderRadius={1} />
+              <YStack width={40} height={10} backgroundColor="$borderColor" borderRadius={1} />
 
               {/* Lado Derecho */}
               <XStack gap={2} alignItems="center">
@@ -68,8 +72,8 @@ export function PlateCalculatorModal({
                   Array.from({ length: p.count }).map((_, i) => (
                     <YStack 
                       key={`r-${p.weight}-${i}`}
-                      width={6 + p.weight * 0.2} 
-                      height={30 + p.weight * 2} 
+                      width={Math.min(20, 6 + p.weight * 0.2)} 
+                      height={Math.min(70, 30 + p.weight * 2)} 
                       backgroundColor="$primary" 
                       borderRadius={2}
                     />
@@ -111,7 +115,8 @@ export function PlateCalculatorModal({
               ))}
             </XStack>
           </YStack>
-        </YStack>
+          </YStack>
+        </Pressable>
       </Pressable>
     </Modal>
   );

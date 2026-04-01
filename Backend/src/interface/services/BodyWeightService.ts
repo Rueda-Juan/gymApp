@@ -16,7 +16,7 @@ export class BodyWeightService {
     return this._logBodyWeight.execute(params);
   }
 
-  async getBodyWeightHistory(startDate: Date, endDate: Date) {
+  async getBodyWeightHistory(startDate: string, endDate: string) {
     return this._getBodyWeightHistory.execute(startDate, endDate);
   }
 

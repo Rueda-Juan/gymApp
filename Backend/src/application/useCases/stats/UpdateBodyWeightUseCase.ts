@@ -13,23 +13,20 @@ export class UpdateBodyWeightUseCase {
   constructor(private readonly bodyWeightRepo: BodyWeightRepository) {}
 
   async execute(params: UpdateBodyWeightInput): Promise<BodyWeightEntry> {
-    // Get the entry to verify it exists
-    const entries = await this.bodyWeightRepo.getByDateRange(
-      new Date('2000-01-01'),
-      new Date('2099-12-31'),
-    );
-    const entry = entries.find((e) => e.id === params.id);
+    const entry = await this.bodyWeightRepo.getById(params.id);
 
     if (!entry) {
       throw new NotFoundError(`Body weight entry con ID ${params.id} no encontrada`);
     }
 
-    const dateStr = typeof params.date === 'string' ? new Date(params.date) : params.date;
+    const normalizedDate = typeof params.date === 'string'
+      ? params.date
+      : (params.date.toISOString().split('T')[0] ?? '');
 
     const updatedEntry: BodyWeightEntry = {
       id: params.id,
       weight: params.weight,
-      date: dateStr.toISOString().split('T')[0],
+      date: normalizedDate,
       notes: params.notes ?? entry.notes,
       createdAt: entry.createdAt,
     };

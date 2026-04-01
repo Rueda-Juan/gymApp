@@ -2,6 +2,7 @@ import type { StartWorkoutUseCase } from '../../application/useCases/workouts/St
 import type { FinishWorkoutUseCase } from '../../application/useCases/workouts/FinishWorkout';
 import type { DeleteWorkoutUseCase } from '../../application/useCases/workouts/DeleteWorkoutUseCase';
 import type { RecordSetUseCase } from '../../application/useCases/workouts/RecordSet';
+import type { RecordAllSetsUseCase } from '../../application/useCases/workouts/RecordAllSetsUseCase';
 import type { UpdateSetUseCase } from '../../application/useCases/workouts/UpdateSetUseCase';
 import type { DeleteSetUseCase } from '../../application/useCases/workouts/DeleteSetUseCase';
 import type { SkipExerciseUseCase } from '../../application/useCases/workouts/SkipExercise';
@@ -12,8 +13,10 @@ import type { UpdateWorkoutExerciseUseCase } from '../../application/useCases/wo
 import type { SuggestWeightUseCase, WarmupStyle } from '../../application/useCases/exercises/SuggestWeight';
 import type { GetWorkoutHistoryUseCase } from '../../application/useCases/workouts/GetWorkoutHistoryUseCase';
 import type { GetWorkoutByIdUseCase } from '../../application/useCases/workouts/GetWorkoutByIdUseCase';
+import type { GetPreviousSetsUseCase } from '../../application/useCases/exercises/GetPreviousSetsUseCase';
 import type { SessionContext } from '../../domain/valueObjects/SessionContext';
 import type { WorkoutSet } from '../../domain/entities/WorkoutSet';
+import type { WorkoutExercise } from '../../domain/entities/Workout';
 
 export class WorkoutService {
   constructor(
@@ -21,6 +24,7 @@ export class WorkoutService {
     private readonly _finishWorkout: FinishWorkoutUseCase,
     private readonly _deleteWorkout: DeleteWorkoutUseCase,
     private readonly _recordSet: RecordSetUseCase,
+    private readonly _recordAllSets: RecordAllSetsUseCase,
     private readonly _updateSet: UpdateSetUseCase,
     private readonly _deleteSet: DeleteSetUseCase,
     private readonly _skipExercise: SkipExerciseUseCase,
@@ -31,6 +35,7 @@ export class WorkoutService {
     private readonly _suggestWeight: SuggestWeightUseCase,
     private readonly _getHistory: GetWorkoutHistoryUseCase,
     private readonly _getById: GetWorkoutByIdUseCase,
+    private readonly _getPreviousSets: GetPreviousSetsUseCase,
   ) {}
 
   async getHistory(limit?: number) {
@@ -53,11 +58,19 @@ export class WorkoutService {
     return this._deleteWorkout.execute(workoutId);
   }
 
-  async recordSet(workoutId: string, set: any) {
+  async recordSet(workoutId: string, set: WorkoutSet) {
     return this._recordSet.execute(workoutId, set);
   }
 
-  async updateSet(workoutId: string, dateStr: string, set: any) {
+  async recordAllSets(workoutId: string, exercises: WorkoutExercise[]) {
+    return this._recordAllSets.execute(workoutId, exercises);
+  }
+
+  async getPreviousSets(exerciseId: string) {
+    return this._getPreviousSets.execute(exerciseId);
+  }
+
+  async updateSet(workoutId: string, dateStr: string, set: WorkoutSet) {
     return this._updateSet.execute(workoutId, dateStr, set);
   }
 

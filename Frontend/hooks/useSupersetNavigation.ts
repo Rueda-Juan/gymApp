@@ -20,7 +20,7 @@ export function useSupersetNavigation() {
    * o el siguiente ejercicio global si no hay superset.
    */
   const getNextExerciseIndex = useCallback((fromIndex: number): number | null => {
-    if (fromIndex >= exercises.length - 1) return null;
+    if (exercises.length === 0 || fromIndex >= exercises.length - 1) return null;
 
     const currentEx = exercises[fromIndex];
     const isSupersetEx = currentEx.supersetGroup != null;

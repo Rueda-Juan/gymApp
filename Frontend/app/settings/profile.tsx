@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, Alert } from 'react-native';
-import { YStack } from 'tamagui';
+import { Pressable, Alert, ScrollView } from 'react-native';
+import { XStack, YStack } from 'tamagui';
 import { Screen } from '@/components/ui/Screen';
 import { AppText } from '@/components/ui/AppText';
 import { AppInput } from '@/components/ui/AppInput';
@@ -12,36 +12,78 @@ export default function ProfileScreen() {
   const user = useUser((s) => s.user);
   const setUser = useUser((s) => s.setUser);
 
-  const [name, setName] = React.useState(user.name || '');
-  const [gender, setGender] = React.useState(user.gender || 'other');
-  const [age, setAge] = React.useState(user.age?.toString() || '');
+  const [name, setName] = React.useState(user?.name || '');
+  const [gender, setGender] = React.useState<'male' | 'female' | 'other'>(user?.gender || 'other');
+  const [age, setAge] = React.useState(user?.age?.toString() || '');
 
   return (
     <Screen safeAreaEdges={['top', 'left', 'right']}>
-      <YStack paddingHorizontal="$lg" paddingTop="$lg" gap="$md">
-        <AppText variant="titleLg">Perfil</AppText>
-        <AppText variant="bodySm" color="textSecondary">Administra tus datos personales</AppText>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 }}>
+        <YStack gap="$md">
+          <AppText variant="titleLg">Perfil</AppText>
+          <AppText variant="bodySm" color="textSecondary">Administra tus datos personales</AppText>
 
-        <AppInput placeholder="Nombre" value={name} onChangeText={setName} />
-        <AppInput placeholder="Sexo" value={gender} onChangeText={(value) => setGender(value as 'male' | 'female' | 'other')} />
-        <AppInput placeholder="Edad" keyboardType="numeric" value={age} onChangeText={setAge} />
+          <AppInput placeholder="Nombre" value={name} onChangeText={setName} />
 
-        <AppButton
-          label="Guardar"
-          onPress={() => {
-            if (!name.trim()) {
-              Alert.alert('Atención', 'El nombre es obligatorio.');
-              return;
-            }
-            setUser({ name: name.trim(), gender: gender as any, age: Number(age) || null, createdAt: user.createdAt || Date.now() });
-            Alert.alert('Listo', 'Tu perfil ha sido actualizado.');
-          }}
-        />
+          <AppText variant="label" color="textSecondary">Sexo / Género</AppText>
+          <XStack gap="$sm">
+            {(['male', 'female', 'other'] as const).map((option) => {
+              const isSelected = gender === option;
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setGender(option)}
+                  style={{ flex: 1 }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                >
+                  <YStack
+                    borderRadius="$md"
+                    borderWidth={1}
+                    borderColor={isSelected ? '$primary' : '$borderColor'}
+                    backgroundColor={isSelected ? '$primarySubtle' : '$surfaceSecondary'}
+                    paddingVertical={12}
+                    alignItems="center"
+                  >
+                    <AppText variant="bodyMd" fontWeight={isSelected ? '700' : '500'} color={isSelected ? 'primary' : 'textSecondary'}>
+                      {option === 'male' ? 'Hombre' : option === 'female' ? 'Mujer' : 'Otro'}
+                    </AppText>
+                  </YStack>
+                </Pressable>
+              );
+            })}
+          </XStack>
 
-        <Pressable onPress={() => router.back()}>
-          <AppText variant="bodyMd" color="primary">Volver</AppText>
-        </Pressable>
-      </YStack>
+          <AppInput
+            placeholder="Edad"
+            keyboardType="numeric"
+            value={age}
+            onChangeText={setAge}
+          />
+
+          <AppButton
+            label="Guardar"
+            onPress={() => {
+              if (!name.trim()) {
+                Alert.alert('Atención', 'El nombre es obligatorio.');
+                return;
+              }
+              const ageNum = Number(age);
+              if (age.trim() && (isNaN(ageNum) || ageNum < 1 || ageNum > 120)) {
+                Alert.alert('Atención', 'La edad debe estar entre 1 y 120 años.');
+                return;
+              }
+              const initializedCreatedAt = user.createdAt ?? Date.now();
+              setUser({ name: name.trim(), gender, age: ageNum || null, createdAt: initializedCreatedAt });
+              Alert.alert('Listo', 'Tu perfil ha sido actualizado.');
+            }}
+          />
+
+          <Pressable onPress={() => router.back()}>
+            <AppText variant="bodyMd" color="primary">Volver</AppText>
+          </Pressable>
+        </YStack>
+      </ScrollView>
     </Screen>
   );
 }

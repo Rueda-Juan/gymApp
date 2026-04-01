@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface RestTimerStore {
   isActive: boolean;
@@ -11,7 +13,9 @@ interface RestTimerStore {
   getRemainingSeconds: () => number;
 }
 
-export const useRestTimer = create<RestTimerStore>((set, get) => ({
+export const useRestTimer = create<RestTimerStore>()(
+  persist(
+    (set, get) => ({
   isActive: false,
   endTime: null,
   durationSeconds: 0,
@@ -33,17 +37,16 @@ export const useRestTimer = create<RestTimerStore>((set, get) => ({
   },
 
   adjustTimer: (secondsToAdd) => {
-    const { endTime, isActive } = get();
+    const { endTime, isActive, durationSeconds } = get();
     if (!isActive || !endTime) return;
     
     const newEndTime = endTime + (secondsToAdd * 1000);
-    // Prevent going below current time (negative remaining)
     if (newEndTime <= Date.now()) {
       get().stopTimer();
       return;
     }
     
-    set({ endTime: newEndTime });
+    set({ endTime: newEndTime, durationSeconds: durationSeconds + secondsToAdd });
   },
 
   getRemainingSeconds: () => {
@@ -51,12 +54,17 @@ export const useRestTimer = create<RestTimerStore>((set, get) => ({
     if (!isActive || !endTime) return 0;
     
     const remainingMs = endTime - Date.now();
-    if (remainingMs <= 0) {
-      // Auto-stop if time passed
-      setTimeout(() => get().stopTimer(), 0);
-      return 0;
-    }
+    if (remainingMs <= 0) return 0;
     
     return Math.ceil(remainingMs / 1000);
   }
+}), {
+  name: 'rest-timer-storage',
+  storage: createJSONStorage(() => AsyncStorage),
+  // Only persist the timer data; skip derived/computed values
+  partialize: (state) => ({
+    isActive: state.isActive,
+    endTime: state.endTime,
+    durationSeconds: state.durationSeconds,
+  }),
 }));

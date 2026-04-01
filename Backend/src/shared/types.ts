@@ -56,3 +56,5 @@ export type { Equipment } from '../domain/valueObjects/Equipment';
 export type { SetType } from '../domain/valueObjects/SetType';
 export type { SessionContext } from '../domain/valueObjects/SessionContext';
 export type { WarmupStyle, WeightSuggestion } from '../application/useCases/exercises/SuggestWeight';
+export type { TrainingFrequencyResult } from '../application/useCases/stats/GetTrainingFrequencyUseCase';
+export type { MuscleVolumeDistribution } from '../application/useCases/stats/GetMuscleBalanceUseCase';

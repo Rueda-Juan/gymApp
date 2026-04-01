@@ -1,7 +1,7 @@
 import type { ExerciseStats } from '../entities/ExerciseStats';
 import type * as SQLite from 'expo-sqlite';
 import type { DailyStats } from '../entities/DailyStats';
-import type { PersonalRecord } from '../entities/PersonalRecord';
+import type { PersonalRecord, RecordType } from '../entities/PersonalRecord';
 
 /**
  * Repository interface for statistics data access.
@@ -32,9 +32,11 @@ export interface StatsRepository {
 
   // Personal records
   getPersonalRecords(exerciseId: string): Promise<PersonalRecord[]>;
-  getLatestRecord(exerciseId: string, recordType: string): Promise<PersonalRecord | null>;
+  getLatestRecord(exerciseId: string, recordType: RecordType): Promise<PersonalRecord | null>;
   /** Saves a new personal record */
   savePersonalRecord(record: PersonalRecord): Promise<void>;
+  /** Counts PRs logged on or after the given ISO date string */
+  countRecordsSince(since: string): Promise<number>;
 
   // Muscle Balance
   /** Gets volume distribution by muscle group in a date range */

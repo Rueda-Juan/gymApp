@@ -2,6 +2,7 @@ import React from 'react';
 import { XStack } from 'tamagui';
 import { AppText } from './AppText';
 import { ThemeColorKey } from '@/theme/types';
+import { FONT_SCALE } from '@/tamagui.config';
 
 type BadgeVariant = 'primary' | 'success' | 'warning' | 'danger' | 'ghost';
 type BadgeSize = 'sm' | 'md';
@@ -22,18 +23,18 @@ const BADGE_CONFIG: Record<BadgeVariant, { bg: string; color: ThemeColorKey }> =
 };
 
 const SIZE_CONFIG: Record<BadgeSize, { px: number; py: number; fontSize: number; iconSize: number }> = {
-  sm: { px: 8, py: 2, fontSize: 10, iconSize: 12 },
-  md: { px: 12, py: 4, fontSize: 12, iconSize: 14 },
+  sm: { px: 8, py: 2, fontSize: FONT_SCALE.sizes[1], iconSize: 12 },
+  md: { px: 12, py: 4, fontSize: FONT_SCALE.sizes[2], iconSize: 14 },
 };
 
 export function Badge({ label, variant = 'primary', size = 'sm', icon }: BadgeProps) {
   const colors = BADGE_CONFIG[variant];
   const spacing = SIZE_CONFIG[size];
 
-  const styledIcon = React.isValidElement(icon)
-    ? React.cloneElement(icon as React.ReactElement<any>, {
+  const styledIcon = React.isValidElement<{ size?: number; color?: string }>(icon)
+    ? React.cloneElement(icon, {
         size: spacing.iconSize,
-        color: `$${colors.color}`,
+        color: colors.color,
       })
     : icon;
 
