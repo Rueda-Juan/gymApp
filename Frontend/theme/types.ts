@@ -27,4 +27,7 @@ export type ThemeColorKey =
   | 'darkText'
   | 'info'
   | 'infoSubtle'
-  | 'white';
+  | 'white'
+  | 'surfaceTertiary'
+  | 'borderStrong'
+  | 'borderColor';

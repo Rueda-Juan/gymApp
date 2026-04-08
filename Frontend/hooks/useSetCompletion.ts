@@ -1,10 +1,9 @@
 import { useCallback } from 'react';
-import { Platform } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useRestTimer } from '@/store/useRestTimer';
 import { useSettings } from '@/store/useSettings';
+import { triggerMediumHaptic } from '@/utils/haptics';
 
 /**
  * useSetCompletion — Encapsula la lógica de completar un set.
@@ -30,13 +29,13 @@ export function useSetCompletion() {
   const restTimerSeconds = useSettings(s => s.restTimerSeconds);
 
   const completeSet = useCallback(
-    async (
+    (
       exerciseId: string,
       setId: string,
       currentlyCompleted: boolean,
       exercise: ExerciseForCompletion,
-      shouldStartRestTimer: boolean = true,
-    ): Promise<void> => {
+      shouldStartRestTimer = true,
+    ): void => {
       toggleSetComplete(exerciseId, setId);
 
       if (currentlyCompleted) return;
@@ -53,9 +52,7 @@ export function useSetCompletion() {
         }
       }
 
-      if (Platform.OS !== 'web') {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
+      triggerMediumHaptic();
 
       if (shouldStartRestTimer) {
         startTimer(restTimerSeconds);
@@ -67,4 +64,3 @@ export function useSetCompletion() {
 
   return { completeSet };
 }
-

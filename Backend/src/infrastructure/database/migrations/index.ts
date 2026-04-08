@@ -26,6 +26,10 @@ import * as m023 from './023_fix_more_exercise_muscles';
 import * as m024 from './024_fix_exercise_muscles_batch3';
 import * as m025 from './025_fix_exercise_muscles_batch4';
 import * as m026 from './026_add_name_es_column';
+import * as m027 from './027_add_exercise_key';
+import * as m028 from './028_deduplicate_exercises';
+import * as m029 from './029_add_custom_exercise_fields';
+import * as m030 from './030_add_exercise_load_cache';
 
 interface Migration {
   version: number;
@@ -42,7 +46,7 @@ const migrations: Migration[] = [
   m011, m012, m013, m014, m015,
   m016, m017, m018, m019, m020,
   m021, m022, m023, m024, m025,
-  m026
+  m026, m027, m028, m029, m030,
 ];
 
 /**

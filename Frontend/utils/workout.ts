@@ -42,3 +42,30 @@ export function calculateExercisesVolume(
 export function sumWorkoutDurationSeconds(workouts: { durationSeconds?: number }[]): number {
   return workouts.reduce((total, w) => total + (w.durationSeconds ?? 0), 0);
 }
+
+const EPLEY_DIVISOR = 30;
+
+/**
+ * Estimates 1-rep max using the Epley formula: weight × (1 + reps / 30).
+ * Returns 0 when inputs are non-positive.
+ */
+export function calculateEpley1RM(weight: number, reps: number): number {
+  if (reps <= 0 || weight <= 0) return 0;
+  return Number((weight * (1 + reps / EPLEY_DIVISOR)).toFixed(1));
+}
+
+/**
+ * Finds the exercise with the highest total volume across its sets.
+ */
+export function findMaxVolumeExercise<T extends MinimalExercise>(
+  exercises: T[]
+): { exercise: T; volume: number } | null {
+  if (!exercises?.length) return null;
+  return exercises.reduce<{ exercise: T; volume: number }>(
+    (max, ex) => {
+      const vol = ex.sets?.reduce((acc, set) => acc + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0) ?? 0;
+      return vol > max.volume ? { exercise: ex, volume: vol } : max;
+    },
+    { exercise: exercises[0], volume: 0 },
+  );
+}

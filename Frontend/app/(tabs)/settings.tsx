@@ -1,16 +1,20 @@
-﻿import React from 'react';
+import React from 'react';
 import { Pressable, Switch, Alert } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
-import { User, Bell, Lock, CircleHelp, Info, LogOut, ChevronRight, Moon, Hourglass, type LucideIcon } from 'lucide-react-native';
+import { User, Bell, Lock, CircleHelp, Info, LogOut, ChevronRight, Moon, Hourglass, Wind, type LucideIcon } from 'lucide-react-native';
 
 import { Screen } from '@/components/ui/Screen';
 import { CardBase } from '@/components/ui/card';
 import { AppText } from '@/components/ui/AppText';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppIcon } from '@/components/ui/AppIcon';
+import { ToggleChip } from '@/components/ui/ToggleChip';
+import { SettingItem } from '@/components/settings/SettingItem';
+import { SegmentedPicker } from '@/components/settings/SegmentedPicker';
 import { useSettings, STANDARD_PLATES, BAR_WEIGHTS } from '@/store/useSettings';
 import { useUser } from '@/store/useUser';
 import { router } from 'expo-router';
+import { ROUTES } from '@/constants/routes';
 
 const REST_TIMER_PRESETS = [60, 90, 120, 180] as const;
 const MIN_REST_TIMER_SECONDS = 15;
@@ -20,62 +24,12 @@ function clampRestTimerSeconds(seconds: number) {
   return Math.min(MAX_REST_TIMER_SECONDS, Math.max(MIN_REST_TIMER_SECONDS, seconds));
 }
 
-type SettingItemProps = {
-  icon: LucideIcon;
-  label: string;
-} & (
-  | {
-      type?: 'link';
-      onPress?: () => void;
-    }
-  | {
-      type: 'switch';
-      value: boolean;
-      onValueChange: (value: boolean) => void;
-    }
-);
 
-const SettingItem = React.memo(function SettingItem(props: SettingItemProps) {
-  const theme = useTheme();
-  const isSwitch = props.type === 'switch';
-  const handlePress = isSwitch ? () => props.onValueChange(!props.value) : props.onPress;
-  const isDisabled = !isSwitch && props.onPress == null;
-  
-  return (
-    <Pressable
-      disabled={isDisabled}
-      onPress={handlePress}
-      accessibilityRole={isSwitch ? 'switch' : 'button'}
-      accessibilityState={isSwitch ? { checked: props.value } : undefined}
-    >
-      <XStack justifyContent="space-between" alignItems="center" paddingVertical="$sm">
-        <XStack alignItems="center" gap="$md">
-          <YStack
-            width={40} 
-            height={40} 
-            borderRadius={20}
-            alignItems="center" 
-            justifyContent="center"
-            backgroundColor="$surfaceSecondary"
-          >
-            <AppIcon icon={props.icon} size={18} color="primary" />
-          </YStack>
-          <AppText variant="bodyMd" fontWeight="500">{props.label}</AppText>
-        </XStack>
+const THEME_OPTIONS = ['system', 'light', 'dark'] as const;
+const THEME_LABELS: Record<typeof THEME_OPTIONS[number], string> = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' };
 
-        {!isSwitch && <AppIcon icon={ChevronRight} size={18} color="textTertiary" />}
-        {isSwitch && (
-          <Switch
-            value={props.value}
-            onValueChange={props.onValueChange}
-            trackColor={{ false: theme.surfaceSecondary?.val as string, true: theme.primary?.val as string }}
-            thumbColor={theme.background?.val as string}
-          />
-        )}
-      </XStack>
-    </Pressable>
-  );
-});
+const MOTION_OPTIONS = ['system', 'full', 'reduced'] as const;
+const MOTION_LABELS: Record<typeof MOTION_OPTIONS[number], string> = { system: 'Sistema', full: 'Completa', reduced: 'Reducida' };
 
 export default function SettingsScreen() {
   const availablePlates = useSettings(s => s.availablePlates);
@@ -84,9 +38,14 @@ export default function SettingsScreen() {
   const setRestTimerSeconds = useSettings(s => s.setRestTimerSeconds);
   const themeMode = useSettings(s => s.themeMode);
   const setThemeMode = useSettings(s => s.setThemeMode);
+  const motionPreference = useSettings(s => s.motionPreference);
+  const setMotionPreference = useSettings(s => s.setMotionPreference);
   const togglePlate = useSettings(s => s.togglePlate);
   const setBarWeight = useSettings(s => s.setBarWeight);
+  const hapticsEnabled = useSettings(s => s.hapticsEnabled);
+  const setHapticsEnabled = useSettings(s => s.setHapticsEnabled);
   const resetUser = useUser(s => s.resetUser);
+  const theme = useTheme();
   const restTimerDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [restTimerInput, setRestTimerInput] = React.useState(() => String(restTimerSeconds));
 
@@ -132,9 +91,9 @@ export default function SettingsScreen() {
         <YStack marginBottom="$2xl">
           <AppText variant="label" color="textTertiary" marginBottom="$xs">PERFIL</AppText>
           <CardBase padding="$md">
-            <SettingItem icon={User} label="Perfil de Usuario" onPress={() => router.push('/settings/profile')} />
-            <SettingItem icon={Bell} label="Notificaciones" onPress={() => router.push('/settings/notifications')} />
-            <SettingItem icon={Lock} label="Privacidad" onPress={() => router.push('/settings/privacy')} />
+            <SettingItem icon={User} label="Perfil de Usuario" onPress={() => router.push(ROUTES.SETTINGS_PROFILE)} />
+            <SettingItem icon={Bell} label="Notificaciones" onPress={() => router.push(ROUTES.SETTINGS_NOTIFICATIONS)} />
+            <SettingItem icon={Lock} label="Privacidad" onPress={() => router.push(ROUTES.SETTINGS_PRIVACY)} />
           </CardBase>
         </YStack>
 
@@ -146,34 +105,15 @@ export default function SettingsScreen() {
           </AppText>
           <CardBase marginBottom="$md" padding="$md">
             <XStack flexWrap="wrap" gap="$sm">
-              {STANDARD_PLATES.map(plate => {
-                const isActive = availablePlates.includes(plate);
-                return (
-                  <Pressable
-                    key={plate}
-                    onPress={() => togglePlate(plate)}
-                  >
-                    <YStack
-                      alignItems="center" 
-                      justifyContent="center"
-                      paddingHorizontal="$md" 
-                      paddingVertical="$xs"
-                      borderRadius="$full" 
-                      borderWidth={1}
-                      borderColor={isActive ? '$primary' : '$borderColor'}
-                      backgroundColor={isActive ? '$primarySubtle' : '$surfaceSecondary'}
-                    >
-                      <AppText
-                        variant="bodyMd"
-                        fontWeight="700"
-                        color={isActive ? 'primary' : 'textSecondary'}
-                      >
-                        {plate}
-                      </AppText>
-                    </YStack>
-                  </Pressable>
-                );
-              })}
+              {STANDARD_PLATES.map(plate => (
+                <ToggleChip
+                  key={plate}
+                  label={String(plate)}
+                  isActive={availablePlates.includes(plate)}
+                  onPress={() => togglePlate(plate)}
+                  accessibilityLabel={`Disco de ${plate} kg`}
+                />
+              ))}
             </XStack>
           </CardBase>
 
@@ -182,36 +122,15 @@ export default function SettingsScreen() {
           </AppText>
           <CardBase padding="$md">
             <XStack justifyContent="space-between" gap="$xs">
-              {BAR_WEIGHTS.map(bar => {
-                const isActive = defaultBarWeight === bar;
-                return (
-                  <Pressable
-                    key={bar}
-                    style={{ flex: 1 }}
-                    onPress={() => setBarWeight(bar)}
-                    accessibilityLabel={`Barra de ${bar} kg`}
-                  >
-                    <YStack
-                      alignItems="center" 
-                      justifyContent="center"
-                      paddingVertical="$sm" 
-                      borderRadius="$md" 
-                      borderCurve="continuous"
-                      borderWidth={1}
-                      borderColor={isActive ? '$primary' : '$borderColor'}
-                      backgroundColor={isActive ? '$primarySubtle' : '$surfaceSecondary'}
-                    >
-                      <AppText
-                        variant="bodyMd"
-                        fontWeight="700"
-                        color={isActive ? 'primary' : 'textSecondary'}
-                      >
-                        {bar} kg
-                      </AppText>
-                    </YStack>
-                  </Pressable>
-                );
-              })}
+              {BAR_WEIGHTS.map(bar => (
+                <ToggleChip
+                  key={bar}
+                  label={`${bar} kg`}
+                  isActive={defaultBarWeight === bar}
+                  onPress={() => setBarWeight(bar)}
+                  accessibilityLabel={`Barra de ${bar} kg`}
+                />
+              ))}
             </XStack>
           </CardBase>
         </YStack>
@@ -219,53 +138,39 @@ export default function SettingsScreen() {
         <YStack marginBottom="$2xl">
           <AppText variant="label" color="textTertiary" marginBottom="$xs">APLICACIÓN</AppText>
           <CardBase padding="$md" marginBottom="$md">
+            <SegmentedPicker
+              icon={Moon}
+              label="Apariencia"
+              options={THEME_OPTIONS}
+              labels={THEME_LABELS}
+              value={themeMode}
+              onValueChange={setThemeMode}
+            />
+            <SegmentedPicker
+              icon={Wind}
+              label="Animaciones"
+              options={MOTION_OPTIONS}
+              labels={MOTION_LABELS}
+              value={motionPreference}
+              onValueChange={setMotionPreference}
+            />
+            <SettingItem icon={CircleHelp} label="Ayuda y Soporte" disabled />
+            <SettingItem icon={Info} label="Información de la App" disabled />
+          </CardBase>
+          
+          <AppText variant="label" color="textTertiary" marginBottom="$xs">RETROALIMENTACIÓN</AppText>
+          <CardBase padding="$md" marginBottom="$md">
             <XStack alignItems="center" justifyContent="space-between" paddingVertical="$sm">
               <XStack alignItems="center" gap="$md">
-                <YStack
-                  width={40}
-                  height={40}
-                  borderRadius={20}
-                  alignItems="center"
-                  justifyContent="center"
-                  backgroundColor="$surfaceSecondary"
-                >
-                  <AppIcon icon={Moon} size={18} color="primary" />
-                </YStack>
-                <AppText variant="bodyMd" fontWeight="500">Apariencia</AppText>
+                <AppIcon icon={Bell} size={20} color="textSecondary" />
+                <AppText variant="bodyMd">Vibración (Haptics)</AppText>
               </XStack>
-              <XStack gap="$xs">
-                {(['system', 'light', 'dark'] as const).map((mode) => {
-                  const labels = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' };
-                  const isActive = themeMode === mode;
-                  return (
-                    <Pressable key={mode} onPress={() => setThemeMode(mode)}>
-                      <YStack
-                        paddingHorizontal="$sm"
-                        paddingVertical="$xs"
-                        borderRadius="$md"
-                        borderWidth={1}
-                        borderColor={isActive ? '$primary' : '$borderColor'}
-                        backgroundColor={isActive ? '$primarySubtle' : '$surfaceSecondary'}
-                      >
-                        <AppText
-                          variant="label"
-                          fontWeight="700"
-                          color={isActive ? 'primary' : 'textSecondary'}
-                        >
-                          {labels[mode]}
-                        </AppText>
-                      </YStack>
-                    </Pressable>
-                  );
-                })}
-              </XStack>
+              <Switch 
+                value={hapticsEnabled} 
+                onValueChange={setHapticsEnabled}
+                trackColor={{ true: theme.primary?.val }}
+              />
             </XStack>
-            <YStack opacity={0.4} pointerEvents="none">
-              <SettingItem icon={CircleHelp} label="Ayuda y Soporte" />
-            </YStack>
-            <YStack opacity={0.4} pointerEvents="none">
-              <SettingItem icon={Info} label="Información de la App" />
-            </YStack>
           </CardBase>
 
           <AppText variant="label" color="textTertiary" marginBottom="$xs">TIMER DE DESCANSO</AppText>
@@ -321,34 +226,14 @@ export default function SettingsScreen() {
               <YStack gap="$xs">
                 <AppText variant="label" color="textTertiary">ATAJOS</AppText>
                 <XStack gap="$xs" flexWrap="wrap">
-                  {REST_TIMER_PRESETS.map((preset) => {
-                    const isActive = restTimerSeconds === preset;
-
-                    return (
-                      <Pressable key={preset} onPress={() => applyRestTimerSeconds(preset)}>
-                        <YStack
-                          minWidth={68}
-                          alignItems="center"
-                          paddingHorizontal="$md"
-                          paddingVertical="$sm"
-                          borderRadius="$lg"
-                          borderCurve="continuous"
-                          borderWidth={1}
-                          borderColor={isActive ? '$primary' : '$borderColor'}
-                          backgroundColor={isActive ? '$primarySubtle' : '$surfaceSecondary'}
-                        >
-                          <AppText
-                            variant="bodyMd"
-                            fontWeight="700"
-                            color={isActive ? 'primary' : 'textSecondary'}
-                            fontVariant={['tabular-nums']}
-                          >
-                            {preset}s
-                          </AppText>
-                        </YStack>
-                      </Pressable>
-                    );
-                  })}
+                  {REST_TIMER_PRESETS.map((preset) => (
+                    <ToggleChip
+                      key={preset}
+                      label={`${preset}s`}
+                      isActive={restTimerSeconds === preset}
+                      onPress={() => applyRestTimerSeconds(preset)}
+                    />
+                  ))}
                 </XStack>
               </YStack>
 
@@ -383,7 +268,7 @@ export default function SettingsScreen() {
         </YStack>
 
         <YStack alignItems="center" marginTop="$xl">
-          <AppText variant="bodySm" color="textTertiary">Versión 1.0.0 (Premium)</AppText>
+          <AppText variant="bodySm" color="textTertiary">Versión 1.0.0</AppText>
         </YStack>
 
         <YStack opacity={0.6} marginTop="$md">

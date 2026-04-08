@@ -1,104 +1,75 @@
-﻿import { XStack, YStack } from 'tamagui';
-import React, { useEffect, useState, useCallback } from 'react';
+import { XStack, YStack } from 'tamagui';
+import React, { useEffect, useCallback } from 'react';
 import { ScrollView, ActivityIndicator, Share } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Trophy, Clock, Dumbbell, Share2, TrendingUp, TrendingDown } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
 
 import { CardBase } from '@/components/ui/card';
+import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton, IconButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Screen } from '@/components/ui/Screen';
-import { useWorkout } from '@/hooks/useWorkout';
 import { useRoutines } from '@/hooks/useRoutines';
 import { useWorkoutSummary } from '../../store/useWorkoutSummary';
 import { calculateExercisesVolume } from '@/utils/workout';
 import { useStartWorkout } from '@/hooks/useStartWorkout';
 import { getExerciseName } from '@/utils/exercise';
 import { WorkoutExerciseSummaryList } from '@/components/workout/WorkoutExerciseSummaryList';
-
-interface SummaryPersonalRecord {
-  exerciseId: string;
-  recordType: string;
-  value: number;
-}
-
-interface SummarySet {
-  id: string;
-  weight: number;
-  reps: number;
-  isCompleted?: boolean;
-}
-
-interface SummaryExercise {
-  id: string;
-  exerciseId: string;
-  name?: string;
-  nameEs?: string | null;
-  supersetGroup?: number | null;
-  sets: SummarySet[];
-}
-
-interface SummaryWorkout {
-  id: string;
-  routineId: string | null;
-  date: string | Date;
-  durationSeconds: number;
-  exercises: SummaryExercise[];
-}
+import { motion } from '@/constants/motion';
+import { useMotion } from '@/hooks/useMotion';
+import { useWorkoutSummaryData } from '@/hooks/useWorkoutSummaryData';
+import type { SummaryWorkout, SummaryPersonalRecord } from '@/hooks/useWorkoutSummaryData';
+import { ROUTES } from '@/constants/routes';
+import { PRCelebrationOverlay } from '@/components/workout/PRCelebrationOverlay';
 
 const SUMMARY_VOLUME_OPTIONS = { completedOnly: true, defaultCompleted: true } as const;
 
+function PreviousWorkoutComparison({ current, previous }: { current: SummaryWorkout; previous: SummaryWorkout }) {
+  const currentVolume = calculateExercisesVolume(current.exercises, SUMMARY_VOLUME_OPTIONS);
+  const previousVolume = calculateExercisesVolume(previous.exercises, SUMMARY_VOLUME_OPTIONS);
+  const volumeDelta = currentVolume - previousVolume;
+  const minsDelta = Math.floor(current.durationSeconds / 60) - Math.floor(previous.durationSeconds / 60);
+  const isVolumeUp = volumeDelta >= 0;
+  const formatDelta = (val: number) => `${val >= 0 ? '+' : ''}${val}`;
+
+  return (
+    <Animated.View entering={FadeIn.delay(700)}>
+      <XStack alignItems="center" gap="$sm" marginBottom="$lg" paddingHorizontal="$xs">
+        <AppIcon
+          icon={isVolumeUp ? TrendingUp : TrendingDown}
+          size={16}
+          color={isVolumeUp ? 'success' : 'danger'}
+        />
+        <AppText variant="bodySm" color="textSecondary">
+          {`vs sesión anterior: ${formatDelta(volumeDelta)} kg · ${formatDelta(minsDelta)} min`}
+        </AppText>
+      </XStack>
+    </Animated.View>
+  );
+}
+
 export default function WorkoutSummaryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const m = useMotion();
   const theme = useTheme();
-  const workoutService = useWorkout();
   const routineService = useRoutines();
   const startWorkoutFromRoutine = useStartWorkout('replace');
+  const { workout, previousWorkout, loading } = useWorkoutSummaryData(id);
   const newRecords = useWorkoutSummary(s => s.newRecords) as SummaryPersonalRecord[];
   const clearNewRecords = useWorkoutSummary(s => s.clearNewRecords);
-
-  const [workout, setWorkout] = useState<SummaryWorkout | null>(null);
-  const [previousWorkout, setPreviousWorkout] = useState<SummaryWorkout | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [showCelebration, setShowCelebration] = React.useState(false);
 
   useEffect(() => {
-    const loadWorkout = async () => {
-      try { 
-        setWorkout((await workoutService.getWorkoutById(id as string)) as SummaryWorkout | null); 
-      } catch (e) { 
-        console.error(e); 
-      } finally { 
-        setLoading(false); 
-      }
-    };
-
-    if (id) loadWorkout();
-  }, [id, workoutService]);
+    if (!loading && newRecords.length > 0) {
+      setTimeout(() => setShowCelebration(true), 500);
+    }
+  }, [loading, newRecords]);
 
   useEffect(() => () => clearNewRecords(), [clearNewRecords]);
-
-  useEffect(() => {
-    const loadPreviousWorkout = async () => {
-      try {
-        if (!workout?.date) return;
-
-        const history = await workoutService.getHistory(200);
-        const currentWorkoutDate = new Date(workout.date).getTime();
-        const previous = (history as SummaryWorkout[])
-          .filter((entry) => entry.id !== workout.id)
-          .filter((entry) => new Date(entry.date).getTime() < currentWorkoutDate)
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] ?? null;
-
-        setPreviousWorkout(previous);
-      } catch (e) {
-        console.warn('[Summary] failed to load previous workout:', e);
-      }
-    };
-    if (id && workout) loadPreviousWorkout();
-  }, [id, workout, workoutService]);
 
   const calculateTotalVolume = useCallback(
     () => workout ? calculateExercisesVolume(workout.exercises, SUMMARY_VOLUME_OPTIONS) : 0,
@@ -125,7 +96,9 @@ export default function WorkoutSummaryScreen() {
     if (!workout) return;
     try {
       await Share.share({ message: buildShareMessage(workout) });
-    } catch {}
+    } catch {
+      // Share cancelled or failed — non-critical
+    }
   }, [buildShareMessage, workout]);
 
   const handleRepeat = useCallback(async () => {
@@ -134,15 +107,15 @@ export default function WorkoutSummaryScreen() {
       const routine = await routineService.getRoutineById(workout.routineId);
       if (!routine) return;
       await startWorkoutFromRoutine(routine);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      Toast.show({ type: 'error', text1: 'Error al repetir entrenamiento', position: 'top' });
     }
   }, [workout, routineService, startWorkoutFromRoutine]);
 
   if (loading) {
     return (
       <Screen>
-        <ActivityIndicator size="large" color={theme.primary?.val as string} />
+        <ActivityIndicator size="large" color={theme.primary?.val ?? '#007AFF'} />
       </Screen>
     );
   }
@@ -152,7 +125,7 @@ export default function WorkoutSummaryScreen() {
       <Screen>
         <YStack flex={1} alignItems="center" justifyContent="center" padding="$xl">
           <AppText variant="titleSm" color="textSecondary">No se encontró el entrenamiento</AppText>
-          <AppButton label="Volver" onPress={() => router.replace('/(tabs)/')} style={{ marginTop: 16 }} />
+          <AppButton label="Volver" onPress={() => router.replace(ROUTES.TABS_HOME)} style={{ marginTop: 16 }} />
         </YStack>
       </Screen>
     );
@@ -164,11 +137,12 @@ export default function WorkoutSummaryScreen() {
         <IconButton
           icon={<AppIcon icon={Share2} size={20} color="color" />}
           onPress={handleShare}
+          accessibilityLabel="Compartir resumen"
         />
       </XStack>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
 
-        <Animated.View entering={FadeInDown.delay(200).duration(800)}>
+        <Animated.View entering={m.entering(FadeInDown.delay(200).duration(motion.duration.hero))}>
           <YStack alignItems="center" marginVertical="$3xl">
             <Animated.View
               entering={FadeInDown.delay(300).duration(600).springify()}
@@ -177,7 +151,7 @@ export default function WorkoutSummaryScreen() {
                 height: 140,
                 borderRadius: 70,
                 borderWidth: 2,
-                borderColor: theme.gold?.val as string,
+                borderColor: theme.gold?.val ?? '#FFD700',
                 justifyContent: 'center',
                 alignItems: 'center',
                 overflow: 'hidden',
@@ -186,7 +160,7 @@ export default function WorkoutSummaryScreen() {
               <YStack
                 width={112}
                 height={112}
-                borderRadius="$circle"
+                borderRadius={9999}
                 justifyContent="center"
                 alignItems="center"
                 backgroundColor="$goldSubtle"
@@ -202,8 +176,8 @@ export default function WorkoutSummaryScreen() {
         </Animated.View>
 
         <XStack gap="$md" marginBottom="$lg">
-          <Animated.View entering={FadeInUp.delay(400)} style={{ flex: 1 }}>
-            <CardBase alignItems="center" justifyContent="center" padding="$md">
+          <Animated.View entering={FadeInUp.delay(400)} style={[{ flex: 1 }, animatedCardShadow]}>
+            <CardBase alignItems="center" justifyContent="center" padding="$md" {...elevation.flat}>
               <AppIcon icon={Clock} size={20} color="primary" />
               <AppText variant="titleMd" marginTop="$sm">
                 {Math.floor(workout.durationSeconds / 60)}:{(workout.durationSeconds % 60).toString().padStart(2, '0')}
@@ -212,8 +186,8 @@ export default function WorkoutSummaryScreen() {
             </CardBase>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(600)} style={{ flex: 1 }}>
-            <CardBase alignItems="center" justifyContent="center" padding="$md">
+          <Animated.View entering={FadeInUp.delay(600)} style={[{ flex: 1 }, animatedCardShadow]}>
+            <CardBase alignItems="center" justifyContent="center" padding="$md" {...elevation.flat}>
               <AppIcon icon={Dumbbell} size={20} color="primary" />
               <AppText variant="titleMd" marginTop="$sm">{calculateTotalVolume()} kg</AppText>
               <AppText variant="label" color="textTertiary">VOLUMEN TOTAL</AppText>
@@ -221,29 +195,9 @@ export default function WorkoutSummaryScreen() {
           </Animated.View>
         </XStack>
 
-        {previousWorkout && (() => {
-          const prevVolume = calculateExercisesVolume(previousWorkout.exercises, SUMMARY_VOLUME_OPTIONS);
-          const currVolume = calculateTotalVolume();
-          const prevMins = Math.floor(previousWorkout.durationSeconds / 60);
-          const currMins = Math.floor(workout.durationSeconds / 60);
-          const volumeDelta = currVolume - prevVolume;
-          const minsDelta = currMins - prevMins;
-          const isVolumeUp = volumeDelta >= 0;
-          return (
-            <Animated.View entering={FadeIn.delay(700)}>
-              <XStack alignItems="center" gap="$sm" marginBottom="$lg" paddingHorizontal="$xs">
-                <AppIcon
-                  icon={isVolumeUp ? TrendingUp : TrendingDown}
-                  size={16}
-                  color={isVolumeUp ? 'success' : 'danger'}
-                />
-                <AppText variant="bodySm" color="textSecondary">
-                  {`vs sesión anterior: ${volumeDelta >= 0 ? '+' : ''}${volumeDelta} kg · ${minsDelta >= 0 ? '+' : ''}${minsDelta} min`}
-                </AppText>
-              </XStack>
-            </Animated.View>
-          );
-        })()}
+        {previousWorkout && (
+          <PreviousWorkoutComparison current={workout} previous={previousWorkout} />
+        )}
 
         <WorkoutExerciseSummaryList exercises={workout.exercises} newRecords={newRecords} />
 
@@ -252,7 +206,7 @@ export default function WorkoutSummaryScreen() {
         <YStack gap="$md" marginVertical="$3xl">
           <AppButton
             label="Listo"
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => router.replace(ROUTES.TABS)}
           />
           {workout?.routineId && (
             <AppButton
@@ -263,6 +217,10 @@ export default function WorkoutSummaryScreen() {
           )}
         </YStack>
       </ScrollView>
+      <PRCelebrationOverlay 
+        visible={showCelebration} 
+        onFinished={() => setShowCelebration(false)} 
+      />
     </Screen>
   );
 }

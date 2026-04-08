@@ -1,5 +1,6 @@
 import { FinishWorkoutUseCase } from '../workouts/FinishWorkout';
 import type { WorkoutRepository } from '../../../domain/repositories/WorkoutRepository';
+import type { ExerciseLoadCacheRepository } from '../../../domain/repositories/ExerciseLoadCacheRepository';
 import type { Workout } from '../../../domain/entities/Workout';
 import { NotFoundError } from '../../../shared/errors';
 
@@ -18,6 +19,7 @@ function createWorkout(overrides: Partial<Workout> = {}): Workout {
 describe('FinishWorkoutUseCase', () => {
   let useCase: FinishWorkoutUseCase;
   let mockWorkoutRepo: jest.Mocked<WorkoutRepository>;
+  let mockLoadCacheRepo: jest.Mocked<ExerciseLoadCacheRepository>;
 
   beforeEach(() => {
     mockWorkoutRepo = {
@@ -25,7 +27,11 @@ describe('FinishWorkoutUseCase', () => {
       save: jest.fn(),
     } as unknown as jest.Mocked<WorkoutRepository>;
 
-    useCase = new FinishWorkoutUseCase(mockWorkoutRepo);
+    mockLoadCacheRepo = {
+      invalidateAll: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<ExerciseLoadCacheRepository>;
+
+    useCase = new FinishWorkoutUseCase(mockWorkoutRepo, mockLoadCacheRepo);
   });
 
   // ─── Happy Path ──────────────────────────────────────────────

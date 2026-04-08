@@ -26,11 +26,9 @@ export function useSupersetNavigation() {
     const isSupersetEx = currentEx.supersetGroup != null;
 
     if (!isSupersetEx) {
-      // No superset: siguiente ejercicio simple
       return fromIndex + 1;
     }
 
-    // En superset: encontrar el siguiente en el grupo
     const supersetIndices = exercises
       .map((ex, i) => (ex.supersetGroup === currentEx.supersetGroup ? i : -1))
       .filter(i => i !== -1)
@@ -41,11 +39,9 @@ export function useSupersetNavigation() {
 
     const nextPosInGroup = currentPos + 1;
     if (nextPosInGroup < supersetIndices.length) {
-      // Próximo en el grupo
       return supersetIndices[nextPosInGroup];
     }
 
-    // Fin del grupo: siguiente ejercicio global
     const lastIndexInGroup = supersetIndices[supersetIndices.length - 1];
     return lastIndexInGroup < exercises.length - 1 ? lastIndexInGroup + 1 : null;
   }, [exercises]);
@@ -61,11 +57,9 @@ export function useSupersetNavigation() {
     const isSupersetEx = currentEx.supersetGroup != null;
 
     if (!isSupersetEx) {
-      // No superset: verificar solo este ejercicio
       return currentEx.sets.every(s => s.isCompleted);
     }
 
-    // En superset: verificar todos los ejercicios del grupo
     const groupExercises = exercises.filter(
       ex => ex.supersetGroup === currentEx.supersetGroup
     );
@@ -74,7 +68,7 @@ export function useSupersetNavigation() {
   }, [exercises, currentExerciseIndex]);
 
   /**
-   * Calcula los ejercicios que deben destacarse (pertenecen al superset actual).
+   * Calcula los índices de los ejercicios que pertenecen al superset actual.
    */
   const supersetGroupExercises = useMemo(() => {
     const currentEx = exercises[currentExerciseIndex];

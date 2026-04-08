@@ -4,7 +4,7 @@ import { ValidationError } from '../errors';
 export const BackupSchema = z.object({
   version: z.number(),
   timestamp: z.string().datetime(),
-  data: z.record(z.string(), z.array(z.record(z.string(), z.any()))),
+  data: z.record(z.string(), z.array(z.record(z.string(), z.unknown()))),
 });
 
 export type BackupInput = z.infer<typeof BackupSchema>;

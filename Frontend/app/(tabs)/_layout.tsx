@@ -4,8 +4,8 @@ import { Tabs } from 'expo-router';
 import { useTheme } from 'tamagui';
 import { BlurView } from 'expo-blur';
 import { Home, ClipboardList, History, BarChart3, Settings } from 'lucide-react-native';
-import { HapticTab } from '@/components/haptic-tab';
-import { MiniPlayer } from '@/components/ui/mini-player';
+import { HapticTab } from '@/components/HapticTab';
+import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { useSettings } from '@/store/useSettings';
 import { FONT_SCALE } from '@/tamagui.config';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -70,35 +70,35 @@ export default function TabLayout() {
           name="index"
           options={{
             title: 'Inicio',
-            tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+            tabBarIcon: ({ color, focused }) => <Home size={24} color={color} fill={focused ? theme.primarySubtle?.val : 'none'} />,
           }}
         />
         <Tabs.Screen
           name="routines"
           options={{
             title: 'Rutinas',
-            tabBarIcon: ({ color }) => <ClipboardList size={24} color={color} />,
+            tabBarIcon: ({ color, focused }) => <ClipboardList size={24} color={color} fill={focused ? theme.primarySubtle?.val : 'none'} />,
           }}
         />
         <Tabs.Screen
           name="history"
           options={{
             title: 'Historial',
-            tabBarIcon: ({ color }) => <History size={24} color={color} />,
+            tabBarIcon: ({ color, focused }) => <History size={24} color={color} fill={focused ? theme.primarySubtle?.val : 'none'} />,
           }}
         />
         <Tabs.Screen
           name="stats"
           options={{
             title: 'Progreso',
-            tabBarIcon: ({ color }) => <BarChart3 size={24} color={color} />,
+            tabBarIcon: ({ color, focused }) => <BarChart3 size={24} color={color} fill={focused ? theme.primarySubtle?.val : 'none'} />,
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
             title: 'Ajustes',
-            tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
+            tabBarIcon: ({ color, focused }) => <Settings size={24} color={color} fill={focused ? theme.primarySubtle?.val : 'none'} />,
           }}
         />
       </Tabs>

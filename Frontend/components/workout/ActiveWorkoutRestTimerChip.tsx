@@ -4,6 +4,9 @@ import { XStack, YStack, useTheme } from 'tamagui';
 import Animated, { type AnimatedStyle } from 'react-native-reanimated';
 import { AppText } from '@/components/ui/AppText';
 
+const PROGRESS_BAR_WIDTH = 112;
+const PROGRESS_BAR_HEIGHT = 28;
+
 interface ActiveWorkoutRestTimerChipProps {
   isVisible: boolean;
   restDisplaySeconds: number;
@@ -41,8 +44,8 @@ export function ActiveWorkoutRestTimerChip({
       </Pressable>
 
       <YStack
-        width={112}
-        height={28}
+        width={PROGRESS_BAR_WIDTH}
+        height={PROGRESS_BAR_HEIGHT}
         borderRadius="$md"
         overflow="hidden"
         backgroundColor="$surface"
@@ -51,6 +54,7 @@ export function ActiveWorkoutRestTimerChip({
         <Animated.View
           style={[
             { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: theme.primarySubtle?.val },
+            // Reanimated AnimatedStyle<object> no es asignable directo a ViewStyle — cast seguro
             restProgressStyle as any,
           ]}
         />

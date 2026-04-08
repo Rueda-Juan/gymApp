@@ -6,11 +6,14 @@ import { Search } from 'lucide-react-native';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { FONT_SCALE } from '@/tamagui.config';
 
+const SEARCH_BAR_HEIGHT = 48;
+const FALLBACK_ACCESSIBILITY_LABEL = 'Campo de búsqueda';
+
 interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  inputRef?: React.RefObject<TextInput>;
+  inputRef?: React.RefObject<TextInput | null>;
   returnKeyType?: TextInput['props']['returnKeyType'];
 }
 
@@ -21,7 +24,7 @@ export function SearchBar({ value, onChangeText, placeholder, inputRef, returnKe
     <XStack
       alignItems="center"
       gap="$sm"
-      height={48}
+      height={SEARCH_BAR_HEIGHT}
       borderRadius="$lg"
       borderWidth={1}
       paddingHorizontal="$md"
@@ -37,6 +40,7 @@ export function SearchBar({ value, onChangeText, placeholder, inputRef, returnKe
         value={value}
         onChangeText={onChangeText}
         returnKeyType={returnKeyType}
+        accessibilityLabel={placeholder ?? FALLBACK_ACCESSIBILITY_LABEL}
       />
     </XStack>
   );

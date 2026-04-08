@@ -3,35 +3,27 @@ import { useContainer } from './useContainer';
 import type { BodyWeightEntry } from '../../domain/entities/BodyWeightEntry';
 import type { UpdateBodyWeightInput } from '../../application/useCases/stats/UpdateBodyWeightUseCase';
 
-/**
- * Hook that exposes body weight tracking operations.
- * Wraps BodyWeightService from the DI container.
- */
 export function useBodyWeight() {
-  const { bodyWeightService } = useContainer();
+  const { logBodyWeight: logBodyWeightUseCase, getBodyWeightHistory: getBodyWeightHistoryUseCase, updateBodyWeight: updateBodyWeightUseCase, deleteBodyWeight: deleteBodyWeightUseCase } = useContainer();
 
   const logBodyWeight = useCallback(
-    (params: Omit<BodyWeightEntry, 'id' | 'createdAt'>) =>
-      bodyWeightService.logBodyWeight(params),
-    [bodyWeightService],
+    (params: Omit<BodyWeightEntry, 'id' | 'createdAt'>) => logBodyWeightUseCase.execute(params),
+    [logBodyWeightUseCase],
   );
 
   const getBodyWeightHistory = useCallback(
-    (startDate: string, endDate: string) =>
-      bodyWeightService.getBodyWeightHistory(startDate, endDate),
-    [bodyWeightService],
+    (startDate: string, endDate: string) => getBodyWeightHistoryUseCase.execute(startDate, endDate),
+    [getBodyWeightHistoryUseCase],
   );
 
   const updateBodyWeight = useCallback(
-    (params: UpdateBodyWeightInput) =>
-      bodyWeightService.updateBodyWeight(params),
-    [bodyWeightService],
+    (params: UpdateBodyWeightInput) => updateBodyWeightUseCase.execute(params),
+    [updateBodyWeightUseCase],
   );
 
   const deleteBodyWeight = useCallback(
-    (bodyWeightId: string) =>
-      bodyWeightService.deleteBodyWeight(bodyWeightId),
-    [bodyWeightService],
+    (bodyWeightId: string) => deleteBodyWeightUseCase.execute(bodyWeightId),
+    [deleteBodyWeightUseCase],
   );
 
   return useMemo(() => ({

@@ -1,5 +1,6 @@
 import type { Workout } from '../../../domain/entities/Workout';
 import type { WorkoutRepository } from '../../../domain/repositories/WorkoutRepository';
+import type { ExerciseLoadCacheRepository } from '../../../domain/repositories/ExerciseLoadCacheRepository';
 import { NotFoundError } from '../../../shared/errors';
 
 /**
@@ -8,6 +9,7 @@ import { NotFoundError } from '../../../shared/errors';
 export class FinishWorkoutUseCase {
   constructor(
     private readonly workoutRepo: WorkoutRepository,
+    private readonly loadCacheRepo: ExerciseLoadCacheRepository,
   ) {}
 
   /**
@@ -33,6 +35,7 @@ export class FinishWorkoutUseCase {
     };
 
     await this.workoutRepo.save(finishedWorkout);
+    await this.loadCacheRepo.invalidateAll();
     return finishedWorkout;
   }
 }

@@ -3,30 +3,35 @@ import { useDI } from '../context/DIContext';
 import type { BodyWeightEntry, UpdateBodyWeightInput } from 'backend/shared/types';
 
 export function useBodyWeight() {
-  const { bodyWeightService } = useDI();
+  const {
+    logBodyWeight: logBWUC,
+    getBodyWeightHistory: getHistoryUC,
+    updateBodyWeight: updateBWUC,
+    deleteBodyWeight: deleteBWUC,
+  } = useDI();
 
   const logBodyWeight = useCallback(
     (params: Omit<BodyWeightEntry, 'id' | 'createdAt'>) =>
-      bodyWeightService.logBodyWeight(params),
-    [bodyWeightService]
+      logBWUC.execute(params),
+    [logBWUC, getHistoryUC, updateBWUC, deleteBWUC]
   );
 
   const getBodyWeightHistory = useCallback(
     (startDate: string, endDate: string) =>
-      bodyWeightService.getBodyWeightHistory(startDate, endDate),
-    [bodyWeightService]
+      getHistoryUC.execute(startDate, endDate),
+    [getHistoryUC]
   );
 
   const updateBodyWeight = useCallback(
     (params: UpdateBodyWeightInput) =>
-      bodyWeightService.updateBodyWeight(params),
-    [bodyWeightService]
+      updateBWUC.execute(params),
+    [logBWUC, getHistoryUC, updateBWUC, deleteBWUC]
   );
 
   const deleteBodyWeight = useCallback(
     (bodyWeightId: string) =>
-      bodyWeightService.deleteBodyWeight(bodyWeightId),
-    [bodyWeightService]
+      deleteBWUC.execute(bodyWeightId),
+    [logBWUC, getHistoryUC, updateBWUC, deleteBWUC]
   );
 
   return useMemo(() => ({

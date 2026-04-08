@@ -13,6 +13,10 @@ import { LineChart as LineChartIcon } from 'lucide-react-native';
 import { EmptyState } from '../ui/empty-state';
 import { buildChartColors, CHART_TABULAR_NUMS, CHART_FONT_SIZE } from './chartUtils';
 
+const MAX_X_TICKS = 5;
+const HIGH_DENSITY_THRESHOLD = 25;
+const LINE_ANIMATION_DURATION_MS = 450;
+
 interface StatsLineDataPoint {
   x: string | number | Date;
   y: number;
@@ -54,8 +58,7 @@ export function StatsLineChart({
 
   const chartColors = useMemo(() => buildChartColors(theme), [theme]);
 
-  const MAX_X_TICKS = 5;
-  const isHighDensity = safeData.length > 25;
+  const isHighDensity = safeData.length > HIGH_DENSITY_THRESHOLD;
 
   const visibleXIndices = useMemo(() => {
     const total = safeData.length;
@@ -101,7 +104,7 @@ export function StatsLineChart({
               style={{
                 fill: tooltipText,
                 fontSize: CHART_FONT_SIZE.tooltip,
-                fontVariant: CHART_TABULAR_NUMS,
+                fontVariant: CHART_TABULAR_NUMS as any,
               }}
               flyoutStyle={{
                 fill: tooltipBg,
@@ -131,7 +134,7 @@ export function StatsLineChart({
           tickLabels: {
             fill: textColor,
             fontSize: CHART_FONT_SIZE.axis,
-            fontVariant: CHART_TABULAR_NUMS,
+            fontVariant: CHART_TABULAR_NUMS as any,
           },
         }}
       />
@@ -141,7 +144,7 @@ export function StatsLineChart({
         style={{
           data: { stroke: primaryColor, strokeWidth: isHighDensity ? 2 : 2.5 },
         }}
-        animate={{ duration: 450 }}
+        animate={{ duration: LINE_ANIMATION_DURATION_MS }}
       />
       {!isHighDensity && (
         <VictoryScatter

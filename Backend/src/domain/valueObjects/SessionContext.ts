@@ -58,8 +58,8 @@ export class SessionContext {
     return coldest;
   }
 
-  /** Get all tracked muscle states as a plain record. */
-  getAllStates(): Record<string, ActivationLevel> {
+  /** Get all tracked muscle states as a readonly record. */
+  getAllStates(): Readonly<Record<string, ActivationLevel>> {
     const result: Record<string, ActivationLevel> = {};
     for (const [muscle, level] of this.activationMap) {
       result[muscle] = level;

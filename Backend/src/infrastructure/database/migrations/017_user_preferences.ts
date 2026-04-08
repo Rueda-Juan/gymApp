@@ -21,6 +21,7 @@ export async function up(db: SQLite.SQLiteDatabase): Promise<void> {
     INSERT OR IGNORE INTO user_preferences (key, value) VALUES
       ('weight_unit', 'kg'),
       ('theme', 'dark'),
-      ('default_rest_seconds', '90');
+      ('default_rest_seconds', '90'),
+      ('haptics_enabled', 'true');
   `);
 }

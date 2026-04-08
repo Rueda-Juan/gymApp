@@ -1,26 +1,22 @@
 import { useCallback, useMemo } from 'react';
 import { useContainer } from './useContainer';
 
-/**
- * Hook that exposes backup and export operations.
- * Wraps BackupService from the DI container.
- */
 export function useBackup() {
-  const { backupService } = useContainer();
+  const { createBackup: createBackupUseCase, restoreBackup: restoreBackupUseCase, exportCSV: exportCSVUseCase } = useContainer();
 
   const createBackup = useCallback(
-    () => backupService.createBackup(),
-    [backupService],
+    () => createBackupUseCase.execute(),
+    [createBackupUseCase],
   );
 
   const restoreBackup = useCallback(
-    (jsonData: string) => backupService.restoreBackup(jsonData),
-    [backupService],
+    (jsonData: string) => restoreBackupUseCase.execute(jsonData),
+    [restoreBackupUseCase],
   );
 
   const exportCSV = useCallback(
-    () => backupService.exportCSV(),
-    [backupService],
+    () => exportCSVUseCase.execute(),
+    [exportCSVUseCase],
   );
 
   return useMemo(() => ({

@@ -51,9 +51,17 @@ async function flushLogs() {
   }
 }
 
+function safeStringify(obj: unknown): string {
+  try {
+    return JSON.stringify(obj);
+  } catch (err) {
+    return '[Unserializable data]';
+  }
+}
+
 function queueLog(level: LogLevel, namespace: string, message: string, args: unknown[]) {
   const timestamp = new Date().toISOString();
-  const argsString = args.length > 0 ? JSON.stringify(args) : '';
+  const argsString = args.length > 0 ? safeStringify(args) : '';
   const logEntry = `[${timestamp}] [${level.toUpperCase()}] [${namespace}] ${message} ${argsString}`;
   logBuffer.push(logEntry);
   scheduleFlush();

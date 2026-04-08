@@ -12,13 +12,15 @@ import { useBodyWeight } from '@/hooks/useBodyWeight';
 import type { BodyWeightEntry } from 'backend/shared/types';
 import { FONT_SCALE } from '@/tamagui.config';
 
+const MAX_BODY_WEIGHT_KG = 500;
+const WEIGHT_INPUT_FONT_SIZE = FONT_SCALE.sizes[7];
+const HEADER_ICON_WIDTH = 40;
+
 export default function LogWeightScreen() {
   const weightService = useBodyWeight();
 
   const [weight, setWeight] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const MAX_BODY_WEIGHT_KG = 500;
 
   const handleSave = useCallback(async () => {
     const parsedWeight = parseFloat(weight);
@@ -46,9 +48,9 @@ export default function LogWeightScreen() {
   return (
     <Screen>
       <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingVertical="$md">
-        <IconButton icon={<AppIcon icon={X} size={24} color="color" />} onPress={() => router.back()} />
+        <IconButton icon={<AppIcon icon={X} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Cerrar" />
         <AppText variant="titleSm">Registrar Peso</AppText>
-        <XStack width={40} />
+        <XStack width={HEADER_ICON_WIDTH} />
       </XStack>
 
       <YStack flex={1} alignItems="center" justifyContent="center" paddingHorizontal="$xl">
@@ -61,10 +63,11 @@ export default function LogWeightScreen() {
             keyboardType="numeric"
             autoFocus
             textAlign="center"
-            fontSize={FONT_SCALE.sizes[7]}
-            height={60}
+            fontSize={WEIGHT_INPUT_FONT_SIZE}
+            accessibilityLabel="Peso corporal en kilogramos"
+            height={56}
             fontWeight="800"
-            minWidth={150}
+            minWidth={160}
           />
           <AppText variant="titleLg" color="textSecondary" marginTop="$xl">kg</AppText>
         </XStack>

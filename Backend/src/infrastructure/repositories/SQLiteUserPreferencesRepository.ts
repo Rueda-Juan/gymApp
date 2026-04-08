@@ -16,12 +16,14 @@ export class SQLiteUserPreferencesRepository implements UserPreferencesRepositor
         weightUnit: 'kg',
         theme: 'system',
         defaultRestSeconds: 60,
+        hapticsEnabled: true,
       };
 
       for (const row of rows) {
         if (row.key === 'weight_unit') prefs.weightUnit = row.value as 'kg' | 'lbs';
         if (row.key === 'theme') prefs.theme = row.value as 'light' | 'dark' | 'system';
         if (row.key === 'default_rest_seconds') prefs.defaultRestSeconds = parseInt(row.value, 10);
+        if (row.key === 'haptics_enabled') prefs.hapticsEnabled = row.value === 'true';
       }
 
       return prefs;
@@ -41,6 +43,7 @@ export class SQLiteUserPreferencesRepository implements UserPreferencesRepositor
       if (!row) return null;
 
       if (key === 'defaultRestSeconds') return parseInt(row.value, 10) as UserPreferences[K];
+      if (key === 'hapticsEnabled') return (row.value === 'true') as UserPreferences[K];
       return row.value as UserPreferences[K];
     } catch (error) {
       throw new DatabaseError(`Error al obtener preferencia ${key}`, error);
@@ -68,6 +71,7 @@ export class SQLiteUserPreferencesRepository implements UserPreferencesRepositor
       case 'weightUnit': return 'weight_unit';
       case 'theme': return 'theme';
       case 'defaultRestSeconds': return 'default_rest_seconds';
+      case 'hapticsEnabled': return 'haptics_enabled';
     }
   }
 }

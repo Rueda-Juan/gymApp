@@ -2,21 +2,25 @@ import { useCallback, useMemo } from 'react';
 import { useDI } from '../context/DIContext';
 
 export function useStats() {
-  const { statsService } = useDI();
+  const {
+    getWeeklyStats: getWeeklyUC,
+    getMuscleBalance: getMuscleUC,
+    getTrainingFrequency: getFreqUC,
+  } = useDI();
 
   const getWeeklyStats = useCallback(
-    (startDate: string, endDate: string) => statsService.getWeeklyStats(startDate, endDate),
-    [statsService]
+    (startDate: string, endDate: string) => getWeeklyUC.execute(startDate, endDate),
+    [getWeeklyUC, getMuscleUC, getFreqUC]
   );
 
   const getMuscleBalance = useCallback(
-    (startDate: string, endDate: string) => statsService.getMuscleBalance(startDate, endDate),
-    [statsService]
+    (startDate: string, endDate: string) => getMuscleUC.execute(startDate, endDate),
+    [getWeeklyUC, getMuscleUC, getFreqUC]
   );
 
   const getTrainingFrequency = useCallback(
-    (startDate: string, endDate: string) => statsService.getTrainingFrequency(startDate, endDate),
-    [statsService]
+    (startDate: string, endDate: string) => getFreqUC.execute(startDate, endDate),
+    [getWeeklyUC, getMuscleUC, getFreqUC]
   );
 
   return useMemo(() => ({

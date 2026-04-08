@@ -177,7 +177,7 @@ describe('useStartWorkout', () => {
         exercises: [{
           exercise: { id: 'ex-1', name: 'Test', nameEs: null },
           targetSets: 1,
-          maxReps: 'abc',
+          maxReps: 'abc' as unknown as number,
         }],
       };
 

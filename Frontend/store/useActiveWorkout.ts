@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storage } from '@/utils/storage';
 import { createClientId } from '@/utils/clientId';
 import { useRestTimer } from '@/store/useRestTimer';
 
@@ -23,6 +23,12 @@ export interface WorkoutExerciseState {
   supersetGroup?: number | null;
 }
 
+export interface PendingDeletion {
+  exerciseId: string;
+  set: WorkoutSetState;
+  index: number;
+}
+
 interface ActiveWorkoutStore {
   isActive: boolean;
   workoutId: string | null;
@@ -33,6 +39,7 @@ interface ActiveWorkoutStore {
   currentExerciseIndex: number;
   sessionNote?: string;
   lastSessionOutcome: 'finished' | 'cancelled' | null;
+  pendingDeletionsByExercise: Record<string, PendingDeletion[]>;
 
   // Actions
   startWorkout: (workoutId: string, routineId: string | null, name: string | null, initialExercises: WorkoutExerciseState[]) => void;
@@ -43,8 +50,11 @@ interface ActiveWorkoutStore {
   // Sets Actions
   toggleSetComplete: (exerciseId: string, setId: string) => void;
   updateSetValues: (exerciseId: string, setId: string, values: Partial<WorkoutSetState>) => void;
-  addSet: (exerciseId: string) => void;
+  addSet: (exerciseId: string) => string;
   removeSet: (exerciseId: string, setId: string) => void;
+  softRemoveSet: (exerciseId: string, setId: string) => void;
+  restoreLastSet: (exerciseId: string) => void;
+  clearPendingDeletions: (exerciseId: string) => void;
   
   // Exercises Actions
   addExercise: (exercise: WorkoutExerciseState) => void;
@@ -65,6 +75,7 @@ const createInactiveWorkoutState = (lastSessionOutcome: 'finished' | 'cancelled'
   currentExerciseIndex: 0,
   sessionNote: undefined,
   lastSessionOutcome,
+  pendingDeletionsByExercise: {},
 });
 
 const staleWorkoutThresholdMs = 1000 * 60 * 60 * 12;
@@ -84,6 +95,7 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
       exercises: initialExercises.map((ex, i) => ({ ...ex, status: i === 0 ? 'active' : 'pending' })),
       currentExerciseIndex: 0,
       lastSessionOutcome: null,
+      pendingDeletionsByExercise: {},
     }),
 
   finishWorkout: () => {
@@ -120,13 +132,15 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
       })
     })),
 
-  addSet: (exerciseId) =>
+  addSet: (exerciseId) => {
+    let newId = '';
     set((state) => ({
       exercises: state.exercises.map(ex => {
         if (ex.id !== exerciseId) return ex;
         const lastSet = ex.sets[ex.sets.length - 1];
+        newId = createClientId();
         const newSet: WorkoutSetState = {
-          id: createClientId(),
+          id: newId,
           weight: lastSet ? lastSet.weight : 0,
           reps: lastSet ? lastSet.reps : 0,
           isCompleted: false,
@@ -134,7 +148,9 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
         };
         return { ...ex, sets: [...ex.sets, newSet] };
       })
-    })),
+    }));
+    return newId;
+  },
 
   removeSet: (exerciseId, setId) =>
     set((state) => ({
@@ -146,6 +162,69 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
         };
       })
     })),
+
+  softRemoveSet: (exerciseId, setId) => {
+    set((state) => {
+      const exercise = state.exercises.find(ex => ex.id === exerciseId);
+      if (!exercise) return state;
+
+      const setIndex = exercise.sets.findIndex(s => s.id === setId);
+      if (setIndex === -1) return state;
+
+      const setToDelete = exercise.sets[setIndex];
+      const newSets = exercise.sets.filter(s => s.id !== setId);
+      
+      const newPending = {
+        exerciseId,
+        set: setToDelete,
+        index: setIndex
+      };
+
+      const currentPending = state.pendingDeletionsByExercise[exerciseId] || [];
+
+      return {
+        exercises: state.exercises.map(ex => 
+          ex.id === exerciseId ? { ...ex, sets: newSets } : ex
+        ),
+        pendingDeletionsByExercise: {
+          ...state.pendingDeletionsByExercise,
+          [exerciseId]: [...currentPending, newPending]
+        }
+      };
+    });
+  },
+
+  restoreLastSet: (exerciseId) => {
+    set((state) => {
+      const pending = state.pendingDeletionsByExercise[exerciseId] || [];
+      if (pending.length === 0) return state;
+
+      const lastPending = pending[pending.length - 1];
+      const newPending = pending.slice(0, -1);
+
+      return {
+        exercises: state.exercises.map(ex => {
+          if (ex.id !== exerciseId) return ex;
+          const newSets = [...ex.sets];
+          newSets.splice(lastPending.index, 0, lastPending.set);
+          return { ...ex, sets: newSets };
+        }),
+        pendingDeletionsByExercise: {
+          ...state.pendingDeletionsByExercise,
+          [exerciseId]: newPending
+        }
+      };
+    });
+  },
+
+  clearPendingDeletions: (exerciseId) => {
+    set((state) => ({
+      pendingDeletionsByExercise: {
+        ...state.pendingDeletionsByExercise,
+        [exerciseId]: []
+      }
+    }));
+  },
 
   addExercise: (exercise) =>
     set((state) => ({
@@ -198,7 +277,11 @@ export const useActiveWorkout = create<ActiveWorkoutStore>()(
     }),
 }), {
   name: 'active-workout-storage',
-  storage: createJSONStorage(() => AsyncStorage),
+  storage: {
+    getItem: (name) => storage.getString(name),
+    setItem: (name, value) => storage.set(name, value),
+    removeItem: (name) => storage.delete(name),
+  },
   onRehydrateStorage: () => (state) => {
     if (!state?.isActive) return;
 

@@ -1,6 +1,7 @@
 import { RecordSetUseCase } from '../workouts/RecordSet';
 import type { WorkoutRepository } from '../../../domain/repositories/WorkoutRepository';
 import type { StatsRepository } from '../../../domain/repositories/StatsRepository';
+import type { ExerciseLoadCacheRepository } from '../../../domain/repositories/ExerciseLoadCacheRepository';
 import type { ExerciseStats } from '../../../domain/entities/ExerciseStats';
 import { ValidationError } from '../../../shared/errors';
 
@@ -42,6 +43,7 @@ describe('RecordSetUseCase', () => {
   let useCase: RecordSetUseCase;
   let mockWorkoutRepo: jest.Mocked<WorkoutRepository>;
   let mockStatsRepo: jest.Mocked<StatsRepository>;
+  let mockLoadCacheRepo: jest.Mocked<ExerciseLoadCacheRepository>;
 
   beforeEach(() => {
     mockWorkoutRepo = {
@@ -56,7 +58,11 @@ describe('RecordSetUseCase', () => {
       upsertDailyStats: jest.fn(),
     } as unknown as jest.Mocked<StatsRepository>;
 
-    useCase = new RecordSetUseCase(mockWorkoutRepo, mockStatsRepo, mockDb);
+    mockLoadCacheRepo = {
+      invalidate: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<ExerciseLoadCacheRepository>;
+
+    useCase = new RecordSetUseCase(mockWorkoutRepo, mockStatsRepo, mockDb, mockLoadCacheRepo);
     mockWithTransactionAsync.mockClear();
   });
 

@@ -9,11 +9,8 @@ export function useWorkoutTimer() {
   useEffect(() => {
     if (!startTime) {
       setElapsedSeconds(0);
+      return;
     }
-  }, [startTime]);
-
-  useEffect(() => {
-    if (!startTime) return;
 
     const interval = setInterval(() => {
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));

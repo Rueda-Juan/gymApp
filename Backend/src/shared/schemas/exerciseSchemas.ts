@@ -3,6 +3,10 @@ import { MUSCLE_GROUPS } from '../../domain/valueObjects/MuscleGroup';
 import { EQUIPMENT } from '../../domain/valueObjects/Equipment';
 import { ValidationError } from '../errors';
 
+// --- Load Type ---
+
+export const LoadTypeSchema = z.enum(['weighted', 'bodyweight', 'assisted', 'timed']);
+
 // --- Exercise Schema ---
 
 export const ExerciseSchema = z.object({
@@ -19,9 +23,28 @@ export const ExerciseSchema = z.object({
   animationPath: z.string().nullable().default(null),
   description: z.string().nullable().default(null),
   anatomicalRepresentationSvg: z.string().nullable().default(null),
+  loadType: LoadTypeSchema.default('weighted'),
 });
 
 export type CreateExerciseInput = z.infer<typeof ExerciseSchema>;
+
+// --- Custom Exercise Schema ---
+
+export const CreateCustomExerciseSchema = z.object({
+  name: z.string().trim().min(2, 'Mínimo 2 caracteres').max(60, 'Máximo 60 caracteres'),
+  primaryMuscles: z.array(z.enum(MUSCLE_GROUPS, {
+    errorMap: () => ({ message: 'Grupo muscular inválido' }),
+  })).min(1, 'Al menos un músculo primario'),
+  secondaryMuscles: z.array(z.enum(MUSCLE_GROUPS)).default([]),
+  equipment: z.enum(EQUIPMENT, {
+    errorMap: () => ({ message: 'Equipamiento inválido' }),
+  }),
+  exerciseType: z.enum(['compound', 'isolation']).default('isolation'),
+  loadType: LoadTypeSchema,
+  description: z.string().max(500).nullable().default(null),
+});
+
+export type CreateCustomExerciseInput = z.infer<typeof CreateCustomExerciseSchema>;
 
 // --- Routine Schema ---
 
@@ -57,6 +80,21 @@ export function validateExerciseInput(raw: unknown): CreateExerciseInput {
   if (!result.success) {
     throw new ValidationError(
       'Ejercicio inválido',
+      result.error.flatten().fieldErrors as Record<string, string[]>,
+    );
+  }
+  return result.data;
+}
+
+/**
+ * Validates raw input for creating a custom exercise.
+ * Throws ValidationError on failure.
+ */
+export function validateCustomExerciseInput(raw: unknown): CreateCustomExerciseInput {
+  const result = CreateCustomExerciseSchema.safeParse(raw);
+  if (!result.success) {
+    throw new ValidationError(
+      'Ejercicio custom inválido',
       result.error.flatten().fieldErrors as Record<string, string[]>,
     );
   }

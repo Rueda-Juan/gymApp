@@ -4,12 +4,14 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Star, Link2 } from 'lucide-react-native';
 
 import { CardBase } from '@/components/ui/card';
+import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { getExerciseName } from '@/utils/exercise';
 import { FONT_SCALE } from '@/tamagui.config';
 
 const MAX_ANIMATION_DELAY_MS = 1300;
+const STAGGER_DELAY_MS = 100;
 
 interface SummaryPersonalRecord {
   exerciseId: string;
@@ -38,20 +40,32 @@ interface WorkoutExerciseSummaryListProps {
   newRecords: SummaryPersonalRecord[];
 }
 
-export function WorkoutExerciseSummaryList({ exercises, newRecords }: WorkoutExerciseSummaryListProps) {
-  const supersetGroups = useMemo(() => {
-    const groups = new Set<number>();
-    exercises.forEach(ex => {
-      if (ex.supersetGroup != null) groups.add(ex.supersetGroup);
-    });
-    return groups;
-  }, [exercises]);
+function buildSupersetGroups(exercises: SummaryExercise[]): Set<number> {
+  return new Set(
+    exercises
+      .filter(ex => ex.supersetGroup != null)
+      .map(ex => ex.supersetGroup as number)
+  );
+}
 
-  const isInSuperset = (ex: SummaryExercise) => ex.supersetGroup != null && supersetGroups.has(ex.supersetGroup!);
-  const isFirstInGroup = (ex: SummaryExercise, idx: number) =>
-    isInSuperset(ex) && (idx === 0 || exercises[idx - 1]?.supersetGroup !== ex.supersetGroup);
-  const isLastInGroup = (ex: SummaryExercise, idx: number) =>
-    isInSuperset(ex) && (idx === exercises.length - 1 || exercises[idx + 1]?.supersetGroup !== ex.supersetGroup);
+function checkIsInSuperset(ex: SummaryExercise, supersetGroups: Set<number>): boolean {
+  return ex.supersetGroup != null && supersetGroups.has(ex.supersetGroup);
+}
+
+function checkIsFirstInSupersetGroup(exercises: SummaryExercise[], ex: SummaryExercise, idx: number): boolean {
+  const hasGroup = ex.supersetGroup != null;
+  const isPreviousDifferent = exercises[idx - 1]?.supersetGroup !== ex.supersetGroup;
+  return hasGroup && (idx === 0 || isPreviousDifferent);
+}
+
+function checkIsLastInSupersetGroup(exercises: SummaryExercise[], ex: SummaryExercise, idx: number): boolean {
+  const hasGroup = ex.supersetGroup != null;
+  const isNextDifferent = exercises[idx + 1]?.supersetGroup !== ex.supersetGroup;
+  return hasGroup && (idx === exercises.length - 1 || isNextDifferent);
+}
+
+export function WorkoutExerciseSummaryList({ exercises, newRecords }: WorkoutExerciseSummaryListProps) {
+  const supersetGroups = useMemo(() => buildSupersetGroups(exercises), [exercises]);
 
   return (
     <Animated.View entering={FadeIn.delay(800)}>
@@ -60,19 +74,19 @@ export function WorkoutExerciseSummaryList({ exercises, newRecords }: WorkoutExe
       <YStack gap="$md">
         {exercises.map((ex, exIdx) => {
           const exerciseName = getExerciseName({ name: ex.name ?? '', nameEs: ex.nameEs });
-          const sessionSets = (ex.sets || []).filter((s) => Number(s.reps) > 0);
+          const sessionSets = (ex.sets || []).filter(set => Number(set.reps) > 0);
           const exercisePRs = newRecords.filter(
-            (r) => r.exerciseId === ex.exerciseId || r.exerciseId === ex.id,
+            r => r.exerciseId === ex.exerciseId || r.exerciseId === ex.id,
           );
-          const inSuperset = isInSuperset(ex);
-          const firstInGroup = isFirstInGroup(ex, exIdx);
-          const lastInGroup = isLastInGroup(ex, exIdx);
+          const inSuperset = checkIsInSuperset(ex, supersetGroups);
+          const firstInGroup = checkIsFirstInSupersetGroup(exercises, ex, exIdx);
+          const lastInGroup = checkIsLastInSupersetGroup(exercises, ex, exIdx);
 
           return (
             <Animated.View
               key={ex.id}
               entering={FadeInDown.delay(
-                Math.min(900 + exIdx * 100, MAX_ANIMATION_DELAY_MS),
+                Math.min(900 + exIdx * STAGGER_DELAY_MS, MAX_ANIMATION_DELAY_MS),
               ).springify()}
             >
               {firstInGroup && (
@@ -93,10 +107,13 @@ export function WorkoutExerciseSummaryList({ exercises, newRecords }: WorkoutExe
                     marginRight="$sm"
                   />
                 )}
-                <YStack flex={1}>
-                  <CardBase padding="$md">
+                <YStack flex={1} style={animatedCardShadow}>
+                  <CardBase padding="$md" {...elevation.flat}>
                     <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
-                      <AppText variant="titleSm" flex={1}>{exerciseName}</AppText>
+                      {/* @ts-ignore - sharedTransitionTag exists at runtime */}
+                      <Animated.View sharedTransitionTag={`ex-name-${ex.exerciseId}`}>
+                        <AppText variant="titleSm">{exerciseName}</AppText>
+                      </Animated.View>
                       {exercisePRs.length > 0 && (
                         <YStack alignItems="flex-end" gap={2}>
                           <XStack

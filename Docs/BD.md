@@ -31,13 +31,13 @@ El sistema de base de datos debe permitir:
 
 **SQLite** — Motor seleccionado.
 
-| Razón                                            | Detalle                          |
-| ------------------------------------------------ | -------------------------------- |
-| Offline nativo                                   | Sin necesidad de servidor        |
-| Integrado en Android                             | Disponible out-of-the-box        |
-| Extremadamente rápido para apps locales          | Operaciones en microsegundos     |
-| Soporte completo SQL                             | Índices, triggers, transacciones |
-| Ideal para datasets pequeños a medianos          | Hasta ~1 GB sin problemas        |
+| Razón                                   | Detalle                          |
+| --------------------------------------- | -------------------------------- |
+| Offline nativo                          | Sin necesidad de servidor        |
+| Integrado en Android                    | Disponible out-of-the-box        |
+| Extremadamente rápido para apps locales | Operaciones en microsegundos     |
+| Soporte completo SQL                    | Índices, triggers, transacciones |
+| Ideal para datasets pequeños a medianos | Hasta ~1 GB sin problemas        |
 
 ### Librería de acceso
 
@@ -84,6 +84,7 @@ graph TD
         G[exercise_stats]
         H[personal_records]
         I[daily_stats]
+        J[exercise_load_cache]
     end
 
     A --> C
@@ -97,6 +98,7 @@ graph TD
     A --> H
     F --> H
     D --> I
+    A --> J
 ```
 
 ---
@@ -113,6 +115,7 @@ erDiagram
     workouts ||--|{ sets : "registra"
     exercises ||--o{ sets : "tiene"
     exercises ||--o| exercise_stats : "estadísticas"
+    exercises ||--o| exercise_load_cache : "recomendación"
     exercises ||--o{ personal_records : "récords"
     sets ||--o{ personal_records : "origen"
     user_preferences ||--o| user_preferences : "config"
@@ -121,12 +124,20 @@ erDiagram
     exercises {
         text id PK
         text name
-        text primary_muscle
+        text name_es
+        text primary_muscles
         text secondary_muscles
         text equipment
+        text exercise_type
+        text load_type
         real weight_increment
         text animation_path
         text description
+        text anatomical_representation_svg
+        text exercise_key
+        boolean is_custom
+        text created_by
+        boolean is_archived
     }
 
     routines {
@@ -142,7 +153,8 @@ erDiagram
         text exercise_id FK
         integer order_index
         integer target_sets
-        integer target_reps
+        integer min_reps
+        integer max_reps
         integer rest_seconds
         integer superset_group
     }
@@ -191,6 +203,16 @@ erDiagram
         integer total_reps
         real total_volume
         datetime last_performed
+        datetime updated_at
+    }
+
+    exercise_load_cache {
+        text exercise_id PK
+        real recommended_weight
+        text basis
+        real last_weight
+        integer last_reps
+        integer sessions_analyzed
         datetime updated_at
     }
 
@@ -243,12 +265,20 @@ Contiene la base de datos de ejercicios disponibles.
 CREATE TABLE exercises (
     id               TEXT PRIMARY KEY,
     name             TEXT NOT NULL,
-    primary_muscle   TEXT NOT NULL,
-    secondary_muscles TEXT,        -- JSON array o comma-separated
+    name_es          TEXT,
+    primary_muscles  TEXT NOT NULL, -- JSON array
+    secondary_muscles TEXT,        -- JSON array
     equipment        TEXT,
+    exercise_type    TEXT DEFAULT 'compound',
     weight_increment REAL DEFAULT 2.5,
     animation_path   TEXT,         -- ruta relativa al archivo WebP local
-    description      TEXT
+    description      TEXT,
+    anatomical_representation_svg TEXT,
+    exercise_key     TEXT NOT NULL UNIQUE,
+    is_custom        BOOLEAN DEFAULT 0,
+    created_by       TEXT,
+    load_type        TEXT DEFAULT 'weighted',
+    is_archived      BOOLEAN DEFAULT 0
 );
 ```
 
@@ -289,7 +319,8 @@ CREATE TABLE routine_exercises (
     exercise_id  TEXT NOT NULL,
     order_index  INTEGER NOT NULL DEFAULT 0,
     target_sets  INTEGER,
-    target_reps  INTEGER,
+    min_reps     INTEGER,
+    max_reps     INTEGER,
     rest_seconds   INTEGER DEFAULT 90,
     superset_group INTEGER,
 
@@ -421,6 +452,28 @@ CREATE TABLE exercise_stats (
 
 ---
 
+### 6.1.1 `exercise_load_cache`
+
+Caché de recomendación de peso (Progressive Overload o peso sugerido).
+
+- **Propósito**: Evitar recalcular peso sugerido en tiempo real en workflows críticos.
+- **Clave**: `exercise_id` (1:1 con `exercises`)
+
+```sql
+CREATE TABLE exercise_load_cache (
+    exercise_id        TEXT PRIMARY KEY,
+    recommended_weight REAL NOT NULL,
+    basis              TEXT NOT NULL CHECK(basis IN ('progressive_overload', 'last_set', 'deload', 'failure_recovery', 'default')),
+    last_weight        REAL,
+    last_reps          INTEGER,
+    sessions_analyzed  INTEGER NOT NULL DEFAULT 0,
+    updated_at         DATETIME NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+);
+```
+
+---
+
 ### 6.2 `personal_records`
 
 Récords personales categorizados.
@@ -508,19 +561,19 @@ CREATE INDEX idx_body_weight_date ON body_weight_log(date);
 
 Los índices están diseñados para optimizar las consultas más frecuentes:
 
-| Índice                             | Tabla                | Columna(s)      | Justificación                           |
-| ---------------------------------- | -------------------- | --------------- | --------------------------------------- |
-| `idx_sets_exercise`                | `sets`               | `exercise_id`   | Consultas de historial por ejercicio    |
-| `idx_sets_workout`                 | `sets`               | `workout_id`    | Carga de sets de un workout             |
-| `idx_sets_created_at`              | `sets`               | `created_at`    | Consultas por rango de fechas           |
-| `idx_workouts_date`                | `workouts`           | `date`          | Listado cronológico de entrenamientos   |
-| `idx_workouts_routine_id`          | `workouts`           | `routine_id`    | Filtrar workouts por rutina             |
-| `idx_routine_exercises_routine`    | `routine_exercises`  | `routine_id`    | Carga de ejercicios de una rutina       |
-| `idx_routine_exercises_exercise`   | `routine_exercises`  | `exercise_id`   | Buscar en qué rutinas está un ejercicio |
-| `idx_workout_exercises_workout`    | `workout_exercises`  | `workout_id`    | Carga de ejercicios de un workout       |
-| `idx_workout_exercises_exercise`   | `workout_exercises`  | `exercise_id`   | Historial de un ejercicio por workout   |
-| `idx_personal_records_exercise`    | `personal_records`   | `exercise_id`   | PRs por ejercicio                       |
-| `idx_personal_records_type`        | `personal_records`   | `record_type`   | Filtrar por tipo de récord              |
+| Índice                           | Tabla               | Columna(s)    | Justificación                           |
+| -------------------------------- | ------------------- | ------------- | --------------------------------------- |
+| `idx_sets_exercise`              | `sets`              | `exercise_id` | Consultas de historial por ejercicio    |
+| `idx_sets_workout`               | `sets`              | `workout_id`  | Carga de sets de un workout             |
+| `idx_sets_created_at`            | `sets`              | `created_at`  | Consultas por rango de fechas           |
+| `idx_workouts_date`              | `workouts`          | `date`        | Listado cronológico de entrenamientos   |
+| `idx_workouts_routine_id`        | `workouts`          | `routine_id`  | Filtrar workouts por rutina             |
+| `idx_routine_exercises_routine`  | `routine_exercises` | `routine_id`  | Carga de ejercicios de una rutina       |
+| `idx_routine_exercises_exercise` | `routine_exercises` | `exercise_id` | Buscar en qué rutinas está un ejercicio |
+| `idx_workout_exercises_workout`  | `workout_exercises` | `workout_id`  | Carga de ejercicios de un workout       |
+| `idx_workout_exercises_exercise` | `workout_exercises` | `exercise_id` | Historial de un ejercicio por workout   |
+| `idx_personal_records_exercise`  | `personal_records`  | `exercise_id` | PRs por ejercicio                       |
+| `idx_personal_records_type`      | `personal_records`  | `record_type` | Filtrar por tipo de récord              |
 
 > [!TIP]
 > Los Primary Keys en SQLite generan índice automáticamente. No se crean índices adicionales en tablas pequeñas (`exercises`, `routines`) para evitar overhead de escritura innecesario.
@@ -598,14 +651,14 @@ flowchart TD
 
 ### Constraints aplicados
 
-| Tipo            | Aplicación                                                   |
-| --------------- | ------------------------------------------------------------ |
-| **PRIMARY KEY** | Toda tabla tiene PK definida                                 |
-| **FOREIGN KEY** | Todas las relaciones usan FK explícitas                      |
-| **NOT NULL**    | Columnas requeridas marcadas                                 |
-| **CHECK**       | `weight >= 0`, `reps >= 0`, `record_type IN (...)`           |
-| **DEFAULT**     | Timestamps, valores numéricos iniciales                      |
-| **ON DELETE**   | `CASCADE` para datos hijos, `SET NULL` para refs opcionales  |
+| Tipo            | Aplicación                                                  |
+| --------------- | ----------------------------------------------------------- |
+| **PRIMARY KEY** | Toda tabla tiene PK definida                                |
+| **FOREIGN KEY** | Todas las relaciones usan FK explícitas                     |
+| **NOT NULL**    | Columnas requeridas marcadas                                |
+| **CHECK**       | `weight >= 0`, `reps >= 0`, `record_type IN (...)`          |
+| **DEFAULT**     | Timestamps, valores numéricos iniciales                     |
+| **ON DELETE**   | `CASCADE` para datos hijos, `SET NULL` para refs opcionales |
 
 ### Estrategia de borrado
 
@@ -654,18 +707,18 @@ Los backups se realizan en formato **JSON** y se suben a **Google Drive**.
 
 ## 12. Estimaciones de tamaño
 
-| Tabla              | Filas estimadas  | Tamaño estimado |
-| ------------------ | ---------------- | --------------- |
-| `exercises`        | ~200–500         | < 100 KB        |
-| `routines`         | ~10–50           | < 10 KB         |
-| `routine_exercises`| ~50–250          | < 50 KB         |
-| `workouts`         | ~2 000           | ~200 KB         |
-| `workout_exercises`| ~10 000          | ~1 MB           |
-| `sets`             | ~50 000          | ~5 MB           |
-| `exercise_stats`   | ~200–500         | < 100 KB        |
-| `personal_records` | ~1 000–5 000     | ~500 KB         |
-| `daily_stats`      | ~700–1 500       | < 200 KB        |
-| **Total estimado** |                  | **10–30 MB**    |
+| Tabla               | Filas estimadas | Tamaño estimado |
+| ------------------- | --------------- | --------------- |
+| `exercises`         | ~200–500        | < 100 KB        |
+| `routines`          | ~10–50          | < 10 KB         |
+| `routine_exercises` | ~50–250         | < 50 KB         |
+| `workouts`          | ~2 000          | ~200 KB         |
+| `workout_exercises` | ~10 000         | ~1 MB           |
+| `sets`              | ~50 000         | ~5 MB           |
+| `exercise_stats`    | ~200–500        | < 100 KB        |
+| `personal_records`  | ~1 000–5 000    | ~500 KB         |
+| `daily_stats`       | ~700–1 500      | < 200 KB        |
+| **Total estimado**  |                 | **10–30 MB**    |
 
 > [!TIP]
 > SQLite maneja bases de datos de este tamaño sin ningún problema, incluso con años de uso intensivo.

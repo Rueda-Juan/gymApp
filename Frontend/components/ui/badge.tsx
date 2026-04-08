@@ -4,6 +4,8 @@ import { AppText } from './AppText';
 import { ThemeColorKey } from '@/theme/types';
 import { FONT_SCALE } from '@/tamagui.config';
 
+const BADGE_ICON_GAP = 4;
+
 type BadgeVariant = 'primary' | 'success' | 'warning' | 'danger' | 'ghost';
 type BadgeSize = 'sm' | 'md';
 
@@ -23,7 +25,7 @@ const BADGE_CONFIG: Record<BadgeVariant, { bg: string; color: ThemeColorKey }> =
 };
 
 const SIZE_CONFIG: Record<BadgeSize, { px: number; py: number; fontSize: number; iconSize: number }> = {
-  sm: { px: 8, py: 2, fontSize: FONT_SCALE.sizes[1], iconSize: 12 },
+  sm: { px: 8, py: 4, fontSize: FONT_SCALE.sizes[1], iconSize: 12 },
   md: { px: 12, py: 4, fontSize: FONT_SCALE.sizes[2], iconSize: 14 },
 };
 
@@ -48,8 +50,9 @@ export function Badge({ label, variant = 'primary', size = 'sm', icon }: BadgePr
       paddingHorizontal={spacing.px}
       paddingVertical={spacing.py}
       alignSelf="flex-start"
-      gap={4}
+      gap={BADGE_ICON_GAP}
       maxWidth="100%"
+      accessibilityRole="text"
     >
       {styledIcon}
       <AppText

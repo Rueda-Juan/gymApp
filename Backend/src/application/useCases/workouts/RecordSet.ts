@@ -2,6 +2,7 @@ import type * as SQLite from 'expo-sqlite';
 import type { WorkoutSet } from '../../../domain/entities/WorkoutSet';
 import type { WorkoutRepository } from '../../../domain/repositories/WorkoutRepository';
 import type { StatsRepository } from '../../../domain/repositories/StatsRepository';
+import type { ExerciseLoadCacheRepository } from '../../../domain/repositories/ExerciseLoadCacheRepository';
 import { validateSetInput } from '../../../shared/schemas/workoutSchemas';
 import { generateId } from '../../../shared/utils/generateId';
 import { toSQLiteDate } from '../../../shared/utils/dateUtils';
@@ -23,6 +24,7 @@ export class RecordSetUseCase {
     private readonly workoutRepo: WorkoutRepository,
     private readonly statsRepo: StatsRepository,
     private readonly db: SQLite.SQLiteDatabase,
+    private readonly loadCacheRepo: ExerciseLoadCacheRepository,
   ) {}
 
   /**
@@ -106,6 +108,7 @@ export class RecordSetUseCase {
     });
 
     log.info('Set recorded successfully', { setId: set.id });
+    await this.loadCacheRepo.invalidate(set.exerciseId);
     return { set, newRecords: brokenRecords };
   }
 }

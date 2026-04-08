@@ -1,8 +1,10 @@
 import React from 'react';
 import { YStack, XStack } from 'tamagui';
+import { Bell } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
+import { EmptyState } from '@/components/ui/empty-state';
 import { router } from 'expo-router';
 
 export default function NotificationsScreen() {
@@ -15,12 +17,13 @@ export default function NotificationsScreen() {
             <AppText variant="label" color="primary">PRÓXIMAMENTE</AppText>
           </YStack>
         </XStack>
-        <AppText variant="bodyMd" color="textSecondary">Personaliza alertas y recordatorios.</AppText>
-        <AppText variant="bodyMd" color="textTertiary" marginTop="$md">
-          Esta sección está en desarrollo. Pronto podrás configurar notificaciones push y recordatorios de entrenamiento.
-        </AppText>
-        <AppButton label="Volver" onPress={() => router.back()} />
       </YStack>
+      <EmptyState
+        icon={Bell}
+        title="En desarrollo"
+        description="Pronto podrás configurar notificaciones push y recordatorios de entrenamiento."
+        action={<AppButton label="Volver" onPress={() => router.back()} />}
+      />
     </Screen>
   );
 }

@@ -9,6 +9,10 @@
     "typecheck:front": "cd Frontend && npx tsc --noEmit",
     "test": "cd Backend && npx jest && cd ../Frontend && npx jest",
     "test:back": "cd Backend && npx jest",
-    "test:front": "cd Frontend && npx jest"
+    "test:front": "cd Frontend && npx jest",
+    "testing": "npx tsc -b --watch"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
   }
 }

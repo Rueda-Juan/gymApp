@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   VictoryChart,
   VictoryBar,
@@ -11,6 +11,19 @@ import { useWindowDimensions } from 'react-native';
 import { BarChart3 } from 'lucide-react-native';
 import { EmptyState } from '../ui/empty-state';
 import { buildChartColors, CHART_TABULAR_NUMS, CHART_FONT_SIZE } from './chartUtils';
+
+const CONTAINER_HORIZONTAL_PADDING = 40;
+const MIN_BAR_WIDTH = 8;
+const MAX_BAR_WIDTH = 16;
+const BAR_SPACING_FACTOR = 3;
+const BAR_CORNER_RADIUS = 4;
+const BAR_ANIMATION_DURATION_MS = 350;
+
+function calculateLeftPadding(maxValue: number): number {
+  if (maxValue >= 10_000) return 60;
+  if (maxValue >= 1_000) return 50;
+  return 45;
+}
 
 interface ChartDataPoint {
   x: string | number;
@@ -33,11 +46,14 @@ export function WeeklyVolumeBarChart({
 }: WeeklyVolumeBarChartProps) {
   const theme = useTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const chartWidth = screenWidth - 40;
+  const chartWidth = screenWidth - CONTAINER_HORIZONTAL_PADDING;
 
-  const safeData = (data ?? []).filter(
-    (p) => typeof p.y === 'number' && !isNaN(p.y)
+  const safeData = useMemo(
+    () => (data ?? []).filter((p) => typeof p.y === 'number' && !isNaN(p.y)),
+    [data],
   );
+
+  const chartColors = useMemo(() => buildChartColors(theme), [theme]);
 
   if (safeData.length === 0) {
     return (
@@ -51,10 +67,10 @@ export function WeeklyVolumeBarChart({
     );
   }
 
-  const { textColor, gridColor, primaryColor, tooltipBg, tooltipText } = buildChartColors(theme);
-  const barWidth = Math.max(8, Math.min(16, Math.floor(chartWidth / (safeData.length * 3))));
+  const { textColor, gridColor, primaryColor, tooltipBg, tooltipText } = chartColors;
+  const barWidth = Math.max(MIN_BAR_WIDTH, Math.min(MAX_BAR_WIDTH, Math.floor(chartWidth / (safeData.length * BAR_SPACING_FACTOR))));
   const maxValue = safeData.reduce((max, p) => Math.max(max, p.y), 0);
-  const leftPadding = maxValue >= 10000 ? 60 : maxValue >= 1000 ? 50 : 45;
+  const leftPadding = calculateLeftPadding(maxValue);
 
   return (
     <VictoryChart
@@ -71,7 +87,7 @@ export function WeeklyVolumeBarChart({
               style={{
                 fill: tooltipText,
                 fontSize: CHART_FONT_SIZE.tooltipLarge,
-                fontVariant: CHART_TABULAR_NUMS,
+                fontVariant: CHART_TABULAR_NUMS as any,
               }}
               flyoutStyle={{
                 fill: tooltipBg,
@@ -101,7 +117,7 @@ export function WeeklyVolumeBarChart({
           tickLabels: {
             fill: textColor,
             fontSize: CHART_FONT_SIZE.axis,
-            fontVariant: CHART_TABULAR_NUMS,
+            fontVariant: CHART_TABULAR_NUMS as any,
           },
         }}
       />
@@ -109,9 +125,9 @@ export function WeeklyVolumeBarChart({
         data={safeData}
         x="x"
         y="y"
-        cornerRadius={{ top: 4 }}
+        cornerRadius={{ top: BAR_CORNER_RADIUS }}
         style={{ data: { fill: primaryColor, width: barWidth } }}
-        animate={{ duration: 350 }}
+        animate={{ duration: BAR_ANIMATION_DURATION_MS }}
       />
     </VictoryChart>
   );

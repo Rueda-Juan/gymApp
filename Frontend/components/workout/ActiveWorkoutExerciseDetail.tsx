@@ -1,6 +1,8 @@
 import React from 'react';
+import Animated from 'react-native-reanimated';
 import { Pressable, ScrollView } from 'react-native';
 import { XStack, YStack } from 'tamagui';
+import { useBottomBarHeightContext } from '@/context/BottomBarHeightContext';
 import { MoreVertical, Plus, SkipForward, TrendingUp } from 'lucide-react-native';
 import { SetRow } from '@/components/cards/set-row';
 import { AppText } from '@/components/ui/AppText';
@@ -8,6 +10,11 @@ import { AppIcon } from '@/components/ui/AppIcon';
 import { Badge } from '@/components/ui/badge';
 import { getExerciseName } from '@/utils/exercise';
 import type { WorkoutExerciseState, WorkoutSetState } from '@/store/useActiveWorkout';
+
+const SCROLL_BOTTOM_PADDING = 140;
+const SET_HEADER_HORIZONTAL_PADDING = 4;
+const SET_NUMBER_COLUMN_WIDTH = 32;
+const SET_ACTION_COLUMN_WIDTH = 44;
 
 interface ActiveWorkoutExerciseDetailProps {
   exercise: WorkoutExerciseState;
@@ -21,6 +28,9 @@ interface ActiveWorkoutExerciseDetailProps {
   onRemoveSet: (exerciseId: string, setId: string) => void;
   onAddSet: (exerciseId: string) => void;
   resolvePreviousWeight: (exercise: WorkoutExerciseState, setIndex: number) => number;
+  scrollEnabled?: boolean;
+  onLayout?: (y: number) => void;
+  isSupersetMember?: boolean;
 }
 
 export function ActiveWorkoutExerciseDetail({
@@ -35,14 +45,26 @@ export function ActiveWorkoutExerciseDetail({
   onRemoveSet,
   onAddSet,
   resolvePreviousWeight,
+  scrollEnabled = true,
+  onLayout,
+  isSupersetMember = false,
 }: ActiveWorkoutExerciseDetailProps) {
   const isSkipped = exercise.status === 'skipped';
+  const completedSets = exercise.sets.filter(set => set.isCompleted).length;
+  const totalSets = exercise.sets.length;
+  const { bottomBarHeight } = useBottomBarHeightContext();
 
   return (
     <ScrollView
-      contentContainerStyle={{ paddingBottom: 140, flexGrow: 1, justifyContent: 'center' }}
+      contentContainerStyle={{ 
+        paddingBottom: isSupersetMember ? 20 : Math.max(SCROLL_BOTTOM_PADDING, bottomBarHeight || SCROLL_BOTTOM_PADDING), 
+        flexGrow: 1, 
+        justifyContent: isSupersetMember ? 'flex-start' : 'center' 
+      }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      scrollEnabled={scrollEnabled}
+      onLayout={(e) => onLayout?.(e.nativeEvent.layout.y, e.nativeEvent.layout.height)}
     >
       <XStack
         justifyContent="space-between"
@@ -52,11 +74,14 @@ export function ActiveWorkoutExerciseDetail({
         paddingBottom="$sm"
       >
         <YStack flex={1} marginRight="$md">
-          <AppText variant="titleMd" numberOfLines={2}>
-            {getExerciseName(exercise)}
-          </AppText>
+          {/* @ts-ignore - sharedTransitionTag exists at runtime but might be missing in @types/react-native-reanimated for SDK 54 */}
+          <Animated.View sharedTransitionTag={`ex-name-${exercise.exerciseId}`}>
+            <AppText variant="titleMd" numberOfLines={1}>
+              {getExerciseName(exercise)}
+            </AppText>
+          </Animated.View>
           <AppText variant="bodySm" color="textSecondary" marginTop="$xs">
-            {exercise.sets.filter((set) => set.isCompleted).length}/{exercise.sets.length} sets completados
+            {completedSets}/{totalSets} sets completados
           </AppText>
         </YStack>
 
@@ -113,11 +138,11 @@ export function ActiveWorkoutExerciseDetail({
 
       {!isSkipped && (
         <YStack paddingHorizontal="$xl">
-          <XStack marginBottom="$xs" paddingHorizontal={4} alignItems="center">
-            <AppText variant="label" color="textTertiary" width={32} textAlign="center">SET</AppText>
+          <XStack marginBottom="$xs" paddingHorizontal={SET_HEADER_HORIZONTAL_PADDING} alignItems="center">
+            <AppText variant="label" color="textTertiary" width={SET_NUMBER_COLUMN_WIDTH} textAlign="center">SET</AppText>
             <AppText variant="label" color="textTertiary" flex={1.2} textAlign="center">KG</AppText>
             <AppText variant="label" color="textTertiary" flex={1} textAlign="center">REPS</AppText>
-            <YStack width={44} />
+            <YStack width={SET_ACTION_COLUMN_WIDTH} />
           </XStack>
 
           <YStack gap="$xs">
@@ -125,7 +150,7 @@ export function ActiveWorkoutExerciseDetail({
               <SetRow
                 key={set.id}
                 index={setIndex}
-                setRef={set}
+                set={set}
                 previousWeight={resolvePreviousWeight(exercise, setIndex)}
                 autoFocus={set.id === focusedSetId}
                 onUpdate={(values) => onUpdateSetValues(exercise.id, set.id, values)}

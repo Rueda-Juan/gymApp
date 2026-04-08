@@ -1,7 +1,7 @@
 import { createTamagui, createTokens, createFont } from '@tamagui/core';
 
 // ─────────────────────────────────────────────
-// IRON LOG — Sistema de diseño v2
+// TEMPER — Sistema de diseño v2
 // Identidad: Carbón forjado + Cobre + Brasa
 // ─────────────────────────────────────────────
 
@@ -334,6 +334,47 @@ export const THEME_FALLBACKS = {
   danger:       '#E05252',
   dangerSubtle: 'rgba(224, 82, 82, 0.12)',
 } as const;
+
+// ─────────────────────────────────────────────
+// NUMERIC VARIANTS — presets tipográficos para
+// cifras: tiempos, pesos, stats, contadores.
+// Todos incluyen tabular-nums para alineación.
+// ─────────────────────────────────────────────
+
+export const NUMERIC_VARIANTS = {
+  numericDisplay: {
+    fontSize:    FONT_SCALE.sizes.hero,
+    fontWeight:  FONT_SCALE.weights.bold,
+    fontVariant: ['tabular-nums'] as readonly ['tabular-nums'],
+    letterSpacing: -1,
+  },
+  numericCompact: {
+    fontSize:    FONT_SCALE.sizes[5],
+    fontWeight:  FONT_SCALE.weights.bold,
+    fontVariant: ['tabular-nums'] as readonly ['tabular-nums'],
+    letterSpacing: 0,
+  },
+  timerDisplay: {
+    fontSize:    FONT_SCALE.sizes.hero,
+    fontWeight:  FONT_SCALE.weights.bold,
+    fontVariant: ['tabular-nums'] as readonly ['tabular-nums'],
+    letterSpacing: -0.5,
+  },
+  timerCompact: {
+    fontSize:    FONT_SCALE.sizes[5],
+    fontWeight:  FONT_SCALE.weights.semibold,
+    fontVariant: ['tabular-nums'] as readonly ['tabular-nums'],
+    letterSpacing: 0,
+  },
+  statValue: {
+    fontSize:    FONT_SCALE.sizes[7],
+    fontWeight:  FONT_SCALE.weights.bold,
+    fontVariant: ['tabular-nums'] as readonly ['tabular-nums'],
+    letterSpacing: -0.5,
+  },
+} as const;
+
+export type NumericVariant = keyof typeof NUMERIC_VARIANTS;
 
 declare module '@tamagui/core' {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type

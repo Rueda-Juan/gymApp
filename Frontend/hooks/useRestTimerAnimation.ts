@@ -9,6 +9,8 @@ import {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { useRestTimer } from '@/store/useRestTimer';
+import { motion } from '@/constants/motion';
+import { useSensoryFeedback } from '@/hooks/useSensoryFeedback';
 
 /**
  * Encapsulates the hourglass spin animation and countdown progress bar
@@ -16,6 +18,8 @@ import { useRestTimer } from '@/store/useRestTimer';
  */
 export function useRestTimerAnimation() {
   const restTimerIsActive = useRestTimer(s => s.isActive);
+  const stopTimer = useRestTimer(s => s.stopTimer);
+  const feedback = useSensoryFeedback();
   const [restDisplaySeconds, setRestDisplaySeconds] = useState(0);
 
   const hourglassRotation = useSharedValue(0);
@@ -32,11 +36,11 @@ export function useRestTimerAnimation() {
 
   useEffect(() => {
     if (restTimerIsActive) {
-      restProgress.value = withTiming(1, { duration: 200 });
+      restProgress.value = withTiming(1, { duration: motion.duration.normal });
       hourglassRotation.value = withRepeat(
         withSequence(
-          withTiming(180, { duration: 600 }),
-          withDelay(1500, withTiming(360, { duration: 600 })),
+          withTiming(180, { duration: motion.duration.hero }),
+          withDelay(1500, withTiming(360, { duration: motion.duration.hero })),
           withTiming(0, { duration: 0 }),
         ),
         -1,
@@ -46,7 +50,7 @@ export function useRestTimerAnimation() {
       cancelAnimation(hourglassRotation);
       hourglassRotation.value = 0;
       setRestDisplaySeconds(0);
-      restProgress.value = withTiming(0, { duration: 300 });
+      restProgress.value = withTiming(0, { duration: motion.duration.slow });
     }
     return () => cancelAnimation(hourglassRotation);
   }, [hourglassRotation, restProgress, restTimerIsActive]);
@@ -54,15 +58,19 @@ export function useRestTimerAnimation() {
   useEffect(() => {
     if (!restTimerIsActive) return;
     const interval = setInterval(() => {
-      const remaining = useRestTimer.getState().getRemainingSeconds();
-      const duration = useRestTimer.getState().durationSeconds;
+      const { getRemainingSeconds, durationSeconds } = useRestTimer.getState();
+      const remaining = getRemainingSeconds();
       setRestDisplaySeconds(Math.max(0, remaining));
-      if (duration > 0) {
-        restProgress.value = withTiming(Math.max(0, remaining / duration), { duration: 250 });
+      
+      if (remaining <= 0) {
+        feedback.heavy();
+        stopTimer();
+      } else if (durationSeconds > 0) {
+        restProgress.value = withTiming(Math.max(0, remaining / durationSeconds), { duration: motion.duration.normal });
       }
     }, 500);
     return () => clearInterval(interval);
-  }, [restProgress, restTimerIsActive]);
+  }, [restProgress, restTimerIsActive, feedback, stopTimer]);
 
   return { restDisplaySeconds, hourglassAnimatedStyle, restProgressStyle };
 }

@@ -3,44 +3,52 @@ import { useDI } from '../context/DIContext';
 import type { Routine, RoutineExercise } from 'backend/shared/types';
 
 export function useRoutines() {
-  const { routineService } = useDI();
+  const {
+    createRoutine: createUC,
+    updateRoutine: updateUC,
+    deleteRoutine: deleteUC,
+    duplicateRoutine: duplicateUC,
+    getRoutines: getRoutinesUC,
+    getRoutineById: getByIdUC,
+    getRoutineExercises: getExercisesUC,
+  } = useDI();
 
   const getRoutines = useCallback(
-    () => routineService.getAll(),
-    [routineService]
+    () => getRoutinesUC.execute(),
+    [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
   const getRoutineById = useCallback(
-    (id: string) => routineService.getById(id),
-    [routineService]
+    (id: string) => getByIdUC.execute(id),
+    [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
   const createRoutine = useCallback(
     (params: Omit<Routine, 'id' | 'createdAt'>) =>
-      routineService.createRoutine(params),
-    [routineService]
+      createUC.execute(params),
+    [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
   const updateRoutine = useCallback(
     (id: string, params: Partial<Omit<Routine, 'id' | 'createdAt'>>) =>
-      routineService.updateRoutine(id, params),
-    [routineService]
+      updateUC.execute(id, params),
+    [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
   const deleteRoutine = useCallback(
-    (id: string) => routineService.deleteRoutine(id),
-    [routineService]
+    (id: string) => deleteUC.execute(id),
+    [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
   const duplicateRoutine = useCallback(
-    (id: string) => routineService.duplicateRoutine(id),
-    [routineService]
+    (id: string) => duplicateUC.execute(id),
+    [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
   const getExercises = useCallback(
     (routineId: string): Promise<RoutineExercise[]> =>
-      routineService.getExercises(routineId),
-    [routineService]
+      getExercisesUC.execute(routineId),
+    [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
   return useMemo(() => ({

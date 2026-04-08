@@ -1,47 +1,60 @@
-// hooks/useExercises.ts
 import { useCallback, useMemo } from 'react';
 import { useDI } from '../context/DIContext';
 import type { Exercise } from 'backend/shared/types';
 
 export function useExercises() {
-  const { exerciseService } = useDI();
+  const {
+    createExercise: createUC,
+    updateExercise: updateUC,
+    deleteExercise: deleteUC,
+    getExerciseHistory: getHistoryUC,
+    getExercises: getExercisesUC,
+    getExerciseById: getByIdUC,
+  } = useDI();
 
   const createExercise = useCallback(
-    (params: Omit<Exercise, 'id'>) => exerciseService.createExercise(params),
-    [exerciseService]
+    (params: Omit<Exercise, 'id'>) => createUC.execute(params),
+    [createUC]
+  );
+
+  const createCustomExercise = useCallback(
+    (params: Omit<Exercise, 'id'>) =>
+      createUC.execute({ ...params, isCustom: true }),
+    [createUC]
   );
 
   const updateExercise = useCallback(
-    (id: string, params: Partial<Omit<Exercise, 'id'>>) => exerciseService.updateExercise(id, params),
-    [exerciseService]
+    (id: string, params: Partial<Omit<Exercise, 'id'>>) => updateUC.execute(id, params),
+    [updateUC]
   );
 
   const deleteExercise = useCallback(
-    (id: string) => exerciseService.deleteExercise(id),
-    [exerciseService]
+    (id: string) => deleteUC.execute(id),
+    [deleteUC]
   );
 
   const getExerciseHistory = useCallback(
-    (exerciseId: string, limit?: number) => exerciseService.getExerciseHistory(exerciseId, limit),
-    [exerciseService]
+    (exerciseId: string, limit?: number) => getHistoryUC.execute(exerciseId, limit),
+    [getHistoryUC]
   );
 
   const getAll = useCallback(
-    () => exerciseService.getAll(),
-    [exerciseService]
+    () => getExercisesUC.execute(),
+    [getExercisesUC]
   );
 
   const getById = useCallback(
-    (id: string) => exerciseService.getById(id),
-    [exerciseService]
+    (id: string) => getByIdUC.execute(id),
+    [getByIdUC]
   );
 
   return useMemo(() => ({
     createExercise,
+    createCustomExercise,
     updateExercise,
     deleteExercise,
     getExerciseHistory,
     getAll,
     getById,
-  }), [createExercise, updateExercise, deleteExercise, getExerciseHistory, getAll, getById]);
+  }), [createExercise, createCustomExercise, updateExercise, deleteExercise, getExerciseHistory, getAll, getById]);
 }

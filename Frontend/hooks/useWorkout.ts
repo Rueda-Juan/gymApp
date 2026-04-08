@@ -3,6 +3,14 @@ import { useDI } from '../context/DIContext';
 import type { WorkoutSet, SessionContext, WarmupStyle } from 'backend/shared/types';
 import type { WorkoutExerciseState } from '@/store/useActiveWorkout';
 
+const VALID_SET_TYPES = ['warmup', 'normal', 'failure', 'dropset'] as const;
+type SetType = typeof VALID_SET_TYPES[number];
+
+function asSetType(raw: string): SetType {
+  const isValid = (VALID_SET_TYPES as readonly string[]).includes(raw);
+  return isValid ? (raw as SetType) : 'normal';
+}
+
 function mapExerciseStateToBackend(ex: WorkoutExerciseState, orderIndex: number) {
   return {
     id: ex.id,
@@ -20,7 +28,7 @@ function mapExerciseStateToBackend(ex: WorkoutExerciseState, orderIndex: number)
         weight: s.weight,
         reps: s.reps,
         rir: s.rir ?? null,
-        setType: s.type as 'warmup' | 'normal' | 'failure' | 'dropset',
+        setType: asSetType(s.type),
         restSeconds: null,
         durationSeconds: 0,
         completed: true,
@@ -31,92 +39,110 @@ function mapExerciseStateToBackend(ex: WorkoutExerciseState, orderIndex: number)
 }
 
 export function useWorkout() {
-  const { workoutService } = useDI();
+  const {
+    startWorkout: startUC,
+    finishWorkout: finishUC,
+    deleteWorkout: deleteUC,
+    recordSet: recSetUC,
+    updateSet: upSetUC,
+    deleteSet: delSetUC,
+    skipExercise: skipExUC,
+    addExerciseToWorkout: addExUC,
+    reorderWorkoutExercises: reorderUC,
+    deleteWorkoutExercise: delExUC,
+    updateWorkoutExercise: upwkExUC,
+    suggestWeight: sugWUC,
+    getWorkoutHistory: getHistUC,
+    getWorkoutById: getByIdUC,
+    suggestWarmup: sugWarmUC,
+    recordAllSets: recAllUC,
+    getPreviousSets: getPrevUC,
+  } = useDI();
 
   const startWorkout = useCallback(
-    (routineId: string | null) => workoutService.startWorkout(routineId),
-    [workoutService]
+    (routineId: string | null) => startUC.execute(routineId),
+    [startUC]
   );
 
   const finishWorkout = useCallback(
-    (workoutId: string) => workoutService.finishWorkout(workoutId),
-    [workoutService]
+    (workoutId: string) => finishUC.execute(workoutId),
+    [finishUC]
   );
 
   const deleteWorkout = useCallback(
-    (workoutId: string) => workoutService.deleteWorkout(workoutId),
-    [workoutService]
+    (workoutId: string) => deleteUC.execute(workoutId),
+    [deleteUC]
   );
 
   const recordSet = useCallback(
-    (workoutId: string, set: WorkoutSet) => workoutService.recordSet(workoutId, set),
-    [workoutService]
+    (workoutId: string, set: WorkoutSet) => recSetUC.execute(workoutId, set),
+    [recSetUC]
   );
 
   const updateSet = useCallback(
-    (workoutId: string, dateStr: string, set: WorkoutSet) => workoutService.updateSet(workoutId, dateStr, set),
-    [workoutService]
+    (workoutId: string, dateStr: string, set: WorkoutSet) => upSetUC.execute(workoutId, dateStr, set),
+    [upSetUC]
   );
 
   const deleteSet = useCallback(
-    (workoutId: string, setId: string, exerciseId: string, dateStr: string) => workoutService.deleteSet(workoutId, setId, exerciseId, dateStr),
-    [workoutService]
+    (workoutId: string, setId: string, exerciseId: string, dateStr: string) => delSetUC.execute(workoutId, setId, exerciseId, dateStr),
+    [delSetUC]
   );
 
   const skipExercise = useCallback(
-    (workoutId: string, exerciseId: string) => workoutService.skipExercise(workoutId, exerciseId),
-    [workoutService]
+    (workoutId: string, exerciseId: string) => skipExUC.execute(workoutId, exerciseId),
+    [skipExUC]
   );
 
   const addExerciseToWorkout = useCallback(
-    (workoutId: string, exerciseId: string) => workoutService.addExerciseToWorkout(workoutId, exerciseId),
-    [workoutService]
+    (workoutId: string, exerciseId: string) => addExUC.execute(workoutId, exerciseId),
+    [addExUC]
   );
 
   const reorderWorkoutExercises = useCallback(
-    (workoutId: string, exerciseIds: string[]) => workoutService.reorderWorkoutExercises(workoutId, exerciseIds),
-    [workoutService]
+    (workoutId: string, exerciseIds: string[]) => reorderUC.execute(workoutId, exerciseIds),
+    [reorderUC]
   );
 
   const deleteWorkoutExercise = useCallback(
-    (workoutId: string, workoutExerciseId: string) => workoutService.deleteWorkoutExercise(workoutId, workoutExerciseId),
-    [workoutService]
+    (workoutId: string, workoutExerciseId: string) => delExUC.execute(workoutId, workoutExerciseId),
+    [delExUC]
   );
 
   const updateWorkoutExercise = useCallback(
-    (workoutId: string, workoutExerciseId: string, notes?: string) => workoutService.updateWorkoutExercise(workoutId, workoutExerciseId, notes),
-    [workoutService]
+    (workoutId: string, workoutExerciseId: string, notes?: string) => upwkExUC.execute({ workoutId, workoutExerciseId, notes }),
+    [upwkExUC]
   );
 
   const suggestWeight = useCallback(
-    (exerciseId: string) => workoutService.suggestWeight(exerciseId),
-    [workoutService]
+    (exerciseId: string) => sugWUC.execute(exerciseId),
+    [sugWUC]
   );
 
   const getHistory = useCallback(
-    (limit?: number) => workoutService.getHistory(limit),
-    [workoutService]
+    (limit?: number) => getHistUC.execute(limit),
+    [getHistUC]
   );
 
   const getWorkoutById = useCallback(
-    (id: string) => workoutService.getById(id),
-    [workoutService]
+    (id: string) => getByIdUC.execute(id),
+    [getByIdUC]
   );
 
   const suggestWarmup = useCallback(
-    (exerciseId: string, sessionContext: SessionContext, warmupStyle?: WarmupStyle, targetWeight?: number) => workoutService.suggestWarmup(exerciseId, sessionContext, warmupStyle, targetWeight),
-    [workoutService]
+    (exerciseId: string, sessionContext: SessionContext, warmupStyle?: WarmupStyle, targetWeight?: number) => sugWarmUC.execute(exerciseId, sessionContext, warmupStyle, targetWeight),
+    [sugWarmUC]
   );
 
   const recordAllSets = useCallback(
     (workoutId: string, exercises: WorkoutExerciseState[]) =>
-      workoutService.recordAllSets(workoutId, exercises.map((ex, idx) => mapExerciseStateToBackend(ex, idx))),
-    [workoutService]
+      recAllUC.execute(workoutId, exercises.map((ex, idx) => mapExerciseStateToBackend(ex, idx))),
+    [recAllUC]
   );
 
   const getPreviousSets = useCallback(
-    (exerciseId: string) => workoutService.getPreviousSets(exerciseId),
-    [workoutService]
+    (exerciseId: string) => getPrevUC.execute(exerciseId),
+    [getPrevUC]
   );
 
   return useMemo(() => ({

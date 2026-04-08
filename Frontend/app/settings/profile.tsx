@@ -18,7 +18,7 @@ export default function ProfileScreen() {
 
   return (
     <Screen safeAreaEdges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 }}>
         <YStack gap="$md">
           <AppText variant="titleLg">Perfil</AppText>
           <AppText variant="bodySm" color="textSecondary">Administra tus datos personales</AppText>
@@ -34,7 +34,8 @@ export default function ProfileScreen() {
                   key={option}
                   onPress={() => setGender(option)}
                   style={{ flex: 1 }}
-                  accessibilityRole="button"
+                  accessibilityRole="radio"
+                  accessibilityLabel={option === 'male' ? 'Hombre' : option === 'female' ? 'Mujer' : 'Otro'}
                   accessibilityState={{ selected: isSelected }}
                 >
                   <YStack
@@ -42,7 +43,7 @@ export default function ProfileScreen() {
                     borderWidth={1}
                     borderColor={isSelected ? '$primary' : '$borderColor'}
                     backgroundColor={isSelected ? '$primarySubtle' : '$surfaceSecondary'}
-                    paddingVertical={12}
+                    paddingVertical="$md"
                     alignItems="center"
                   >
                     <AppText variant="bodyMd" fontWeight={isSelected ? '700' : '500'} color={isSelected ? 'primary' : 'textSecondary'}>

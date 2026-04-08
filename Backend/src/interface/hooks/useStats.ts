@@ -1,29 +1,22 @@
 import { useCallback, useMemo } from 'react';
 import { useContainer } from './useContainer';
 
-/**
- * Hook that exposes all statistics-related operations.
- * Wraps StatsService from the DI container.
- */
 export function useStats() {
-  const { statsService } = useContainer();
+  const { getWeeklyStats: getWeeklyStatsUseCase, getMuscleBalance: getMuscleBalanceUseCase, getTrainingFrequency: getTrainingFrequencyUseCase } = useContainer();
 
   const getWeeklyStats = useCallback(
-    (startDate: string, endDate: string) =>
-      statsService.getWeeklyStats(startDate, endDate),
-    [statsService],
+    (startDate: string, endDate: string) => getWeeklyStatsUseCase.execute(startDate, endDate),
+    [getWeeklyStatsUseCase],
   );
 
   const getMuscleBalance = useCallback(
-    (startDate: string, endDate: string) =>
-      statsService.getMuscleBalance(startDate, endDate),
-    [statsService],
+    (startDate: string, endDate: string) => getMuscleBalanceUseCase.execute(startDate, endDate),
+    [getMuscleBalanceUseCase],
   );
 
   const getTrainingFrequency = useCallback(
-    (startDate: string, endDate: string) =>
-      statsService.getTrainingFrequency(startDate, endDate),
-    [statsService],
+    (startDate: string, endDate: string) => getTrainingFrequencyUseCase.execute(startDate, endDate),
+    [getTrainingFrequencyUseCase],
   );
 
   return useMemo(() => ({

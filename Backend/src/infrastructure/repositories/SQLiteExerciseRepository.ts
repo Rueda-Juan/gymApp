@@ -1,6 +1,5 @@
 import type * as SQLite from 'expo-sqlite';
-import type { Exercise } from '../../domain/entities/Exercise';
-import type { ExerciseType } from '../../domain/entities/Exercise';
+import type { Exercise, ExerciseType, LoadType } from '../../domain/entities/Exercise';
 import type { ExerciseRepository } from '../../domain/repositories/ExerciseRepository';
 import type { MuscleGroup } from '../../domain/valueObjects/MuscleGroup';
 import type { Equipment } from '../../domain/valueObjects/Equipment';
@@ -20,6 +19,11 @@ interface ExerciseRow {
   animation_path: string | null;
   description: string | null;
   anatomical_representation_svg: string | null;
+  exercise_key: string | null;
+  is_custom: number | null;
+  created_by: string | null;
+  load_type: string | null;
+  is_archived: number | null;
 }
 
 /**
@@ -43,6 +47,11 @@ function mapRowToExercise(row: ExerciseRow): Exercise {
     animationPath: row.animation_path,
     description: row.description,
     anatomicalRepresentationSvg: row.anatomical_representation_svg,
+    exerciseKey: row.exercise_key ?? '',
+    isCustom: Boolean(row.is_custom),
+    createdBy: row.created_by,
+    loadType: (row.load_type ?? 'weighted') as LoadType,
+    isArchived: Boolean(row.is_archived),
   };
 }
 
@@ -52,7 +61,7 @@ export class SQLiteExerciseRepository implements ExerciseRepository {
   async getAll(): Promise<Exercise[]> {
     try {
       const rows = await this.db.getAllAsync<ExerciseRow>(
-        'SELECT * FROM exercises ORDER BY name',
+        'SELECT * FROM exercises WHERE is_archived = 0 OR is_archived IS NULL ORDER BY name',
       );
       return rows.map(mapRowToExercise);
     } catch (error) {
@@ -72,11 +81,26 @@ export class SQLiteExerciseRepository implements ExerciseRepository {
     }
   }
 
+  async getByKey(exerciseKey: string): Promise<Exercise | null> {
+    try {
+      const row = await this.db.getFirstAsync<ExerciseRow>(
+        'SELECT * FROM exercises WHERE exercise_key = ?',
+        [exerciseKey],
+      );
+      return row ? mapRowToExercise(row) : null;
+    } catch (error) {
+      throw new DatabaseError(`Error al obtener ejercicio por key ${exerciseKey}`, error);
+    }
+  }
+
   async search(query: string): Promise<Exercise[]> {
     try {
       const rows = await this.db.getAllAsync<ExerciseRow>(
-        'SELECT * FROM exercises WHERE name LIKE ? OR name_es LIKE ? ORDER BY name',
-        [`%${query}%`, `%${query}%`],
+        `SELECT * FROM exercises
+         WHERE (name LIKE ? OR name_es LIKE ? OR exercise_key LIKE ?)
+           AND (is_archived = 0 OR is_archived IS NULL)
+         ORDER BY name`,
+        [`%${query}%`, `%${query}%`, `%${query}%`],
       );
       return rows.map(mapRowToExercise);
     } catch (error) {
@@ -121,13 +145,15 @@ export class SQLiteExerciseRepository implements ExerciseRepository {
     try {
       await this.db.runAsync(
         `INSERT OR REPLACE INTO exercises
-         (id, name, name_es, primary_muscle, primary_muscles, secondary_muscles, equipment, exercise_type, weight_increment, animation_path, description, anatomical_representation_svg)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, name, name_es, primary_muscle, primary_muscles, secondary_muscles, equipment,
+          exercise_type, weight_increment, animation_path, description, anatomical_representation_svg,
+          exercise_key, is_custom, created_by, load_type, is_archived)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           exercise.id,
           exercise.name,
           exercise.nameEs,
-          exercise.primaryMuscles[0] ?? 'other', // backward compat: keep first muscle in old col
+          exercise.primaryMuscles[0] ?? 'other',
           JSON.stringify(exercise.primaryMuscles),
           JSON.stringify(exercise.secondaryMuscles),
           exercise.equipment,
@@ -136,10 +162,26 @@ export class SQLiteExerciseRepository implements ExerciseRepository {
           exercise.animationPath,
           exercise.description,
           exercise.anatomicalRepresentationSvg,
+          exercise.exerciseKey,
+          exercise.isCustom ? 1 : 0,
+          exercise.createdBy,
+          exercise.loadType,
+          exercise.isArchived ? 1 : 0,
         ],
       );
     } catch (error) {
       throw new DatabaseError('Error al guardar ejercicio', error);
+    }
+  }
+
+  async archive(id: string): Promise<void> {
+    try {
+      await this.db.runAsync(
+        'UPDATE exercises SET is_archived = 1 WHERE id = ?',
+        [id],
+      );
+    } catch (error) {
+      throw new DatabaseError(`Error al archivar ejercicio ${id}`, error);
     }
   }
 
