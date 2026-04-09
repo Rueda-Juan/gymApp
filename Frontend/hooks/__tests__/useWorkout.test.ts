@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { useDI } from '../../context/DIContext';
-import { useWorkout } from '../useWorkout';
+import { useWorkout } from '@/hooks/domain/useWorkout';
 import type { WorkoutExerciseState } from '@/store/useActiveWorkout';
 
 jest.mock('../../context/DIContext', () => ({ useDI: jest.fn() }));
@@ -27,7 +27,15 @@ const mockWorkoutService = {
 };
 
 function setupMocks() {
-  (useDI as jest.Mock).mockReturnValue({ workoutService: mockWorkoutService });
+  // Wrap plain mock functions into use-case objects with an `execute` method
+  const nameMapping: Record<string, string> = { getById: 'getWorkoutById', getHistory: 'getWorkoutHistory' };
+  const useCases: Record<string, any> = {};
+  Object.keys(mockWorkoutService).forEach((key) => {
+    const mappedKey = nameMapping[key] || key;
+    useCases[mappedKey] = { execute: (mockWorkoutService as any)[key] };
+  });
+
+  (useDI as jest.Mock).mockReturnValue(useCases);
 }
 
 function renderHook() {

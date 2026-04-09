@@ -1,16 +1,17 @@
 import { XStack, YStack, useTheme } from 'tamagui';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { FlatList, ActivityIndicator, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { ChevronLeft, Trophy, Calendar, Dumbbell, PlayCircle, Activity } from 'lucide-react-native';
 import { format } from 'date-fns';
 
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { IconButton } from '@/components/ui/AppButton';
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
-import { useExerciseDetail } from '@/hooks/useExerciseDetail';
+import { useExerciseDetail } from '@/hooks/domain/useExerciseDetail';
 import { getExerciseName } from '@/utils/exercise';
 import type { WorkoutSet } from 'backend/domain/entities/WorkoutSet';
 import { FONT_SCALE } from '@/tamagui.config';
@@ -21,7 +22,8 @@ const SCROLL_BOTTOM_INSET = 100;
 const formatSetDate = (createdAt: string | Date): string => {
   try {
     return format(new Date(createdAt), 'dd/MM/yyyy');
-  } catch {
+  } catch (err) {
+    console.error('formatSetDate error:', err);
     return String(createdAt);
   }
 };
@@ -60,15 +62,24 @@ function HistorySetItem({ set }: { set: WorkoutSet }) {
 }
 
 export default function ExerciseDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const rawId = params?.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const theme = useTheme();
-  const { exercise, history, maxWeight, loading, loadError } = useExerciseDetail(id);
+  const { exercise, history = [], maxWeight, loading, loadError } = useExerciseDetail(id);
+
+  useEffect(() => {
+    if (loadError) {
+      console.error('useExerciseDetail loadError:', loadError);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }, [loadError]);
 
   const renderHistoryItem = useCallback(
     ({ item }: { item: WorkoutSet }) => <HistorySetItem set={item} />,
     [],
   );
-  const keyExtractor = useCallback((item: WorkoutSet) => item.id, []);
+  const keyExtractor = useCallback((item: WorkoutSet) => String(item.id), []);
 
   if (loading) {
     return (
@@ -103,7 +114,7 @@ export default function ExerciseDetailScreen() {
       </XStack>
 
       <FlatList
-        data={history}
+        data={history ?? []}
         renderItem={renderHistoryItem}
         keyExtractor={keyExtractor}
         removeClippedSubviews

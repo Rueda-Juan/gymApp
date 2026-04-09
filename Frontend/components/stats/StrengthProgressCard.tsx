@@ -4,7 +4,7 @@ import { XStack, YStack } from 'tamagui';
 import { TrendingUp, ChevronRight } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';

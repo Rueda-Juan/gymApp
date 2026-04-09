@@ -4,8 +4,8 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { RoutineFormTemplate } from '@/components/routine/RoutineFormTemplate';
-import { useRoutineEditor } from '@/hooks/useRoutineEditor';
-import { useRoutines } from '@/hooks/useRoutines';
+import { useRoutineEditor } from '@/hooks/domain/useRoutineEditor';
+import { useRoutines } from '@/hooks/domain/useRoutines';
 import { createClientId } from '@/utils/clientId';
 import { mapStoreExercisesToPayload } from '@/utils/routine';
 
@@ -20,6 +20,7 @@ export default function CreateRoutineScreen() {
   }, [reset]);
 
   const handleSave = useCallback(async () => {
+    if (isSaving) return;
     if (!name.trim()) {
       Alert.alert('Error', 'Por favor ingresa un nombre para la rutina');
       return;
@@ -38,12 +39,14 @@ export default function CreateRoutineScreen() {
       });
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
-    } catch {
+    } catch (err) {
+      console.error('createRoutine error:', err);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', 'No se pudo guardar la rutina');
     } finally {
       setIsSaving(false);
     }
-  }, [name, exercises, notes, routineService]);
+  }, [name, exercises, notes, routineService, isSaving]);
 
   return (
     <RoutineFormTemplate

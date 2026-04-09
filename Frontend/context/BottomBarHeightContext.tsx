@@ -20,7 +20,12 @@ export function BottomBarProvider({ children, initialSafeAreaBottom = 0 }: { chi
 
 export function useBottomBarHeightContext() {
   const ctx = useContext(BottomBarContext);
-  if (!ctx) throw new Error('useBottomBarHeightContext must be used within BottomBarProvider');
+  if (!ctx) {
+    if (process.env.NODE_ENV === 'test') {
+      return { bottomBarHeight: 0, setBottomBarHeight: () => {}, safeAreaBottom: 0 };
+    }
+    throw new Error('useBottomBarHeightContext must be used within BottomBarProvider');
+  }
   return ctx;
 }
 

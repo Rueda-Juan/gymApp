@@ -10,11 +10,11 @@ import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useRestTimer } from '@/store/useRestTimer';
 import { useSettings } from '@/store/useSettings';
 import { Screen } from '@/components/ui/Screen';
-import { useSupersetCarousel } from '@/hooks/useSupersetCarousel';
-import { useSupersetFlow } from '@/hooks/useSupersetFlow';
-import { useWorkoutTimer } from '@/hooks/useWorkoutTimer';
-import { useRestTimerAnimation } from '@/hooks/useRestTimerAnimation';
-import { usePreviousSets } from '@/hooks/usePreviousSets';
+import { useSupersetCarousel } from '@/hooks/ui/useSupersetCarousel';
+import { useSupersetFlow } from '@/hooks/domain/useSupersetFlow';
+import { useWorkoutTimer } from '@/hooks/application/useWorkoutTimer';
+import { useRestTimerAnimation } from '@/hooks/ui/useRestTimerAnimation';
+import { usePreviousSets } from '@/hooks/domain/usePreviousSets';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { getExerciseName } from '@/utils/exercise';
@@ -27,8 +27,8 @@ import { ActiveWorkoutExercisePickerSheet } from '@/components/workout/ActiveWor
 import { ActiveWorkoutOptionsSheet } from '@/components/workout/ActiveWorkoutOptionsSheet';
 import { WorkoutSessionNoteSheet } from '@/components/workout/WorkoutSessionNoteSheet';
 import { motion } from '@/constants/motion';
-import { useMotion } from '@/hooks/useMotion';
-import { useActiveWorkoutController } from '@/hooks/useActiveWorkoutController';
+import { useMotion } from '@/hooks/ui/useMotion';
+import { useActiveWorkoutController } from '@/hooks/domain/useActiveWorkoutController';
 import { UndoToast } from '@/components/ui/UndoToast';
 import { PRCelebrationOverlay } from '@/components/workout/PRCelebrationOverlay';
 
@@ -36,6 +36,16 @@ const SUPERSET_TAB_HEIGHT = 52;
 const SUPERSET_TAB_BORDER_RADIUS = 20;
 
 export default function ActiveWorkoutScreen() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <BottomBarProvider initialSafeAreaBottom={insets.bottom}>
+      <RenderContents />
+    </BottomBarProvider>
+  );
+}
+
+function RenderContents() {
   const m = useMotion();
   const routineId = useActiveWorkout(s => s.routineId);
   const routineName = useActiveWorkout(s => s.routineName);
@@ -65,8 +75,7 @@ export default function ActiveWorkoutScreen() {
   } = useSupersetCarousel(exercises, currentExerciseIndex);
 
   const { scrollRef, registerLayout, scrollToExercise } = useSupersetFlow();
-
-  const { bottomBarHeight } = useBottomBarHeightContext ? useBottomBarHeightContext() : { bottomBarHeight: 0 };
+  const { bottomBarHeight } = useBottomBarHeightContext();
 
   const handleSupersetSetComplete = () => {
     if (!isInSuperset) return;
@@ -113,19 +122,8 @@ export default function ActiveWorkoutScreen() {
 
   if (!currentExercise) return null;
 
-  function RenderContents() {
-    const { bottomBarHeight } = useBottomBarHeightContext();
-
-    const handleSupersetSetComplete = () => {
-      if (!isInSuperset) return;
-      const nextIdx = (supersetCarouselIndex + 1) % supersetOrder.length;
-      setSupersetCarouselIndex(nextIdx);
-      const nextId = supersetOrder[nextIdx];
-      if (nextId) setTimeout(() => scrollToExercise(nextId, bottomBarHeight), 100);
-    };
-
-    return (
-      <Screen scroll={false} safeAreaEdges={['top', 'left', 'right']}>
+  return (
+    <Screen scroll={false} safeAreaEdges={['top', 'left', 'right']}>
       <WorkoutHeader
         formattedTime={formattedTime}
         routineName={routineName ?? ''}
@@ -292,12 +290,5 @@ export default function ActiveWorkoutScreen() {
         onClose={() => state.noteSheetRef.current?.close()}
       />
     </Screen>
-    );
-  }
-
-  return (
-    <BottomBarProvider initialSafeAreaBottom={insets.bottom}>
-      <RenderContents />
-    </BottomBarProvider>
   );
 }

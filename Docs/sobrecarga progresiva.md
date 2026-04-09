@@ -311,7 +311,7 @@ Los siguientes ejercicios fueron corregidos con músculos primarios correctos, m
 | Push Up             | chest, triceps           | shoulders, abs               | compound  |
 | Face Pull           | shoulders, traps         | back                         | compound  |
 
-> **Nota:** Los ejercicios no listados aquí conservan sus datos originales del seed de wger. Se irán corrigiendo en futuras iteraciones.
+
 
 ## 9. Ejercicios Corregidos (Migración 023)
 

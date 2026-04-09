@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { YStack, XStack, YStackProps } from 'tamagui';
 import { motion } from '@/constants/motion';
-import { useMotion } from '@/hooks/useMotion';
+import { useMotion } from '@/hooks/ui/useMotion';
 
 const SKELETON_OPACITY_MIN = 0.5;
 const SKELETON_OPACITY_REDUCED = 0.7;

@@ -3,7 +3,7 @@ import { XStack, YStack } from 'tamagui';
 import { Scale, Plus } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -23,7 +23,7 @@ interface BodyWeightCardProps {
 export function BodyWeightCard({ weightHistory, onAddWeight }: BodyWeightCardProps) {
   const chartData = useMemo(
     () => weightHistory
-      .map((w) => ({ x: w.date, y: Number(w.weight) }))
+      .map((w: BodyWeightEntry) => ({ x: w.date, y: Number(w.weight) }))
       .filter((p) => !isNaN(p.y) && p.y > 0)
       .reverse(),
     [weightHistory]

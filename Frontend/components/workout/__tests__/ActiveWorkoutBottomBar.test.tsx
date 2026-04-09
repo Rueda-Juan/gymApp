@@ -21,27 +21,27 @@ describe('ActiveWorkoutBottomBar', () => {
   };
 
   it('renders next exercise button and handles press', () => {
-    const { getByA11yLabel } = render(
+    const { getByLabelText } = render(
       <ActiveWorkoutBottomBar {...baseProps} />
     );
-    const nextButton = getByA11yLabel('Siguiente ejercicio');
+    const nextButton = getByLabelText('Siguiente ejercicio');
     fireEvent.press(nextButton);
     expect(baseProps.onNext).toHaveBeenCalled();
   });
 
   it('shows "Finalizar" when isLast', () => {
-    const { getByA11yLabel, getByText } = render(
+    const { getByLabelText, getByText } = render(
       <ActiveWorkoutBottomBar {...baseProps} isLast />
     );
-    expect(getByA11yLabel('Finalizar entrenamiento')).toBeTruthy();
+    expect(getByLabelText('Finalizar entrenamiento')).toBeTruthy();
     expect(getByText('Finalizar')).toBeTruthy();
   });
 
   it('disables next button when isFinishing', () => {
-    const { getByA11yLabel } = render(
+    const { getByLabelText } = render(
       <ActiveWorkoutBottomBar {...baseProps} isFinishing />
     );
-    const nextButton = getByA11yLabel('Siguiente ejercicio');
+    const nextButton = getByLabelText('Siguiente ejercicio');
     expect(nextButton.props.accessibilityState.disabled).toBe(true);
   });
 });

@@ -1,10 +1,10 @@
 import React from 'react';
-import { Pressable, Switch, Alert } from 'react-native';
+import { Pressable, Switch, Alert, ActivityIndicator } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
-import { User, Bell, Lock, CircleHelp, Info, LogOut, ChevronRight, Moon, Hourglass, Wind, type LucideIcon } from 'lucide-react-native';
+import { User, Bell, Lock, CircleHelp, Info, LogOut, Moon, Hourglass, Wind } from 'lucide-react-native';
 
 import { Screen } from '@/components/ui/Screen';
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { AppText } from '@/components/ui/AppText';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -13,6 +13,7 @@ import { SettingItem } from '@/components/settings/SettingItem';
 import { SegmentedPicker } from '@/components/settings/SegmentedPicker';
 import { useSettings, STANDARD_PLATES, BAR_WEIGHTS } from '@/store/useSettings';
 import { useUser } from '@/store/useUser';
+import { useDI } from '@/context/DIContext';
 import { router } from 'expo-router';
 import { ROUTES } from '@/constants/routes';
 
@@ -45,9 +46,15 @@ export default function SettingsScreen() {
   const hapticsEnabled = useSettings(s => s.hapticsEnabled);
   const setHapticsEnabled = useSettings(s => s.setHapticsEnabled);
   const resetUser = useUser(s => s.resetUser);
+  const { wipeDatabase } = useDI();
   const theme = useTheme();
   const restTimerDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [restTimerInput, setRestTimerInput] = React.useState(() => String(restTimerSeconds));
+  const [resetLoading, setResetLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    setRestTimerInput(String(restTimerSeconds));
+  }, [restTimerSeconds]);
 
   React.useEffect(() => {
     return () => {
@@ -273,11 +280,44 @@ export default function SettingsScreen() {
 
         <YStack opacity={0.6} marginTop="$md">
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Resetear base de datos"
+            onPress={() => {
+              if (resetLoading) return;
+              Alert.alert('Resetear Base de Datos', 'Esto eliminará todos los datos localmente. Asegurate de crear un backup antes. ¿Querés continuar?', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Resetear', style: 'destructive', onPress: async () => {
+                  try {
+                    setResetLoading(true);
+                    await wipeDatabase.execute();
+                    resetUser();
+                    Alert.alert('Listo', 'La base de datos fue reseteada.');
+                  } catch (e) {
+                    Alert.alert('Error', 'No se pudo resetear la base de datos.');
+                  } finally {
+                    setResetLoading(false);
+                  }
+                } }
+              ]);
+            }}
+          >
+            <XStack alignItems="center" justifyContent="center" gap="$sm" padding="$md">
+              <AppIcon icon={LogOut} size={20} color="danger" />
+              {resetLoading ? (
+                <ActivityIndicator size="small" color={theme.primary?.val} />
+              ) : (
+                <AppText variant="bodyMd" color="danger" fontWeight="700">Resetear Base de Datos</AppText>
+              )}
+            </XStack>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar sesión"
             onPress={() => Alert.alert('Cerrar Sesión', '¿Estás seguro?', [
               { text: 'Cancelar' },
               { text: 'Salir', style: 'destructive', onPress: () => resetUser() }
             ])}
-            accessibilityLabel="Cerrar sesión"
           >
             <XStack alignItems="center" justifyContent="center" gap="$sm" padding="$md">
               <AppIcon icon={LogOut} size={20} color="danger" />

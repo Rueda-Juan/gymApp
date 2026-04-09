@@ -4,7 +4,7 @@ import { Calendar, Dumbbell, Clock, Trophy } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AnimatedNumber } from '@/components/feedback/AnimatedNumber';

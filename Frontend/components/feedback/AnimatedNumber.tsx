@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { TextInput, TextStyle } from 'react-native';
 import Animated, { useSharedValue, withTiming, useAnimatedProps } from 'react-native-reanimated';
 import { motion } from '@/constants/motion';
-import { useMotion } from '@/hooks/useMotion';
+import { useMotion } from '@/hooks/ui/useMotion';
 import { useTheme } from 'tamagui';
 import { ThemeColorKey } from '@/theme/types';
 import { FONT_SCALE } from '@/tamagui.config';

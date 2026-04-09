@@ -5,7 +5,7 @@ import { X } from 'lucide-react-native';
 import { XStack } from 'tamagui';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { useBottomSheetStyles } from '@/hooks/useBottomSheetStyles';
+import { useBottomSheetStyles } from '@/hooks/ui/useBottomSheetStyles';
 import { FONT_SCALE } from '@/tamagui.config';
 
 const SHEET_PADDING = 20;

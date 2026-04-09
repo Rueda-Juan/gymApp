@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { useMotion } from '@/hooks/useMotion';
+import { useMotion } from '@/hooks/ui/useMotion';
 import { motion } from '@/constants/motion';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { ThemeColorKey } from '@/theme/types';

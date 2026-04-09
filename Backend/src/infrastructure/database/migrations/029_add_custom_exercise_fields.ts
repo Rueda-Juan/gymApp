@@ -11,6 +11,7 @@ export async function up(db: SQLite.SQLiteDatabase): Promise<void> {
       CHECK(load_type IN ('weighted', 'bodyweight', 'assisted', 'timed'));
   `);
   await db.execAsync(`ALTER TABLE exercises ADD COLUMN is_archived BOOLEAN NOT NULL DEFAULT 0;`);
+  await db.execAsync(`ALTER TABLE exercises ADD COLUMN name_es TEXT;`);
 
   await db.execAsync(`
     UPDATE exercises SET load_type = 'bodyweight' WHERE equipment = 'bodyweight';

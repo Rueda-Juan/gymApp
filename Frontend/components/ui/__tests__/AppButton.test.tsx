@@ -53,7 +53,7 @@ describe('AppButton', () => {
     );
     let button = getByTestId('AppButton');
     expect(button.props.width || button.props.style?.width).toBe('100%');
-    rerender(<AppButton label="Flex" flex={1} fullWidth={false} />, { wrapper: Providers });
+    rerender(<AppButton label="Flex" flex={1} fullWidth={false} />);
     button = getByTestId('AppButton');
     expect(button.props.flex || button.props.style?.flex).toBe(1);
   });

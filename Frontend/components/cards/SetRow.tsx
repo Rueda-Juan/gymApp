@@ -3,7 +3,7 @@ import { TextInput, Pressable, Keyboard, useWindowDimensions, Platform } from 'r
 import { XStack, YStack, View, useTheme } from 'tamagui';
 import { Check, Flame, Trash2 } from 'lucide-react-native';
 import { useSettings } from '@/store/useSettings';
-import { useSensoryFeedback } from '@/hooks/useSensoryFeedback';
+import { useSensoryFeedback } from '@/hooks/ui/useSensoryFeedback';
 import Animated from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { AppText } from '../ui/AppText';
@@ -11,7 +11,7 @@ import { AppIcon } from '../ui/AppIcon';
 import { SetRowNumberInput } from './SetRowNumberInput';
 import { SetRowRirSelector } from './SetRowRirSelector';
 import { THEME_FALLBACKS } from '@/tamagui.config';
-import { useSetRowAnimation } from '@/hooks/useSetRowAnimation';
+import { useSetRowAnimation } from '@/hooks/ui/useSetRowAnimation';
 import { parseWeight } from '@/utils/formatters';
 
 const DELETE_BUTTON_WIDTH = 80;

@@ -25,7 +25,7 @@ export const motion = {
   },
 
   scale: {
-    press: 0.96,
+    press: 0.95,
     micro: 1.03,
     pop:   1.08,
   },

@@ -5,8 +5,11 @@ import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatli
 import * as Haptics from 'expo-haptics';
 
 import { AppText } from '@/components/ui/AppText';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { RoutineExerciseRow } from '@/components/cards/RoutineExerciseRow';
+import { EmptyStateIcon } from '@/components/feedback/EmptyStateIcon';
 import { getExerciseName } from '@/utils/exercise';
+import { Dumbbell } from 'lucide-react-native';
 
 const DEFAULT_CONTENT_PADDING_HORIZONTAL = 16;
 const DEFAULT_CONTENT_PADDING_BOTTOM = 100;
@@ -61,9 +64,13 @@ export function RoutineEditorList({
   );
 
   const emptyComponent = useMemo(() => (
-    <YStack padding="$4xl" alignItems="center">
+    <YStack padding="$4xl" alignItems="center" gap="$md">
+      <EmptyStateIcon icon={Dumbbell} size={40} color="textTertiary" />
       <AppText variant="bodyMd" color="textSecondary" textAlign="center">
         Aún no has agregado ejercicios a esta rutina.
+      </AppText>
+      <AppText variant="bodySm" color="textTertiary" textAlign="center">
+        Tocá "Agregar ejercicio" para empezar.
       </AppText>
     </YStack>
   ), []);

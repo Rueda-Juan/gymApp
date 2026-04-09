@@ -9,7 +9,7 @@ import { useRestTimer } from '@/store/useRestTimer';
 
 jest.mock('@/store/useActiveWorkout');
 jest.mock('@/store/useRestTimer');
-jest.mock('@/hooks/useMotion', () => ({
+jest.mock('@/hooks/ui/useMotion', () => ({
   useMotion: () => ({
     isReduced: false,
     timing: (duration: number) => ({ duration }),

@@ -9,8 +9,8 @@ import { AppIcon } from './AppIcon';
 import { AppButton } from './AppButton';
 import { motion } from '@/constants/motion';
 import { elevation } from '@/constants/elevation';
-import { useMotion } from '@/hooks/useMotion';
-import { useMiniPlayerState } from '@/hooks/useMiniPlayerState';
+import { useMotion } from '@/hooks/ui/useMotion';
+import { useMiniPlayerState } from '@/hooks/ui/useMiniPlayerState';
 
 const HORIZONTAL_INSET = 12;
 const TAB_BAR_OFFSET = 60;

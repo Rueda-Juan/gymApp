@@ -8,7 +8,7 @@ import { AppText } from '@/components/ui/AppText';
 import { AppButton, IconButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppInput } from '@/components/ui/AppInput';
-import { useBodyWeight } from '@/hooks/useBodyWeight';
+import { useBodyWeight } from '@/hooks/domain/useBodyWeight';
 import type { BodyWeightEntry } from 'backend/shared/types';
 import { FONT_SCALE } from '@/tamagui.config';
 

@@ -9,7 +9,7 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { motion } from '@/constants/motion';
-import { useMotion } from '@/hooks/useMotion';
+import { useMotion } from '@/hooks/ui/useMotion';
 
 const REVEAL_DURATION = motion.duration.normal;
 const SKELETON_FADE_DELAY = 50;

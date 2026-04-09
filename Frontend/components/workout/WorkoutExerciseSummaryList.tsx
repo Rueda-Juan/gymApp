@@ -3,7 +3,7 @@ import { XStack, YStack, View } from 'tamagui';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Star, Link2 } from 'lucide-react-native';
 
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';

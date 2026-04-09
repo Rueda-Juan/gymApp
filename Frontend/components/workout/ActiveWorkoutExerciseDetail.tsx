@@ -4,10 +4,10 @@ import { Pressable, ScrollView } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { useBottomBarHeightContext } from '@/context/BottomBarHeightContext';
 import { MoreVertical, Plus, SkipForward, TrendingUp } from 'lucide-react-native';
-import { SetRow } from '@/components/cards/set-row';
+import { SetRow } from '@/components/cards/SetRow';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 import { getExerciseName } from '@/utils/exercise';
 import type { WorkoutExerciseState, WorkoutSetState } from '@/store/useActiveWorkout';
 
@@ -29,7 +29,7 @@ interface ActiveWorkoutExerciseDetailProps {
   onAddSet: (exerciseId: string) => void;
   resolvePreviousWeight: (exercise: WorkoutExerciseState, setIndex: number) => number;
   scrollEnabled?: boolean;
-  onLayout?: (y: number) => void;
+  onLayout?: (layout: { y: number; height: number }) => void;
   isSupersetMember?: boolean;
 }
 
@@ -64,7 +64,7 @@ export function ActiveWorkoutExerciseDetail({
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       scrollEnabled={scrollEnabled}
-      onLayout={(e) => onLayout?.(e.nativeEvent.layout.y, e.nativeEvent.layout.height)}
+      onLayout={(e) => onLayout?.(e.nativeEvent.layout)}
     >
       <XStack
         justifyContent="space-between"

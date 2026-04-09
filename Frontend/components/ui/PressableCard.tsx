@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Pressable, ViewStyle } from 'react-native';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { motion } from '@/constants/motion';
-import { usePressScale } from '@/hooks/usePressScale';
+import { usePressScale } from '@/hooks/ui/usePressScale';
 import { triggerLightHaptic } from '@/utils/haptics';
 import { elevation } from '@/constants/elevation';
 

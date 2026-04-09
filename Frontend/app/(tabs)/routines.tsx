@@ -5,22 +5,22 @@ import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '@/components/ui/Screen';
 import { Plus, Play, Dumbbell } from 'lucide-react-native';
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppButton, IconButton } from '@/components/ui/AppButton';
 import { ToggleChip } from '@/components/ui/ToggleChip';
-import { useRoutines } from '@/hooks/useRoutines';
-import { useWorkout } from '@/hooks/useWorkout';
+import { useRoutines } from '@/hooks/domain/useRoutines';
+import { useWorkout } from '@/hooks/domain/useWorkout';
 import { router } from 'expo-router';
 import { ROUTES } from '@/constants/routes';
 import { RoutineCardSkeleton } from '@/components/cards/Loaders';
 import { ContentReveal } from '@/components/feedback/ContentReveal';
 import { EmptyStateIcon } from '@/components/feedback/EmptyStateIcon';
-import { useStartWorkout } from '@/hooks/useStartWorkout';
+import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
 import { SearchBar } from '@/components/ui/SearchBar';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
@@ -53,9 +53,9 @@ export default function RoutinesScreen() {
 
 
 
-  const loadRoutines = useCallback(async () => {
+  const loadRoutines = useCallback(async (mountedRef?: { current: boolean }) => {
     try {
-      setLoading(true);
+      if (mountedRef?.current ?? true) setLoading(true);
       const data = await routineService.getRoutines();
       const history = await workoutService.getHistory(30);
 
@@ -68,7 +68,7 @@ export default function RoutinesScreen() {
         }
       }
 
-      const routinesWithLastPerformed = data.map((routine) => {
+      const routinesWithLastPerformed = data.map((routine: Routine) => {
         const lastWorkout = latestHistoryByRoutine.get(routine.id);
         return {
           ...routine,
@@ -76,18 +76,20 @@ export default function RoutinesScreen() {
         };
       });
 
-      setRoutines(routinesWithLastPerformed);
+      if (mountedRef?.current ?? true) setRoutines(routinesWithLastPerformed);
     } catch (error) {
       console.error('[Routines] Failed to load:', error);
       Toast.show({ type: 'error', text1: 'Error al cargar rutinas', position: 'top' });
     } finally {
-      setLoading(false);
+      if (mountedRef?.current ?? true) setLoading(false);
     }
   }, [routineService, workoutService, formatLastPerformed]);
 
   useFocusEffect(
     useCallback(() => {
-      void loadRoutines();
+      const mountedRef = { current: true };
+      void loadRoutines(mountedRef);
+      return () => { mountedRef.current = false; };
     }, [loadRoutines])
   );
 
@@ -120,6 +122,8 @@ export default function RoutinesScreen() {
           <Pressable
             style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}
             onPress={() => router.push(`/routine/${routine.id}`)}
+            accessibilityRole="button"
+            accessibilityLabel={`Abrir rutina ${routine.name}`}
           >
             <YStack padding="$md" gap="$xs" flex={1}>
               <AppText variant="label" color="textTertiary">
@@ -150,6 +154,7 @@ export default function RoutinesScreen() {
             <Pressable
               onPress={() => handleStartWorkout(routine)}
               accessibilityLabel={`Iniciar ${routine.name}`}
+              accessibilityRole="button"
             >
               <YStack width={48} height={48} alignItems="center" justifyContent="center">
                 <AppIcon icon={Play} color="primary" size={24} />

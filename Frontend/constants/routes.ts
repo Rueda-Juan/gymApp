@@ -6,6 +6,7 @@ export const ROUTES = {
   ROUTINE_CREATE:         '/routine/create',
   EXERCISE_BROWSER:       '/(workouts)/exercise-browser',
   EXERCISE_BROWSER_ROUTINE: '/(workouts)/exercise-browser?target=routine',
+  EXERCISE_CREATE:          '/exercise/create',
   ACTIVE_WORKOUT:         '/(workouts)/active',
   WORKOUT_SUMMARY:        '/(workouts)/summary',
   REST_TIMER:             '/(workouts)/rest-timer',

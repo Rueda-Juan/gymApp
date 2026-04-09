@@ -10,11 +10,12 @@ import Toast from 'react-native-toast-message';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Screen } from '@/components/ui/Screen';
-import { CardBase } from '@/components/ui/card';
-import { useExercises } from '@/hooks/useExercises';
-import { useStatsData } from '@/hooks/useStatsData';
+import { CardBase } from '@/components/ui/Card';
+import { useExercises } from '@/hooks/domain/useExercises';
+import { useStatsData } from '@/hooks/application/useStatsData';
 import { getExerciseName } from '@/utils/exercise';
 import type { Exercise } from 'backend/shared/types';
+import type { WorkoutSet } from 'backend/domain/entities/WorkoutSet';
 import { WeeklyVolumeBarChart, ActivityGrid } from '@/components/charts';
 import { calculateEpley1RM } from '@/utils/workout';
 import { StatsSummaryGrid } from '@/components/stats/StatsSummaryGrid';
@@ -51,8 +52,8 @@ export default function StatsScreen() {
     try {
       const history = await exerciseService.getExerciseHistory(exercise.id, STRENGTH_HISTORY_LIMIT);
       const oneRMPoints = (history ?? [])
-        .filter((s) => (s.weight ?? 0) > 0 && (s.reps ?? 0) > 0)
-        .map((s) => ({
+        .filter((s: WorkoutSet) => (s.weight ?? 0) > 0 && (s.reps ?? 0) > 0)
+        .map((s: WorkoutSet) => ({
           x: s.createdAt instanceof Date ? s.createdAt.toISOString() : String(s.createdAt),
           y: calculateEpley1RM(s.weight ?? 0, s.reps ?? 0),
         }))
@@ -60,21 +61,32 @@ export default function StatsScreen() {
         .reverse();
       setStrengthHistory(oneRMPoints);
     } catch {
+      // Log error and show toast for observability
+      // eslint-disable-next-line no-console
+      console.error('[Stats] Failed to load progression for exercise', exercise?.id);
       Toast.show({ type: 'error', text1: 'Error al cargar progresión', position: 'top' });
     }
   }, [exerciseService]);
 
   const handleOpenExercisePicker = useCallback(async () => {
     if (!exercisesLoaded) {
-      const allExercises = await exerciseService.getAll();
-      setExerciseList(allExercises ?? []);
-      setExercisesLoaded(true);
+      try {
+        const allExercises = await exerciseService.getAll();
+        setExerciseList(allExercises ?? []);
+        setExercisesLoaded(true);
+      } catch (e) {
+        // Log and surface an error to the user
+        // eslint-disable-next-line no-console
+        console.error('[Stats] Failed to load exercises:', e);
+        Toast.show({ type: 'error', text1: 'No se pudieron cargar los ejercicios', position: 'top' });
+        return;
+      }
     }
     exerciseSheetRef.current?.expand();
   }, [exerciseService, exercisesLoaded]);
 
   const renderExerciseItem = useCallback(({ item }: { item: Exercise }) => (
-    <Pressable onPress={() => selectStrengthExercise(item)}>
+    <Pressable onPress={() => selectStrengthExercise(item)} accessibilityRole="button" accessibilityLabel={`Seleccionar ${getExerciseName(item)}`}>
       <XStack paddingVertical="$md" alignItems="center" justifyContent="space-between">
         <AppText variant="bodyMd">{getExerciseName(item)}</AppText>
         {strengthExercise?.id === item.id && (
@@ -83,6 +95,10 @@ export default function StatsScreen() {
       </XStack>
     </Pressable>
   ), [selectStrengthExercise, strengthExercise]);
+
+  const weeklyChartData = useMemo(() => (stats?.weeklyStats || [])
+    .map((item) => ({ x: item.date, y: Number(item.totalVolume) || 0 }))
+    .filter((p) => !isNaN(p.y)), [stats?.weeklyStats]);
 
   return (
     <>

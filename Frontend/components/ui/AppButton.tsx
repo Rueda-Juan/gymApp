@@ -5,7 +5,7 @@ import { ActivityIndicator, GestureResponderEvent } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { FONT_SCALE } from '@/tamagui.config';
 import { triggerLightHaptic } from '@/utils/haptics';
-import { usePressScale } from '@/hooks/usePressScale';
+import { usePressScale } from '@/hooks/ui/usePressScale';
 
 const BUTTON_CONFIG = {
   primary: {
@@ -93,12 +93,15 @@ export function AppButton({
   // testID para testing robusto
   const testID = rest.testID || 'AppButton';
 
+  const outerStyle = [
+    fullWidth ? { width: '100%' } : undefined,
+    animatedScale,
+    breathingStyle,
+    flex ? { flex: flex as any } : undefined,
+  ];
+
   return (
-    <Animated.View style={[
-      fullWidth ? { width: '100%' } : undefined,
-      animatedScale,
-      breathingStyle,
-    ]}>
+    <Animated.View style={outerStyle}>
       <TamaguiButton
         disabled={isDisabled}
         pointerEvents={isDisabled ? 'none' : 'auto'}
@@ -111,6 +114,7 @@ export function AppButton({
         borderColor={styleToken.borderColor}
         backgroundColor={styleToken.bg}
         width={fullWidth ? '100%' : undefined}
+        flex={flex}
         opacity={isDisabled ? 0.6 : 1}
         accessibilityRole="button"
         accessibilityLabel={label}

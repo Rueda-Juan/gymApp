@@ -8,7 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from '@/hooks/ui/use-color-scheme';
 import { useSettings } from '@/store/useSettings';
 import { DIProvider } from '../context/DIContext';
 import config from '../tamagui.config';
@@ -37,6 +37,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="(workouts)" options={{ headerShown: false }} />
                 <Stack.Screen name="exercise/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="exercise/create" options={{ headerShown: false }} />
                 <Stack.Screen name="history/[id]" options={{ headerShown: false }} />
                 <Stack.Screen name="routine/[id]" options={{ headerShown: false }} />
                 <Stack.Screen name="routine/create" options={{ headerShown: false }} />

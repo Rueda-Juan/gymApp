@@ -63,6 +63,7 @@ import { DeleteBodyWeightUseCase } from '../application/useCases/stats/DeleteBod
 import { CreateBackupUseCase } from '../application/useCases/backup/CreateBackupUseCase';
 import { RestoreBackupUseCase } from '../application/useCases/backup/RestoreBackupUseCase';
 import { ExportCSVUseCase } from '../application/useCases/backup/ExportCSVUseCase';
+import { WipeDatabaseUseCase } from '../application/useCases/backup/WipeDatabaseUseCase';
 
 // --- Records Use Cases ---
 import { GetPersonalRecordsUseCase, GetBestPersonalRecordUseCase, GetPRCountSinceUseCase } from '../application/useCases/stats/GetPersonalRecords';
@@ -123,6 +124,7 @@ export interface AppContainer {
   readonly createBackup: CreateBackupUseCase;
   readonly restoreBackup: RestoreBackupUseCase;
   readonly exportCSV: ExportCSVUseCase;
+  readonly wipeDatabase: WipeDatabaseUseCase;
 
   // Personal Records
   readonly getPersonalRecords: GetPersonalRecordsUseCase;
@@ -204,6 +206,7 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     createBackup: new CreateBackupUseCase(backupRepo),
     restoreBackup: new RestoreBackupUseCase(backupRepo),
     exportCSV: new ExportCSVUseCase(backupRepo),
+    wipeDatabase: new WipeDatabaseUseCase(backupRepo),
 
     // Personal Records
     getPersonalRecords: new GetPersonalRecordsUseCase(statsRepo),

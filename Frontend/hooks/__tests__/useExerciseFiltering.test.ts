@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
-import { useExerciseFiltering } from '../useExerciseFiltering';
+import { useExerciseFiltering } from '@/hooks/application/useExerciseFiltering';
 
 jest.mock('@/utils/exercise', () => ({
   getExerciseName: (ex: { name: string; nameEs?: string }) => ex.nameEs ?? ex.name,

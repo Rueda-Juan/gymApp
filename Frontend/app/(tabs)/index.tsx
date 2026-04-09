@@ -9,8 +9,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import { CardBase as Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { CardBase as Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -20,8 +20,8 @@ import { DashboardSkeleton } from '@/components/layout/Loaders';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useUser } from '@/store/useUser';
 import { getWeeklyTrainingDays } from '@/utils/trainingWeek';
-import { useStartWorkout } from '@/hooks/useStartWorkout';
-import { useHomeData, formatRoutineExercises } from '@/hooks/useHomeData';
+import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
+import { useHomeData, formatRoutineExercises } from '@/hooks/application/useHomeData';
 import { ProfileSetupForm } from '@/components/onboarding/ProfileSetupForm';
 import { elevation } from '@/constants/elevation';
 import { ROUTES } from '@/constants/routes';
@@ -42,9 +42,14 @@ export default function HomeScreen() {
   const { loading, data, lastWorkout } = useHomeData();
   const handleStartWorkout = useStartWorkout();
 
-  const weeklyDays = useMemo(() => getWeeklyTrainingDays(data.history), [data.history]);
+  const weeklyDays = useMemo(() => getWeeklyTrainingDays(data?.history ?? []), [data?.history]);
 
   const navigateToStats = useCallback(() => router.push(ROUTES.STATS), []);
+
+  // Animated.View sometimes receives a runtime-only prop `sharedTransitionTag`.
+  // Create a typed alias to avoid using // @ts-ignore in JSX.
+  type WithSharedTransition = { sharedTransitionTag?: string } & React.ComponentProps<typeof Animated.View>;
+  const AnimatedViewShared = Animated.View as unknown as React.ComponentType<WithSharedTransition>;
 
   if (!user?.name) {
     return <ProfileSetupForm onComplete={setUser} />;
@@ -95,8 +100,10 @@ export default function HomeScreen() {
               </Pressable>
             ) : (
               <AppButton
+                appVariant="primary"
+                backgroundColor="$primary"
                 label="Nueva Sesión"
-                icon={<AppIcon icon={Play} color="surface" fill='surface' size={24} />}
+                icon={<AppIcon icon={Play} color="surface" fill="surface" size={24} />}
                 onPress={() => router.push(ROUTES.ROUTINES_FROM_HOME)}
                 thermalBreathing
               />
@@ -118,7 +125,7 @@ export default function HomeScreen() {
                     <AppText variant="label" color="textSecondary">RACHA</AppText>
                   </XStack>
                   <AppText variant="titleMd">
-                    {data.stats.streak} <AppText variant="bodySm" color="textTertiary">días</AppText>
+                    {data?.stats?.streak ?? 0} <AppText variant="bodySm" color="textTertiary">días</AppText>
                   </AppText>
                 </Card>
               </PressableCard>
@@ -130,7 +137,7 @@ export default function HomeScreen() {
                     <AppText variant="label" color="textSecondary">ESTA SEMANA</AppText>
                   </XStack>
                   <AppText variant="titleMd">
-                    {data.stats.weeklyCount} <AppText variant="bodySm" color="textTertiary">entrenos</AppText>
+                    {data?.stats?.weeklyCount ?? 0} <AppText variant="bodySm" color="textTertiary">entrenos</AppText>
                   </AppText>
                 </Card>
               </PressableCard>
@@ -219,7 +226,7 @@ export default function HomeScreen() {
             </Pressable>
           </XStack>
 
-          {data.routines.length === 0 ? (
+          {(data?.routines?.length ?? 0) === 0 ? (
             <YStack alignItems="center" justifyContent="center" padding="$xl" borderRadius="$lg" borderWidth={1} borderColor="$borderColor" backgroundColor="$surfaceSecondary" marginHorizontal="$xl">
               <AppText variant="bodyMd" color="textSecondary" textAlign="center" marginBottom="$sm">
                 Aún no tienes rutinas guardadas. Empieza creando una para organizar tu entrenamiento.
@@ -231,7 +238,7 @@ export default function HomeScreen() {
             </YStack>
           ) : (
             <YStack paddingHorizontal="$lg" paddingBottom="$md" gap="$md">
-              {data.routines.map((routine, index) => (
+              {(data?.routines ?? []).map((routine, index) => (
                 <Animated.View
                   key={routine.id}
                   entering={FadeInDown.delay(Math.min(index * STAGGER_DELAY_MS, MAX_STAGGER_MS)).springify()}
@@ -243,10 +250,9 @@ export default function HomeScreen() {
                     <Card padding="$md" minHeight={88} borderWidth={1} borderColor="$borderColor" {...elevation.flat}>
                       <XStack alignItems="center" gap="$md">
                         <YStack flex={1}>
-                          {/* @ts-ignore - sharedTransitionTag exists at runtime */}
-                          <Animated.View sharedTransitionTag={`routine-title-${routine.id}`}>
+                          <AnimatedViewShared sharedTransitionTag={`routine-title-${routine.id}`}>
                             <AppText variant="titleSm" numberOfLines={1}>{routine.name}</AppText>
-                          </Animated.View>
+                          </AnimatedViewShared>
                           <AppText variant="label" color="textTertiary" marginTop="$xs">
                             {routine.lastPerformed ? `Hace ${routine.lastPerformed}` : 'Nunca'}
                           </AppText>

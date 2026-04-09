@@ -4,7 +4,7 @@ import { Lock } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
-import { EmptyState } from '@/components/ui/empty-state';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { router } from 'expo-router';
 
 export default function PrivacyScreen() {

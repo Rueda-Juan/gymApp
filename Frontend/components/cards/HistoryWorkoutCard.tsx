@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar, Clock, Dumbbell, History, ChevronRight, Trash2 } from 'lucide-react-native';
 
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { THEME_FALLBACKS } from '@/tamagui.config';

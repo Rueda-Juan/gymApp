@@ -5,7 +5,7 @@ import { Minus, Plus, X, ChevronRight } from 'lucide-react-native';
 import { XStack, YStack } from 'tamagui';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { useBottomSheetStyles } from '@/hooks/useBottomSheetStyles';
+import { useBottomSheetStyles } from '@/hooks/ui/useBottomSheetStyles';
 import type { Exercise } from 'backend/shared/types';
 import type { WorkoutExerciseState } from '@/store/useActiveWorkout';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 
-import { useMotion } from '../useMotion';
+import { useMotion } from '@/hooks/ui/useMotion';
 import { useSettings } from '@/store/useSettings';
 import { motion, reducedMotionConfig } from '@/constants/motion';
 

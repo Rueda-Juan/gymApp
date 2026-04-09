@@ -31,8 +31,16 @@ export function DIProvider({ children }: DIProviderProps) {
 
     async function initDB() {
       try {
+        // open DB and run migrations
+        // lightweight logs help verify migration execution in Metro/Expo logs
+        // without changing migration behavior
+        // eslint-disable-next-line no-console
+        console.log('[DI] Opening DB and running migrations...');
         const db = await getDatabase();
         await runMigrations(db);
+        // eslint-disable-next-line no-console
+        console.log('[DI] Migrations completed');
+
         const appContainer = createContainer(db);
 
         if (!controller.signal.aborted) {
@@ -41,6 +49,7 @@ export function DIProvider({ children }: DIProviderProps) {
       } catch (e) {
         const wrappedError = e instanceof Error ? e : new Error('Error desconocido en la BD local');
         // Log regardless of mount state — this failure warrants a crash report
+        // eslint-disable-next-line no-console
         console.error('Error inicializando la base de datos:', wrappedError);
         if (!controller.signal.aborted) {
           setError(wrappedError);

@@ -2,12 +2,12 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { render, act } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import { useWorkout } from '@/hooks/useWorkout';
+import { useWorkout } from '@/hooks/domain/useWorkout';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
-import { useStartWorkout } from '../useStartWorkout';
+import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
-jest.mock('@/hooks/useWorkout', () => ({ useWorkout: jest.fn() }));
+jest.mock('@/hooks/domain/useWorkout', () => ({ useWorkout: jest.fn() }));
 jest.mock('@/store/useActiveWorkout', () => {
   const fn = jest.fn();
   (fn as any).getState = jest.fn();

@@ -7,22 +7,22 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Trophy, Clock, Dumbbell, Share2, TrendingUp, TrendingDown } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton, IconButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Screen } from '@/components/ui/Screen';
-import { useRoutines } from '@/hooks/useRoutines';
+import { useRoutines } from '@/hooks/domain/useRoutines';
 import { useWorkoutSummary } from '../../store/useWorkoutSummary';
 import { calculateExercisesVolume } from '@/utils/workout';
-import { useStartWorkout } from '@/hooks/useStartWorkout';
+import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
 import { getExerciseName } from '@/utils/exercise';
 import { WorkoutExerciseSummaryList } from '@/components/workout/WorkoutExerciseSummaryList';
 import { motion } from '@/constants/motion';
-import { useMotion } from '@/hooks/useMotion';
-import { useWorkoutSummaryData } from '@/hooks/useWorkoutSummaryData';
-import type { SummaryWorkout, SummaryPersonalRecord } from '@/hooks/useWorkoutSummaryData';
+import { useMotion } from '@/hooks/ui/useMotion';
+import { useWorkoutSummaryData } from '@/hooks/application/useWorkoutSummaryData';
+import type { SummaryWorkout, SummaryPersonalRecord } from '@/hooks/application/useWorkoutSummaryData';
 import { ROUTES } from '@/constants/routes';
 import { PRCelebrationOverlay } from '@/components/workout/PRCelebrationOverlay';
 
@@ -83,7 +83,7 @@ export default function WorkoutSummaryScreen() {
       .map((ex) => {
         const completedSets = ex.sets.filter((s) => s.isCompleted ?? true);
         if (!completedSets.length) return null;
-        const setsText = completedSets.map((s) => `${s.weight}kg×${s.reps}`).join(', ');
+        const setsText = completedSets.map((s: any) => `${s.weight}kg×${s.reps}`).join(', ');
         const exerciseName = getExerciseName({ name: ex.name ?? '', nameEs: ex.nameEs });
         return `${exerciseName}: ${setsText}`;
       })

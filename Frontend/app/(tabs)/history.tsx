@@ -10,7 +10,7 @@ import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { EmptyStateIcon } from '@/components/feedback/EmptyStateIcon';
 import { IconButton } from '@/components/ui/AppButton';
-import { useWorkout } from '@/hooks/useWorkout';
+import { useWorkout } from '@/hooks/domain/useWorkout';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { HistoryCardSkeleton } from '@/components/cards/Loaders';
@@ -22,7 +22,7 @@ import type { Workout } from 'backend/shared/types';
 import { motion } from '@/constants/motion';
 
 type WorkoutNormalized = Omit<Workout, 'date'> & { date: string };
-type HistoryWorkout = Workout & { _searchIndex: string };
+type HistoryWorkout = Omit<Workout, 'date'> & { date: string; _searchIndex: string };
 
 const HISTORY_LIMIT = 50;
 const LIST_BOTTOM_PADDING = 100;
@@ -45,10 +45,29 @@ export default function HistoryScreen() {
         try {
           setLoading(true);
           const data = await workoutService.getHistory(HISTORY_LIMIT);
-          const mapped = data.map(w => ({
-            ...w,
-            _searchIndex: format(new Date(w.date), 'EEEE d MMM yyyy', { locale: es }).toLowerCase(),
-          }));
+
+          const mapped: HistoryWorkout[] = data.map((w) => {
+            const dateStr = (() => {
+              try {
+                return format(new Date(w.date), 'EEEE d MMM yyyy', { locale: es });
+              } catch {
+                return String(w.date);
+              }
+            })();
+
+            const routineName = (w as any).routineName ?? (w as any).name ?? '';
+            const notes = (w as any).notes ?? '';
+            const exerciseNames = (w as any).exercises?.map((ex: any) => (typeof ex === 'string' ? ex : ex.name ?? '')).join(' ') ?? '';
+
+            const _searchIndex = `${dateStr} ${routineName} ${notes} ${exerciseNames}`.toLowerCase();
+
+            return {
+              ...(w as any),
+              date: w.date instanceof Date ? w.date.toISOString() : String(w.date),
+              _searchIndex,
+            } as HistoryWorkout;
+          });
+
           setWorkouts(mapped);
         } catch (error) {
           console.error('[History] Failed to load workouts:', error);
@@ -79,6 +98,8 @@ export default function HistoryScreen() {
     });
   }, [searchAnim]);
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const handleDeleteWorkout = useCallback((id: string, nameOrDate: string) => {
     Alert.alert(
       '¿Eliminar Entrenamiento?',
@@ -89,36 +110,32 @@ export default function HistoryScreen() {
           text: 'Eliminar',
           style: 'destructive',
           onPress: async () => {
+            if (deletingId) return;
             try {
+              setDeletingId(id);
+              Toast.show({ type: 'info', text1: 'Eliminando...', position: 'top' });
               await workoutService.deleteWorkout(id);
               setWorkouts(prev => prev.filter(w => w.id !== id));
+              Toast.show({ type: 'success', text1: 'Entrenamiento eliminado', position: 'top' });
             } catch (e) {
-              console.error(e);
+              console.error('[History] deleteWorkout error', e);
               Alert.alert('Error', 'No se pudo eliminar el entrenamiento.');
+            } finally {
+              setDeletingId(null);
             }
           },
         },
       ]
     );
-  }, [workoutService]);
+  }, [workoutService, deletingId]);
 
   const filteredWorkouts = useMemo(() => workouts.filter(w => {
     if (!search) return true;
     const lowerSearch = search.toLowerCase();
-    const dateMatch = w._searchIndex.includes(lowerSearch);
-    const notesMatch = w.notes?.toLowerCase().includes(lowerSearch);
-    return dateMatch || notesMatch;
+    return w._searchIndex.includes(lowerSearch);
   }), [workouts, search]);
 
-  const normalizedWorkouts = useMemo<WorkoutNormalized[]>(() =>
-    filteredWorkouts.map(w => ({
-      ...w,
-      date: w.date instanceof Date ? w.date.toISOString() : String(w.date),
-    })),
-    [filteredWorkouts],
-  );
-
-  const sections = useMemo(() => groupWorkoutsByPeriod(normalizedWorkouts), [normalizedWorkouts]);
+  const sections = useMemo(() => groupWorkoutsByPeriod(filteredWorkouts as WorkoutNormalized[]), [filteredWorkouts]);
   const searchBarAnimatedStyle = useAnimatedStyle(() => ({
     height: interpolate(searchAnim.value, [0, 1], [0, 56]),
     opacity: interpolate(searchAnim.value, [0, 1], [0, 1]),
