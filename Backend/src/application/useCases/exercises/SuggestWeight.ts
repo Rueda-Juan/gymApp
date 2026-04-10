@@ -1,8 +1,10 @@
 import type { WorkoutRepository } from '../../../domain/repositories/WorkoutRepository';
 import type { StatsRepository } from '../../../domain/repositories/StatsRepository';
 import type { ExerciseRepository } from '../../../domain/repositories/ExerciseRepository';
-import type { SessionContext, ActivationLevel } from '../../../domain/valueObjects/SessionContext';
+import type { ExerciseLoadCacheRepository } from '../../../domain/repositories/ExerciseLoadCacheRepository';
+import type { PlateRounder } from '../../../domain/services/PlateRounder';
 import { createLogger } from '../../../shared/utils/Logger';
+import { filterOutliers } from '../../../shared/utils/mathUtils';
 
 const log = createLogger('SuggestWeight');
 
@@ -14,31 +16,9 @@ export interface WeightSuggestion {
   message?: string;
 }
 
-// ─── Warmup Types ──────────────────────────────────────────────
-
-/**
- * Warmup styles:
- * - standard:  Hypertrophy focus — lubricación articular, 8-12 reps
- * - heavy:     Strength/Powerlifting — singles, CNS preparation
- * - ramp:      Dynamic activation — includes mobility drills
- */
-export type WarmupStyle = 'standard' | 'heavy' | 'ramp';
-
-export interface WarmupSet {
-  setNumber: number;
-  weight: number;
-  reps: number;
-  percentage: number;
-  label: string;
-  restSeconds: number;
-}
-
-export interface WarmupSuggestion {
-  warmupSets: WarmupSet[];
-  warmupStyle: WarmupStyle;
-  targetWeight: number;
-  activationState: ActivationLevel;
-  recommendation: string;
+export interface PlateConfig {
+  availablePlates: number[];
+  barWeight: number;
 }
 
 /**
@@ -57,9 +37,16 @@ export class SuggestWeightUseCase {
     private readonly workoutRepo: WorkoutRepository,
     private readonly statsRepo: StatsRepository,
     private readonly exerciseRepo: ExerciseRepository,
+    private readonly loadCacheRepo: ExerciseLoadCacheRepository,
+    private readonly plateRounder: PlateRounder,
   ) {}
 
-  async execute(exerciseId: string, minReps: number = 8, maxReps: number = 12): Promise<WeightSuggestion> {
+  async execute(
+    exerciseId: string,
+    minReps: number = 8,
+    maxReps: number = 12,
+    plateConfig?: PlateConfig,
+  ): Promise<WeightSuggestion> {
     const defaultSuggestion: WeightSuggestion = {
       suggestedWeight: 0,
       basis: 'default',
@@ -67,15 +54,37 @@ export class SuggestWeightUseCase {
       lastReps: null,
     };
 
-    // 1. Get exercise details to find the correct weight increment
+    // 1. Get exercise details
     const exercise = await this.exerciseRepo.getById(exerciseId);
     if (!exercise) {
       log.warn('Exercise not found for weight suggestion', { exerciseId });
       return defaultSuggestion;
     }
+
+    // 2. Bodyweight/timed bypass — no weight to suggest
+    const isBodweightType = exercise.loadType === 'bodyweight' || exercise.loadType === 'timed';
+    if (isBodweightType) {
+      return { suggestedWeight: 0, basis: 'default', lastWeight: null, lastReps: null };
+    }
+
+    // 3. Cache hit — return immediately if fresh
+    const cached = await this.loadCacheRepo.get(exerciseId);
+    if (cached) {
+      log.debug('Cache hit for weight suggestion', { exerciseId });
+      const weight = plateConfig
+        ? this.plateRounder.round(cached.recommendedWeight, plateConfig.availablePlates, plateConfig.barWeight)
+        : cached.recommendedWeight;
+      return {
+        suggestedWeight: weight,
+        basis: cached.basis,
+        lastWeight: cached.lastWeight,
+        lastReps: cached.lastReps,
+      };
+    }
+
     const weightIncrement = exercise.weightIncrement;
 
-    // 2. Look at the last 10 workouts to find up to 3 valid recent sessions for this exercise
+    // 4. Look at the last 10 workouts to find up to 3 valid recent sessions for this exercise
     const recentWorkouts = await this.workoutRepo.getRecent(10);
     const validSessions = [];
 
@@ -83,17 +92,21 @@ export class SuggestWeightUseCase {
       const we = workout.exercises.find((e) => e.exerciseId === exerciseId && !e.skipped);
       if (!we) continue;
 
-      const completedSets = we.sets.filter((s) => s.completed && !s.skipped);
+      const completedSets = we.sets.filter((s) => s.completed && !s.skipped && s.weight > 0 && s.reps > 0);
       if (completedSets.length === 0) continue;
+
+      // 5. Outlier filter — discard sets deviating more than 3σ from the median weight
+      const filteredSets = filterOutliers(completedSets);
+      if (filteredSets.length === 0) continue;
 
       validSessions.push({
         workoutDate: workout.date,
-        sets: completedSets,
-        maxWeight: Math.max(...completedSets.map((s) => s.weight)),
-        totalVolume: completedSets.reduce((sum, s) => sum + s.weight * s.reps, 0),
-        allHitMax: completedSets.every((s) => s.reps >= maxReps),
-        anyFailedMin: completedSets.some((s) => s.reps < minReps),
-        allHighRIR: completedSets.every((s) => s.rir !== null && s.rir > 4),
+        sets: filteredSets,
+        maxWeight: Math.max(...filteredSets.map((s) => s.weight)),
+        totalVolume: filteredSets.reduce((sum, s) => sum + s.weight * s.reps, 0),
+        allHitMax: filteredSets.every((s) => s.reps >= maxReps),
+        anyFailedMin: filteredSets.some((s) => s.reps < minReps),
+        allHighRIR: filteredSets.every((s) => s.rir !== null && s.rir > 4),
       });
 
       if (validSessions.length === 3) break; // We only need up to 3 sessions for stagnation detection
@@ -124,30 +137,33 @@ export class SuggestWeightUseCase {
 
       if (stuckWeight && noVolumeProgress) {
         log.info('Stagnation detected (3 sessions). Suggesting deload.', { exerciseId });
-        // Deload: reduce weight by ~15% (rounded to nearest 2.5)
         let deloadWeight = lastWeight * 0.85;
         deloadWeight = Math.round(deloadWeight / 2.5) * 2.5;
 
-        return {
+        const deloadResult: WeightSuggestion = {
           suggestedWeight: Math.max(0, deloadWeight),
           basis: 'deload',
           lastWeight,
           lastReps,
           message: 'Estancamiento detectado. Recomendamos una descarga (deload) para recuperar.',
         };
+        await this.saveToCache(exerciseId, deloadResult, validSessions.length);
+        return this.applyPlateRoundingIfNeeded(deloadResult, plateConfig);
       }
     }
 
     // 4. Check for Failure (Too heavy)
     if (lastSession.anyFailedMin) {
       log.info('Failed minimum reps last session. Suggesting slight reduction.', { exerciseId });
-      return {
+      const failureResult: WeightSuggestion = {
         suggestedWeight: Math.max(0, lastWeight - weightIncrement),
         basis: 'failure_recovery',
         lastWeight,
         lastReps,
         message: 'No alcanzaste el mínimo de repeticiones. Intenta bajar un poco el peso.',
       };
+      await this.saveToCache(exerciseId, failureResult, validSessions.length);
+      return this.applyPlateRoundingIfNeeded(failureResult, plateConfig);
     }
 
     // 5. Progressive Overload (Increase weight)
@@ -155,234 +171,60 @@ export class SuggestWeightUseCase {
     if (lastSession.allHitMax || lastSession.allHighRIR) {
       const newWeight = lastWeight + weightIncrement;
       log.info('Progressive overload earned!', { exerciseId, old: lastWeight, new: newWeight });
-      return {
+      const overloadResult: WeightSuggestion = {
         suggestedWeight: newWeight,
         basis: 'progressive_overload',
         lastWeight,
         lastReps,
       };
+      await this.saveToCache(exerciseId, overloadResult, validSessions.length);
+      return this.applyPlateRoundingIfNeeded(overloadResult, plateConfig);
     }
 
     // 6. Double Progression (Keep same weight, try to add reps)
     log.debug('Double progression: keeping same weight to build reps.', { exerciseId, lastWeight });
-    return {
+    const doubleProgressionResult: WeightSuggestion = {
       suggestedWeight: lastWeight,
       basis: 'last_set',
       lastWeight,
       lastReps,
     };
+
+    await this.saveToCache(exerciseId, doubleProgressionResult, validSessions.length);
+    return this.applyPlateRoundingIfNeeded(doubleProgressionResult, plateConfig);
   }
 
-  // ─── Warmup Suggestion ──────────────────────────────────────
-
-  /**
-   * Suggests warmup sets for a given exercise based on:
-   * 1. The exercise's muscle activation state from the session context
-   * 2. The user's preferred warmup style
-   * 3. The target working weight
-   *
-   * After generating suggestions, it updates the session context
-   * to mark muscles as activated.
-   */
-  async suggestWarmup(
+  private async saveToCache(
     exerciseId: string,
-    sessionContext: SessionContext,
-    warmupStyle: WarmupStyle = 'standard',
-    targetWeight?: number,
-  ): Promise<WarmupSuggestion> {
-    // 1. Get exercise details
-    const exercise = await this.exerciseRepo.getById(exerciseId);
-    if (!exercise) {
-      log.warn('Exercise not found for warmup suggestion', { exerciseId });
-      return {
-        warmupSets: [],
-        warmupStyle,
-        targetWeight: 0,
-        activationState: 'cold',
-        recommendation: 'Ejercicio no encontrado.',
-      };
+    result: WeightSuggestion,
+    sessionsAnalyzed: number,
+  ): Promise<void> {
+    try {
+      await this.loadCacheRepo.upsert({
+        exerciseId,
+        recommendedWeight: result.suggestedWeight,
+        basis: result.basis,
+        lastWeight: result.lastWeight,
+        lastReps: result.lastReps,
+        sessionsAnalyzed,
+        updatedAt: new Date(),
+      });
+    } catch {
+      // Non-critical — cache write failure should not break the use case
+      log.warn('Failed to write weight suggestion to cache', { exerciseId });
     }
+  }
 
-    // 2. Determine target weight (from param or from execute)
-    let workingWeight = targetWeight ?? 0;
-    if (!targetWeight) {
-      const suggestion = await this.execute(exerciseId);
-      workingWeight = suggestion.suggestedWeight;
-    }
-
-    // 3. Check muscle activation state
-    const activationState = sessionContext.getColdestState(exercise.primaryMuscles);
-    log.debug('Warmup evaluation', {
-      exerciseId,
-      muscles: exercise.primaryMuscles,
-      activationState,
-      warmupStyle,
-      workingWeight,
-    });
-
-    // 4. Generate warmup sets based on style × activation state
-    const warmupSets = this.generateWarmupSets(
-      workingWeight,
-      exercise.weightIncrement,
-      warmupStyle,
-      activationState,
+  private applyPlateRoundingIfNeeded(
+    suggestion: WeightSuggestion,
+    plateConfig?: PlateConfig,
+  ): WeightSuggestion {
+    if (!plateConfig || suggestion.suggestedWeight === 0) return suggestion;
+    const rounded = this.plateRounder.round(
+      suggestion.suggestedWeight,
+      plateConfig.availablePlates,
+      plateConfig.barWeight,
     );
-
-    // 5. Update session context with worked muscles
-    sessionContext.markAsPrimary(exercise.primaryMuscles);
-    sessionContext.markAsSecondary(exercise.secondaryMuscles);
-
-    // 6. Build recommendation message
-    const recommendation = this.buildRecommendation(
-      exercise.name,
-      exercise.primaryMuscles,
-      activationState,
-      warmupSets.length,
-    );
-
-    return {
-      warmupSets,
-      warmupStyle,
-      targetWeight: workingWeight,
-      activationState,
-      recommendation,
-    };
-  }
-
-  /**
-   * Generates warmup sets based on style × activation level.
-   *
-   * Protocols per combination:
-   *
-   * | Style     | Cold (Full)              | Warm (Abbreviated)   | Hot (Contact)  |
-   * |-----------|--------------------------|----------------------|----------------|
-   * | standard  | 40%×12, 60%×8, 80%×3     | 60%×8, 80%×3         | 70%×5          |
-   * | heavy     | 40%×8, 60%×4, 80%×2, 90%×1 | 70%×3, 85%×1       | 80%×1          |
-   * | ramp      | Movilidad + 50%×10, 70%×5  | 60%×6              | (skip)         |
-   *
-   * For weights >150kg with 'heavy' style, an extra 95%×1 step is added.
-   */
-  private generateWarmupSets(
-    targetWeight: number,
-    weightIncrement: number,
-    style: WarmupStyle,
-    activation: ActivationLevel,
-  ): WarmupSet[] {
-    if (targetWeight <= 0) return [];
-
-    // Define protocols: [percentage, reps, label, restSeconds]
-    type SetDef = [number, number, string, number];
-    let protocol: SetDef[] = [];
-
-    if (style === 'standard') {
-      switch (activation) {
-        case 'cold':
-          protocol = [
-            [0.40, 12, 'Movilidad', 45],
-            [0.60, 8, 'Activación', 60],
-            [0.80, 3, 'Aclimatación', 60],
-          ];
-          break;
-        case 'warm':
-          protocol = [
-            [0.60, 8, 'Activación', 45],
-            [0.80, 3, 'Aclimatación', 60],
-          ];
-          break;
-        case 'hot':
-          protocol = [
-            [0.70, 5, 'Toma de contacto', 45],
-          ];
-          break;
-      }
-    } else if (style === 'heavy') {
-      switch (activation) {
-        case 'cold':
-          protocol = [
-            [0.40, 8, 'Movilidad', 45],
-            [0.60, 4, 'Activación', 60],
-            [0.80, 2, 'Aclimatación', 90],
-            [0.90, 1, 'Feeler', 90],
-          ];
-          // Extra step for very heavy weights (>150kg)
-          if (targetWeight > 150) {
-            protocol.push([0.95, 1, 'Potenciación', 120]);
-          }
-          break;
-        case 'warm':
-          protocol = [
-            [0.70, 3, 'Activación', 60],
-            [0.85, 1, 'Feeler', 90],
-          ];
-          break;
-        case 'hot':
-          protocol = [
-            [0.80, 1, 'Toma de contacto', 60],
-          ];
-          break;
-      }
-    } else if (style === 'ramp') {
-      switch (activation) {
-        case 'cold':
-          protocol = [
-            [0.00, 0, 'Movilidad dinámica', 30],
-            [0.50, 10, 'Rampa inicial', 45],
-            [0.70, 5, 'Activación', 60],
-          ];
-          break;
-        case 'warm':
-          protocol = [
-            [0.60, 6, 'Ajuste', 45],
-          ];
-          break;
-        case 'hot':
-          // RAMP style: hot muscles only need mobility, no weight warmup
-          protocol = [];
-          break;
-      }
-    }
-
-    // Convert protocol to WarmupSet objects with rounded weights
-    return protocol.map((def, index) => {
-      const [pct, reps, label, rest] = def;
-      const rawWeight = targetWeight * pct;
-      const roundedWeight = this.roundToIncrement(rawWeight, weightIncrement);
-
-      return {
-        setNumber: index + 1,
-        weight: roundedWeight,
-        reps,
-        percentage: Math.round(pct * 100),
-        label,
-        restSeconds: rest,
-      };
-    });
-  }
-
-  /** Rounds a weight to the nearest valid increment. */
-  private roundToIncrement(weight: number, increment: number): number {
-    if (increment <= 0) return Math.round(weight);
-    return Math.round(weight / increment) * increment;
-  }
-
-  /** Builds a human-readable recommendation message in Spanish. */
-  private buildRecommendation(
-    exerciseName: string,
-    primaryMuscles: string[],
-    activation: ActivationLevel,
-    numSets: number,
-  ): string {
-    const muscleList = primaryMuscles.join(', ');
-
-    switch (activation) {
-      case 'cold':
-        return `Tu ${muscleList} está frío. Realiza ${numSets} series de calentamiento antes de ${exerciseName}.`;
-      case 'warm':
-        return `Tu ${muscleList} está tibio (trabajado como secundario). Realiza ${numSets} series rápidas de aproximación.`;
-      case 'hot':
-        return numSets > 0
-          ? `Tu ${muscleList} ya está caliente. Solo ${numSets} serie de toma de contacto para ajustar la técnica.`
-          : `Tu ${muscleList} ya está caliente. Puedes ir directo a tus series efectivas.`;
-    }
+    return { ...suggestion, suggestedWeight: rounded };
   }
 }

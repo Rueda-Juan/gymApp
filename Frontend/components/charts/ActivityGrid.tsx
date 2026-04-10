@@ -3,6 +3,7 @@ import { View, ScrollView } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { AppText } from '@/components/ui/AppText';
 import { FONT_SCALE } from '@/tamagui.config';
+import { CHART_FALLBACK_COLORS } from './chartUtils';
 
 const DAY_LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
@@ -10,6 +11,9 @@ const MONTH_CELL_SIZE = 14;
 const MONTH_CELL_GAP = 2;
 const YEAR_CELL_SIZE = 5;
 const YEAR_CELL_GAP = 1;
+const MONTH_CELL_BORDER_RADIUS = 3;
+const YEAR_CELL_BORDER_RADIUS = 1;
+const MAX_YEAR_COLUMNS = 54;
 
 export interface ActivityGridProps {
   trainedDates: Set<string>;
@@ -44,6 +48,22 @@ const MonthGrid = React.memo(function MonthGrid({ trainedDates }: { trainedDates
 
   const colWidth = MONTH_CELL_SIZE + MONTH_CELL_GAP;
 
+  const trainedCellStyle = {
+    width: MONTH_CELL_SIZE,
+    height: MONTH_CELL_SIZE,
+    borderRadius: MONTH_CELL_BORDER_RADIUS,
+    marginRight: MONTH_CELL_GAP,
+    backgroundColor: theme.primary?.val ?? CHART_FALLBACK_COLORS.primary,
+  };
+  const untrainedCellStyle = {
+    width: MONTH_CELL_SIZE,
+    height: MONTH_CELL_SIZE,
+    borderRadius: MONTH_CELL_BORDER_RADIUS,
+    marginRight: MONTH_CELL_GAP,
+    backgroundColor: theme.surfaceSecondary?.val ?? CHART_FALLBACK_COLORS.surface,
+  };
+  const emptyDayCellStyle = { width: colWidth, height: MONTH_CELL_SIZE };
+
   return (
     <YStack gap={MONTH_CELL_GAP}>
       <XStack>
@@ -62,18 +82,10 @@ const MonthGrid = React.memo(function MonthGrid({ trainedDates }: { trainedDates
             date ? (
               <View
                 key={dayIdx}
-                style={{
-                  width: MONTH_CELL_SIZE,
-                  height: MONTH_CELL_SIZE,
-                  borderRadius: 3,
-                  marginRight: MONTH_CELL_GAP,
-                  backgroundColor: trainedDates.has(toYMD(date))
-                    ? theme.primary?.val as string
-                    : theme.surfaceSecondary?.val as string,
-                }}
+                style={trainedDates.has(toYMD(date)) ? trainedCellStyle : untrainedCellStyle}
               />
             ) : (
-              <View key={dayIdx} style={{ width: colWidth, height: MONTH_CELL_SIZE }} />
+              <View key={dayIdx} style={emptyDayCellStyle} />
             )
           )}
         </XStack>
@@ -94,7 +106,7 @@ const YearGrid = React.memo(function YearGrid({ trainedDates }: { trainedDates: 
   const columns: Date[][] = [];
   const cursor = new Date(gridStart);
 
-  while (columns.length < 54) {
+  while (columns.length < MAX_YEAR_COLUMNS) {
     const week: Date[] = [];
     for (let row = 0; row < 7; row++) {
       week.push(new Date(cursor));
@@ -105,6 +117,24 @@ const YearGrid = React.memo(function YearGrid({ trainedDates }: { trainedDates: 
     columns.push(week);
   }
 
+  const baseCellStyle = {
+    width: YEAR_CELL_SIZE,
+    height: YEAR_CELL_SIZE,
+    borderRadius: YEAR_CELL_BORDER_RADIUS,
+  };
+  const trainedCellStyle = {
+    ...baseCellStyle,
+    backgroundColor: theme.primary?.val ?? CHART_FALLBACK_COLORS.primary,
+  };
+  const untrainedCellStyle = {
+    ...baseCellStyle,
+    backgroundColor: theme.surfaceSecondary?.val ?? CHART_FALLBACK_COLORS.surface,
+  };
+  const outOfYearCellStyle = {
+    ...baseCellStyle,
+    backgroundColor: 'transparent' as const,
+  };
+
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <XStack gap={YEAR_CELL_GAP}>
@@ -114,21 +144,12 @@ const YearGrid = React.memo(function YearGrid({ trainedDates }: { trainedDates: 
               const isCurrentYear = date.getFullYear() === year;
               const isInFuture = date > now;
               const trained = isCurrentYear && !isInFuture && trainedDates.has(toYMD(date));
-              return (
-                <View
-                  key={rowIdx}
-                  style={{
-                    width: YEAR_CELL_SIZE,
-                    height: YEAR_CELL_SIZE,
-                    borderRadius: 1,
-                    backgroundColor: isCurrentYear
-                      ? trained
-                        ? theme.primary?.val as string
-                        : theme.surfaceSecondary?.val as string
-                      : 'transparent',
-                  }}
-                />
-              );
+              const cellStyle = !isCurrentYear
+                ? outOfYearCellStyle
+                : trained
+                  ? trainedCellStyle
+                  : untrainedCellStyle;
+              return <View key={rowIdx} style={cellStyle} />;
             })}
           </YStack>
         ))}
@@ -139,11 +160,11 @@ const YearGrid = React.memo(function YearGrid({ trainedDates }: { trainedDates: 
 
 export function ActivityGrid({ trainedDates }: ActivityGridProps) {
   return (
-    <YStack gap="$xl">
+    <YStack gap="$xl" accessibilityLabel={`Actividad de entrenamiento: ${trainedDates.size} días entrenados`}>
       <YStack gap="$sm" alignItems="center">
-          <AppText variant="label" color="textTertiary">ESTE MES</AppText>
-          <MonthGrid trainedDates={trainedDates} />
-        </YStack>
+        <AppText variant="label" color="textTertiary">ESTE MES</AppText>
+        <MonthGrid trainedDates={trainedDates} />
+      </YStack>
       <YStack gap="$sm" alignItems="center">
         <AppText variant="label" color="textTertiary">ESTE AÑO</AppText>
         <YearGrid trainedDates={trainedDates} />

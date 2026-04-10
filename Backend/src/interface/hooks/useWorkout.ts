@@ -2,107 +2,26 @@ import { useCallback, useMemo } from 'react';
 import { useContainer } from './useContainer';
 import type { WorkoutSet } from '../../domain/entities/WorkoutSet';
 import type { SessionContext } from '../../domain/valueObjects/SessionContext';
-import type { WarmupStyle } from '../../application/useCases/exercises/SuggestWeight';
+import type { WarmupStyle } from '../../application/useCases/exercises/SuggestWarmup';
 
-/**
- * Hook that exposes all workout-related operations.
- * Wraps WorkoutService from the DI container.
- */
 export function useWorkout() {
-  const { workoutService } = useContainer();
+  const { startWorkout: startWorkoutUseCase, finishWorkout: finishWorkoutUseCase, deleteWorkout: deleteWorkoutUseCase, recordSet: recordSetUseCase, updateSet: updateSetUseCase, deleteSet: deleteSetUseCase, skipExercise: skipExerciseUseCase, addExerciseToWorkout: addExerciseToWorkoutUseCase, reorderWorkoutExercises: reorderWorkoutExercisesUseCase, deleteWorkoutExercise: deleteWorkoutExerciseUseCase, updateWorkoutExercise: updateWorkoutExerciseUseCase, suggestWeight: suggestWeightUseCase, suggestWarmup: suggestWarmupUseCase } = useContainer();
 
-  const startWorkout = useCallback(
-    (routineId: string | null) => workoutService.startWorkout(routineId),
-    [workoutService],
-  );
-
-  const finishWorkout = useCallback(
-    (workoutId: string) => workoutService.finishWorkout(workoutId),
-    [workoutService],
-  );
-
-  const deleteWorkout = useCallback(
-    (workoutId: string) => workoutService.deleteWorkout(workoutId),
-    [workoutService],
-  );
-
-  const recordSet = useCallback(
-    (workoutId: string, set: WorkoutSet) => workoutService.recordSet(workoutId, set),
-    [workoutService],
-  );
-
-  const updateSet = useCallback(
-    (workoutId: string, dateStr: string, set: WorkoutSet) =>
-      workoutService.updateSet(workoutId, dateStr, set),
-    [workoutService],
-  );
-
-  const deleteSet = useCallback(
-    (workoutId: string, setId: string, exerciseId: string, dateStr: string) =>
-      workoutService.deleteSet(workoutId, setId, exerciseId, dateStr),
-    [workoutService],
-  );
-
-  const skipExercise = useCallback(
-    (workoutId: string, exerciseId: string) =>
-      workoutService.skipExercise(workoutId, exerciseId),
-    [workoutService],
-  );
-
-  const addExerciseToWorkout = useCallback(
-    (workoutId: string, exerciseId: string) =>
-      workoutService.addExerciseToWorkout(workoutId, exerciseId),
-    [workoutService],
-  );
-
-  const reorderWorkoutExercises = useCallback(
-    (workoutId: string, exerciseIds: string[]) =>
-      workoutService.reorderWorkoutExercises(workoutId, exerciseIds),
-    [workoutService],
-  );
-
-  const deleteWorkoutExercise = useCallback(
-    (workoutId: string, workoutExerciseId: string) =>
-      workoutService.deleteWorkoutExercise(workoutId, workoutExerciseId),
-    [workoutService],
-  );
-
-  const updateWorkoutExercise = useCallback(
-    (workoutId: string, workoutExerciseId: string, notes?: string) =>
-      workoutService.updateWorkoutExercise(workoutId, workoutExerciseId, notes),
-    [workoutService],
-  );
-
-  const suggestWeight = useCallback(
-    (exerciseId: string) => workoutService.suggestWeight(exerciseId),
-    [workoutService],
-  );
-
-  const suggestWarmup = useCallback(
-    (exerciseId: string, sessionContext: SessionContext, warmupStyle?: WarmupStyle, targetWeight?: number) =>
-      workoutService.suggestWarmup(exerciseId, sessionContext, warmupStyle, targetWeight),
-    [workoutService],
-  );
+  const startWorkout = useCallback((routineId: string | null) => startWorkoutUseCase.execute(routineId), [startWorkoutUseCase]);
+  const finishWorkout = useCallback((workoutId: string) => finishWorkoutUseCase.execute(workoutId), [finishWorkoutUseCase]);
+  const deleteWorkout = useCallback((workoutId: string) => deleteWorkoutUseCase.execute(workoutId), [deleteWorkoutUseCase]);
+  const recordSet = useCallback((workoutId: string, set: WorkoutSet) => recordSetUseCase.execute(workoutId, set), [recordSetUseCase]);
+  const updateSet = useCallback((workoutId: string, dateStr: string, set: WorkoutSet) => updateSetUseCase.execute(workoutId, dateStr, set), [updateSetUseCase]);
+  const deleteSet = useCallback((workoutId: string, setId: string, exerciseId: string, dateStr: string) => deleteSetUseCase.execute(workoutId, setId, exerciseId, dateStr), [deleteSetUseCase]);
+  const skipExercise = useCallback((workoutId: string, exerciseId: string) => skipExerciseUseCase.execute(workoutId, exerciseId), [skipExerciseUseCase]);
+  const addExerciseToWorkout = useCallback((workoutId: string, exerciseId: string) => addExerciseToWorkoutUseCase.execute(workoutId, exerciseId), [addExerciseToWorkoutUseCase]);
+  const reorderWorkoutExercises = useCallback((workoutId: string, exerciseIds: string[]) => reorderWorkoutExercisesUseCase.execute(workoutId, exerciseIds), [reorderWorkoutExercisesUseCase]);
+  const deleteWorkoutExercise = useCallback((workoutId: string, workoutExerciseId: string) => deleteWorkoutExerciseUseCase.execute(workoutId, workoutExerciseId), [deleteWorkoutExerciseUseCase]);
+  const updateWorkoutExercise = useCallback((workoutId: string, workoutExerciseId: string, notes?: string) => updateWorkoutExerciseUseCase.execute({ workoutId, workoutExerciseId, ...(notes !== undefined && { notes }) }), [updateWorkoutExerciseUseCase]);
+  const suggestWeight = useCallback((exerciseId: string) => suggestWeightUseCase.execute(exerciseId), [suggestWeightUseCase]);
+  const suggestWarmup = useCallback((exerciseId: string, sessionContext: SessionContext, warmupStyle?: WarmupStyle, targetWeight?: number) => suggestWarmupUseCase.execute(exerciseId, sessionContext, warmupStyle, targetWeight), [suggestWarmupUseCase]);
 
   return useMemo(() => ({
-    startWorkout,
-    finishWorkout,
-    deleteWorkout,
-    recordSet,
-    updateSet,
-    deleteSet,
-    skipExercise,
-    addExerciseToWorkout,
-    reorderWorkoutExercises,
-    deleteWorkoutExercise,
-    updateWorkoutExercise,
-    suggestWeight,
-    suggestWarmup,
-  }), [
-    startWorkout, finishWorkout, deleteWorkout,
-    recordSet, updateSet, deleteSet,
-    skipExercise, addExerciseToWorkout, reorderWorkoutExercises,
-    deleteWorkoutExercise, updateWorkoutExercise,
-    suggestWeight, suggestWarmup,
-  ]);
+    startWorkout, finishWorkout, deleteWorkout, recordSet, updateSet, deleteSet, skipExercise, addExerciseToWorkout, reorderWorkoutExercises, deleteWorkoutExercise, updateWorkoutExercise, suggestWeight, suggestWarmup
+  }), [ startWorkout, finishWorkout, deleteWorkout, recordSet, updateSet, deleteSet, skipExercise, addExerciseToWorkout, reorderWorkoutExercises, deleteWorkoutExercise, updateWorkoutExercise, suggestWeight, suggestWarmup ]);
 }

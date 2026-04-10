@@ -1,6 +1,6 @@
 ﻿import { XStack, YStack, useTheme } from 'tamagui';
-import React, { useEffect, useRef } from 'react';
-import { Pressable, View } from 'react-native';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
+import { Pressable, View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Square, Play, Plus, Minus } from 'lucide-react-native';
 import Animated, { 
@@ -16,6 +16,13 @@ import { useSettings } from '@/store/useSettings';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { FONT_SCALE } from '@/tamagui.config';
+import { motion } from '@/constants/motion';
+import { useMotion } from '@/hooks/ui/useMotion';
+import { formatRestDuration } from '@/utils/time';
+
+const TIMER_ADJUST_SECONDS = 15;
+const PROGRESS_SYNC_INTERVAL_MS = 200;
+const BACKDROP_COLOR = 'rgba(0,0,0,0.65)';
 
 const PRESETS = [
   { label: '30s', value: 30 },
@@ -27,6 +34,7 @@ const PRESETS = [
 
 export default function RestTimerScreen() {
   const theme = useTheme();
+  const m = useMotion();
   const isActive = useRestTimer(s => s.isActive);
   const durationSeconds = useRestTimer(s => s.durationSeconds);
   const getRemainingSeconds = useRestTimer(s => s.getRemainingSeconds);
@@ -35,9 +43,8 @@ export default function RestTimerScreen() {
   const startTimer = useRestTimer(s => s.startTimer);
   const restTimerSeconds = useSettings(s => s.restTimerSeconds);
 
-  const [remaining, setRemaining] = React.useState(getRemainingSeconds());
-  const [progressMax, setProgressMax] = React.useState(() => Math.max(restTimerSeconds, durationSeconds || 0));
-  const progressMaxRef = React.useRef(progressMax);
+  const [remaining, setRemaining] = useState(getRemainingSeconds());
+  const progressMaxRef = useRef(Math.max(restTimerSeconds, durationSeconds || 0));
   const hasNavigatedBackRef = useRef(false);
   const containerWidthSV = useSharedValue(0);
   const progress = useSharedValue(1);
@@ -47,38 +54,36 @@ export default function RestTimerScreen() {
   }, []);
 
   useEffect(() => {
-    progressMaxRef.current = progressMax;
-  }, [progressMax]);
-
-  useEffect(() => {
     if (!isActive) {
-      setProgressMax(restTimerSeconds);
+      progressMaxRef.current = restTimerSeconds;
       return;
     }
 
     if (durationSeconds > 0) {
-      setProgressMax(prev => Math.max(prev, durationSeconds));
+      progressMaxRef.current = Math.max(progressMaxRef.current, durationSeconds);
     }
   }, [isActive, durationSeconds, restTimerSeconds]);
 
-  const startManualTimer = () => {
-    const initialDuration = restTimerSeconds;
-    startTimer(initialDuration);
-    setProgressMax(initialDuration);
-    setRemaining(initialDuration);
+  const startManualTimer = useCallback(() => {
+    startTimer(restTimerSeconds);
+    progressMaxRef.current = restTimerSeconds;
+    setRemaining(restTimerSeconds);
     progress.value = 1;
-  };
+  }, [restTimerSeconds, startTimer, progress]);
 
-  const handleAdjust = (delta: number) => {
+  const handleAdjust = useCallback((delta: number) => {
     adjustTimer(delta);
     const currentRemaining = getRemainingSeconds();
     const safeMax = Math.max(progressMaxRef.current, 1);
     setRemaining(currentRemaining);
     progress.value = Math.min(1, Math.max(0, currentRemaining / safeMax));
     if (currentRemaining > progressMaxRef.current) {
-      setProgressMax(currentRemaining);
+      progressMaxRef.current = currentRemaining;
     }
-  };
+  }, [adjustTimer, getRemainingSeconds, progress]);
+
+  const handleDecrease = useCallback(() => handleAdjust(-TIMER_ADJUST_SECONDS), [handleAdjust]);
+  const handleIncrease = useCallback(() => handleAdjust(TIMER_ADJUST_SECONDS), [handleAdjust]);
 
   useEffect(() => {
     if (!isActive) {
@@ -112,7 +117,7 @@ export default function RestTimerScreen() {
         return;
       }
       syncProgress();
-    }, 200);
+    }, PROGRESS_SYNC_INTERVAL_MS);
 
     return () => {
       clearInterval(interval);
@@ -123,31 +128,26 @@ export default function RestTimerScreen() {
     width: containerWidthSV.value * progress.value,
   }));
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+    <View style={styles.container}>
       {/* Backdrop */}
       <Animated.View
-        entering={FadeIn.duration(200)}
-        exiting={FadeOut.duration(150)}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        entering={FadeIn.duration(motion.duration.normal)}
+        exiting={FadeOut.duration(motion.duration.fast)}
+        style={styles.absoluteFill}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }}
+          style={styles.backdrop}
           onPress={() => router.back()}
+          accessibilityLabel="Cerrar temporizador"
         />
       </Animated.View>
 
       {/* Floating card */}
       <Animated.View
-        entering={SlideInUp.springify().damping(18).stiffness(200)}
-        exiting={FadeOut.duration(150)}
-        style={{ width: '100%', maxWidth: 380 }}
+        entering={m.entering(SlideInUp.springify().damping(motion.spring.heavy.damping).stiffness(motion.spring.heavy.stiffness))}
+        exiting={FadeOut.duration(motion.duration.fast)}
+        style={styles.card}
       >
         <YStack
           backgroundColor="$surface"
@@ -159,7 +159,7 @@ export default function RestTimerScreen() {
         >
           <Animated.View 
             style={[
-              { height: '100%', backgroundColor: theme.primary?.val as string },
+              { height: '100%', backgroundColor: theme.primary?.val ?? '#007AFF' },
               animatedProgressStyle
             ]} 
           />
@@ -171,7 +171,7 @@ export default function RestTimerScreen() {
           </AppText>
           
           <AppText variant="titleLg" fontSize={FONT_SCALE.sizes.hero} style={{ fontVariant: ['tabular-nums'] }}>
-            {formatTime(remaining)}
+            {formatRestDuration(remaining)}
           </AppText>
 
           <XStack gap="$sm" justifyContent="center" marginBottom="$md">
@@ -183,10 +183,11 @@ export default function RestTimerScreen() {
                   onPress={() => {
                     stopTimer();
                     startTimer(preset.value);
-                    setProgressMax(preset.value);
+                    progressMaxRef.current = preset.value;
                     setRemaining(preset.value);
                     progress.value = 1;
                   }}
+                  accessibilityLabel={`Establecer temporizador en ${preset.label}`}
                 >
                   <YStack
                     paddingHorizontal="$sm"
@@ -211,7 +212,7 @@ export default function RestTimerScreen() {
           </XStack>
 
           <XStack alignItems="center" gap="$xl" marginTop="$md">
-            <Pressable onPress={() => handleAdjust(-15)}>
+            <Pressable onPress={handleDecrease} accessibilityLabel={`Disminuir ${TIMER_ADJUST_SECONDS} segundos`}>
               <YStack
                 width={60} 
                 height={60} 
@@ -221,12 +222,12 @@ export default function RestTimerScreen() {
                 backgroundColor="$surfaceSecondary"
               >
                 <AppIcon icon={Minus} color="color" size={24} />
-                <AppText variant="label" color="textSecondary" fontSize={FONT_SCALE.sizes[1]}>-15s</AppText>
+                <AppText variant="label" color="textSecondary" fontSize={FONT_SCALE.sizes[1]}>-{TIMER_ADJUST_SECONDS}s</AppText>
               </YStack>
             </Pressable>
 
             {isActive ? (
-              <Pressable onPress={() => { stopTimer(); router.back(); }}>
+              <Pressable onPress={() => { stopTimer(); router.back(); }} accessibilityLabel="Detener temporizador">
                 <YStack
                   width={84} 
                   height={84} 
@@ -239,7 +240,7 @@ export default function RestTimerScreen() {
                 </YStack>
               </Pressable>
             ) : (
-              <Pressable onPress={startManualTimer}>
+              <Pressable onPress={startManualTimer} accessibilityLabel="Iniciar temporizador">
                 <YStack
                   width={84} 
                   height={84} 
@@ -253,7 +254,7 @@ export default function RestTimerScreen() {
               </Pressable>
             )}
 
-            <Pressable onPress={() => handleAdjust(15)}>
+            <Pressable onPress={handleIncrease} accessibilityLabel={`Aumentar ${TIMER_ADJUST_SECONDS} segundos`}>
               <YStack
                 width={60} 
                 height={60} 
@@ -263,7 +264,7 @@ export default function RestTimerScreen() {
                 backgroundColor="$surfaceSecondary"
               >
                 <AppIcon icon={Plus} color="color" size={24} />
-                <AppText variant="label" color="textSecondary" fontSize={FONT_SCALE.sizes[1]}>+15s</AppText>
+                <AppText variant="label" color="textSecondary" fontSize={FONT_SCALE.sizes[1]}>+{TIMER_ADJUST_SECONDS}s</AppText>
               </YStack>
             </Pressable>
           </XStack>
@@ -273,3 +274,10 @@ export default function RestTimerScreen() {
       </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  absoluteFill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  backdrop: { flex: 1, backgroundColor: BACKDROP_COLOR },
+  card: { width: '100%', maxWidth: 380 },
+});

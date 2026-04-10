@@ -114,7 +114,11 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
         'SELECT * FROM workouts WHERE date BETWEEN ? AND ? ORDER BY date DESC',
         [toSQLiteDateTime(start), toSQLiteDateTime(end)],
       );
-      return Promise.all(rows.map((r: WorkoutRow) => this.buildWorkout(r)));
+      const workouts: Workout[] = [];
+      for (const r of rows) {
+        workouts.push(await this.buildWorkout(r));
+      }
+      return workouts;
     } catch (error) {
       throw new DatabaseError('Error al obtener workouts por rango', error);
     }
@@ -126,7 +130,11 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
         'SELECT * FROM workouts ORDER BY date DESC LIMIT ?',
         [limit],
       );
-      return Promise.all(rows.map((r) => this.buildWorkout(r)));
+      const workouts: Workout[] = [];
+      for (const row of rows) {
+        workouts.push(await this.buildWorkout(row));
+      }
+      return workouts;
     } catch (error) {
       throw new DatabaseError('Error al obtener workouts recientes', error);
     }

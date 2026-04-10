@@ -1,7 +1,8 @@
 import { FONT_SCALE } from '@/tamagui.config';
+import { format } from 'date-fns';
 
 // Workaround: victory-native fontVariant expects string[], but RN types expect TextStyle['fontVariant']
-export const CHART_TABULAR_NUMS = ['tabular-nums'] as any;
+export const CHART_TABULAR_NUMS = ['tabular-nums'] as unknown as string[];
 
 export const CHART_FONT_SIZE = {
   axis: FONT_SCALE.sizes[1],
@@ -17,7 +18,7 @@ interface ThemeTokens {
   color?: { val?: string };
 }
 
-const CHART_FALLBACK_COLORS = {
+export const CHART_FALLBACK_COLORS = {
   textSecondary: '#9CA3AF',
   border: '#E5E7EB',
   primary: '#3B99F7',
@@ -33,4 +34,12 @@ export function buildChartColors(theme: ThemeTokens) {
     tooltipBg: theme.surfaceSecondary?.val ?? CHART_FALLBACK_COLORS.surface,
     tooltipText: theme.color?.val ?? CHART_FALLBACK_COLORS.text,
   };
+}
+
+export function formatDateTick(tick: string | number | Date): string {
+  try {
+    return format(new Date(tick), 'dd/MM');
+  } catch {
+    return '';
+  }
 }

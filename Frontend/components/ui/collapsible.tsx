@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, Platform } from 'react-native';
+import { Pressable } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import Animated, {
   useAnimatedStyle,
@@ -8,10 +8,13 @@ import Animated, {
   FadeOut,
   Layout,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { ChevronRight } from 'lucide-react-native';
 import { AppText } from './AppText';
 import { AppIcon } from './AppIcon';
+import { motion } from '@/constants/motion';
+import { triggerLightHaptic } from '@/utils/haptics';
+
+const MIN_TOUCH_TARGET = 44;
 
 interface CollapsibleProps {
   title: string;
@@ -25,15 +28,13 @@ export function Collapsible({ title, children, defaultOpen = false }: Collapsibl
   const iconStyle = useAnimatedStyle(() => {
     return {
       transform: [
-        { rotate: withTiming(isOpen ? '90deg' : '0deg', { duration: 200 }) },
+        { rotate: withTiming(isOpen ? '90deg' : '0deg', { duration: motion.duration.normal }) },
       ],
     };
   });
 
   const handlePress = () => {
-    if (Platform.OS === 'ios') {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    triggerLightHaptic();
     setIsOpen((prev) => !prev);
   };
 
@@ -43,7 +44,7 @@ export function Collapsible({ title, children, defaultOpen = false }: Collapsibl
         onPress={handlePress}
         accessibilityRole="button"
         accessibilityState={{ expanded: isOpen }}
-        style={{ minHeight: 44, justifyContent: 'center' }}
+        style={{ minHeight: MIN_TOUCH_TARGET, justifyContent: 'center' }}
       >
         <XStack alignItems="center" gap="$sm">
           <Animated.View style={iconStyle}>
@@ -57,9 +58,9 @@ export function Collapsible({ title, children, defaultOpen = false }: Collapsibl
 
       {isOpen && (
         <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(200)}
-          layout={Layout.springify().damping(15)}
+          entering={FadeIn.duration(motion.duration.normal)}
+          exiting={FadeOut.duration(motion.duration.normal)}
+          layout={Layout.springify().damping(motion.spring.snappy.damping)}
         >
           <YStack paddingLeft="$lg" paddingTop="$xs" paddingBottom="$md">
             {children}

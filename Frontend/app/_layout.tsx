@@ -5,12 +5,15 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from '@/hooks/ui/use-color-scheme';
 import { useSettings } from '@/store/useSettings';
 import { DIProvider } from '../context/DIContext';
 import config from '../tamagui.config';
+
+import { TextureOverlay } from '@/components/ui/TextureOverlay';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -28,23 +31,27 @@ export default function RootLayout() {
     <TamaguiProvider config={config} defaultTheme={tamaguiTheme}>
       <GestureHandlerRootView style={styles.flex}>
         <DIProvider>
-          <ThemeProvider value={effectiveScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="(workouts)" options={{ headerShown: false }} />
-              <Stack.Screen name="exercise/[id]" options={{ headerShown: false }} />
-              <Stack.Screen name="history/[id]" options={{ headerShown: false }} />
-              <Stack.Screen name="routine/[id]" options={{ headerShown: false }} />
-              <Stack.Screen name="routine/create" options={{ headerShown: false }} />
-              <Stack.Screen name="settings/notifications" options={{ headerShown: false }} />
-              <Stack.Screen name="settings/privacy" options={{ headerShown: false }} />
-              <Stack.Screen name="settings/profile" options={{ headerShown: false }} />
-              <Stack.Screen name="stats/weight" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-            </Stack>
-            <StatusBar style="auto" />
-            <Toast />
-          </ThemeProvider>
+          <BottomSheetModalProvider>
+            <ThemeProvider value={effectiveScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(workouts)" options={{ headerShown: false }} />
+                <Stack.Screen name="exercise/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="exercise/create" options={{ headerShown: false }} />
+                <Stack.Screen name="history/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="routine/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="routine/create" options={{ headerShown: false }} />
+                <Stack.Screen name="settings/notifications" options={{ headerShown: false }} />
+                <Stack.Screen name="settings/privacy" options={{ headerShown: false }} />
+                <Stack.Screen name="settings/profile" options={{ headerShown: false }} />
+                <Stack.Screen name="stats/weight" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+              </Stack>
+              <TextureOverlay />
+              <StatusBar style="auto" />
+              <Toast />
+            </ThemeProvider>
+          </BottomSheetModalProvider>
         </DIProvider>
       </GestureHandlerRootView>
     </TamaguiProvider>

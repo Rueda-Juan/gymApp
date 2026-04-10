@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
-import { useWorkoutTimer } from '../useWorkoutTimer';
+import { useWorkoutTimer } from '@/hooks/application/useWorkoutTimer';
 
 jest.mock('@/store/useActiveWorkout');
 jest.mock('@/utils/time', () => ({

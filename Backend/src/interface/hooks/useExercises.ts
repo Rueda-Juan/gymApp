@@ -2,33 +2,27 @@ import { useCallback, useMemo } from 'react';
 import { useContainer } from './useContainer';
 import type { Exercise } from '../../domain/entities/Exercise';
 
-/**
- * Hook that exposes all exercise-related operations.
- * Wraps ExerciseService from the DI container.
- */
 export function useExercises() {
-  const { exerciseService } = useContainer();
+  const { createExercise: createExerciseUseCase, updateExercise: updateExerciseUseCase, deleteExercise: deleteExerciseUseCase, getExerciseHistory: getExerciseHistoryUseCase } = useContainer();
 
   const createExercise = useCallback(
-    (params: Omit<Exercise, 'id'>) => exerciseService.createExercise(params),
-    [exerciseService],
+    (params: Omit<Exercise, 'id'>) => createExerciseUseCase.execute(params),
+    [createExerciseUseCase],
   );
 
   const updateExercise = useCallback(
-    (id: string, params: Partial<Omit<Exercise, 'id'>>) =>
-      exerciseService.updateExercise(id, params),
-    [exerciseService],
+    (id: string, params: Partial<Omit<Exercise, 'id'>>) => updateExerciseUseCase.execute(id, params),
+    [updateExerciseUseCase],
   );
 
   const deleteExercise = useCallback(
-    (id: string) => exerciseService.deleteExercise(id),
-    [exerciseService],
+    (id: string) => deleteExerciseUseCase.execute(id),
+    [deleteExerciseUseCase],
   );
 
   const getExerciseHistory = useCallback(
-    (exerciseId: string, limit?: number) =>
-      exerciseService.getExerciseHistory(exerciseId, limit),
-    [exerciseService],
+    (exerciseId: string, limit?: number) => getExerciseHistoryUseCase.execute(exerciseId, limit),
+    [getExerciseHistoryUseCase],
   );
 
   return useMemo(() => ({

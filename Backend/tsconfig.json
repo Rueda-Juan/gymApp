@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
+    "composite": true,
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2020"],
     "strict": true,
+    "types": ["jest", "node"],
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "esModuleInterop": true,
@@ -15,12 +17,11 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": ".",
     "paths": {
-      "@domain/*": ["src/domain/*"],
-      "@application/*": ["src/application/*"],
-      "@infrastructure/*": ["src/infrastructure/*"],
-      "@shared/*": ["src/shared/*"]
+      "@domain/*": ["./src/domain/*"],
+      "@application/*": ["./src/application/*"],
+      "@infrastructure/*": ["./src/infrastructure/*"],
+      "@shared/*": ["./src/shared/*"]
     }
   },
   "include": ["src/**/*.ts"],

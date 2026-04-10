@@ -16,10 +16,10 @@ export function Screen({
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
 
-  const pt = safeAreaEdges.includes('top') ? insets.top : 0;
-  const pb = safeAreaEdges.includes('bottom') ? insets.bottom : 0;
-  const pl = safeAreaEdges.includes('left') ? insets.left : 0;
-  const pr = safeAreaEdges.includes('right') ? insets.right : 0;
+  const paddingTop    = safeAreaEdges.includes('top')    ? insets.top    : 0;
+  const paddingBottom = safeAreaEdges.includes('bottom') ? insets.bottom : 0;
+  const paddingLeft   = safeAreaEdges.includes('left')   ? insets.left   : 0;
+  const paddingRight  = safeAreaEdges.includes('right')  ? insets.right  : 0;
 
   const content = scroll ? (
     <ScrollView
@@ -39,10 +39,10 @@ export function Screen({
     <YStack
       flex={1}
       backgroundColor="$background"
-      paddingTop={pt}
-      paddingBottom={pb}
-      paddingLeft={pl}
-      paddingRight={pr}
+      paddingTop={paddingTop}
+      paddingBottom={paddingBottom}
+      paddingLeft={paddingLeft}
+      paddingRight={paddingRight}
       {...props}
     >
       {content}

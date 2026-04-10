@@ -1,15 +1,19 @@
 import React, { useMemo } from 'react';
 import { XStack, YStack } from 'tamagui';
-import { format } from 'date-fns';
 import { Scale, Plus } from 'lucide-react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
+import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { IconButton } from '@/components/ui/AppButton';
 import { StatsLineChart } from '@/components/charts';
+import { formatDateTick } from '@/components/charts/chartUtils';
 import type { BodyWeightEntry } from 'backend/shared/types';
 import { FONT_SCALE } from '@/tamagui.config';
+
+const EMPTY_CHART_HEIGHT = 120;
 
 interface BodyWeightCardProps {
   weightHistory: BodyWeightEntry[];
@@ -19,14 +23,15 @@ interface BodyWeightCardProps {
 export function BodyWeightCard({ weightHistory, onAddWeight }: BodyWeightCardProps) {
   const chartData = useMemo(
     () => weightHistory
-      .map((w) => ({ x: w.date, y: Number(w.weight) }))
+      .map((w: BodyWeightEntry) => ({ x: w.date, y: Number(w.weight) }))
       .filter((p) => !isNaN(p.y) && p.y > 0)
       .reverse(),
     [weightHistory]
   );
 
   return (
-    <CardBase padding="$md">
+    <Animated.View entering={FadeInDown.delay(200).springify()} style={animatedCardShadow}>
+      <CardBase padding="$md" {...elevation.flat}>
       <XStack justifyContent="space-between" alignItems="center">
         <XStack alignItems="center" gap="$sm">
           <AppIcon icon={Scale} size={20} color="primary" />
@@ -34,7 +39,7 @@ export function BodyWeightCard({ weightHistory, onAddWeight }: BodyWeightCardPro
         </XStack>
         <IconButton
           icon={<AppIcon icon={Plus} size={16} color="primary" />}
-          size={32}
+          size={44}
           backgroundColor="$primarySubtle"
           onPress={onAddWeight}
           accessibilityLabel="Registrar peso"
@@ -42,8 +47,10 @@ export function BodyWeightCard({ weightHistory, onAddWeight }: BodyWeightCardPro
       </XStack>
 
       <XStack alignItems="center" marginVertical="$md">
-        <AppText variant="titleLg" fontSize={FONT_SCALE.sizes.displayLg}>
-          {weightHistory.length > 0 ? (Number(weightHistory[0].weight) || 0).toFixed(1) : '--'}
+        <AppText fontSize={FONT_SCALE.sizes.displayLg} fontWeight={FONT_SCALE.weights.bold} letterSpacing={-0.5}>
+          {weightHistory.length > 0
+            ? (Number(weightHistory[0].weight) || 0).toFixed(1)
+            : '--'}
         </AppText>
         <AppText variant="bodyMd" color="textSecondary" marginLeft="$xs" marginTop="$sm">kg</AppText>
       </XStack>
@@ -52,19 +59,14 @@ export function BodyWeightCard({ weightHistory, onAddWeight }: BodyWeightCardPro
       {weightHistory.length > 1 ? (
         <StatsLineChart
           data={chartData}
-          xTickFormat={(t) => {
-            try {
-              return format(new Date(t), 'dd/MM');
-            } catch {
-              return '';
-            }
-          }}
+          xTickFormat={formatDateTick}
         />
       ) : (
-        <YStack alignItems="center" justifyContent="center" height={120}>
+        <YStack alignItems="center" justifyContent="center" height={EMPTY_CHART_HEIGHT}>
           <AppText variant="bodyMd" color="textTertiary">Registra más datos para ver el gráfico</AppText>
         </YStack>
       )}
-    </CardBase>
+      </CardBase>
+    </Animated.View>
   );
 }

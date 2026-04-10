@@ -1,8 +1,10 @@
 import React from 'react';
 import { YStack, XStack } from 'tamagui';
+import { Lock } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { router } from 'expo-router';
 
 export default function PrivacyScreen() {
@@ -15,12 +17,13 @@ export default function PrivacyScreen() {
             <AppText variant="label" color="primary">PRÓXIMAMENTE</AppText>
           </YStack>
         </XStack>
-        <AppText variant="bodyMd" color="textSecondary">Configura permisos y uso de datos.</AppText>
-        <AppText variant="bodyMd" color="textTertiary" marginTop="$md">
-          Esta sección está en desarrollo. Pronto encontrarás aquí política de privacidad y gestión de datos.
-        </AppText>
-        <AppButton label="Volver" onPress={() => router.back()} />
       </YStack>
+      <EmptyState
+        icon={Lock}
+        title="En desarrollo"
+        description="Pronto encontrarás aquí política de privacidad y gestión de datos."
+        action={<AppButton label="Volver" onPress={() => router.back()} />}
+      />
     </Screen>
   );
 }

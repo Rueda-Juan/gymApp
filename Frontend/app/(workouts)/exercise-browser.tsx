@@ -1,51 +1,29 @@
-﻿import { XStack, YStack, ScrollView, useTheme } from 'tamagui';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Pressable, TextInput, FlatList } from 'react-native';
+import { XStack, YStack, ScrollView, useTheme } from 'tamagui';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { TextInput, Pressable } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, X, Dumbbell } from 'lucide-react-native';
+import { Search, X, Dumbbell, Plus } from 'lucide-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { IconButton } from '@/components/ui/AppButton';
-import { useExercises } from '@/hooks/useExercises';
+import { ToggleChip } from '@/components/ui/ToggleChip';
+import { useExercises } from '@/hooks/domain/useExercises';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
+import { EmptyStateIcon } from '@/components/feedback/EmptyStateIcon';
+import { ROUTES } from '@/constants/routes';
 import { useRoutineStore } from '@/store/routineStore';
 import { getExerciseName } from '@/utils/exercise';
 import { createClientId } from '@/utils/clientId';
 import { FONT_SCALE } from '@/tamagui.config';
+import { useExerciseFiltering } from '@/hooks/application/useExerciseFiltering';
+import { MUSCLE_OPTIONS, EQUIPMENT_OPTIONS, MUSCLE_LABELS, EQUIPMENT_LABELS, getMuscleIconName } from '@/constants/exercise';
 import type { Exercise } from 'backend/domain/entities/Exercise';
-
-const MUSCLE_OPTIONS = [
-  'chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms',
-  'quadriceps', 'hamstrings', 'glutes', 'calves', 'abs', 'traps',
-] as const;
-
-const EQUIPMENT_OPTIONS = [
-  'barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'band', 'other',
-] as const;
-
-const MUSCLE_LABELS: Record<string, string> = {
-  chest: 'Pecho', back: 'Espalda', shoulders: 'Hombros',
-  biceps: 'Bíceps', triceps: 'Tríceps', forearms: 'Antebrazos',
-  quadriceps: 'Cuádriceps', hamstrings: 'Isquiotibiales',
-  glutes: 'Glúteos', calves: 'Pantorrillas', abs: 'Abdominales', traps: 'Trapecios',
-};
-
-const EQUIPMENT_LABELS: Record<string, string> = {
-  barbell: 'Barra', dumbbell: 'Mancuernas', machine: 'Máquina',
-  cable: 'Cable', bodyweight: 'Peso corporal', band: 'Banda', other: 'Otro',
-};
-
-const getMuscleIconName = (muscle?: string) => {
-  const m = muscle?.toLowerCase() || '';
-  if (['biceps', 'triceps', 'forearms'].includes(m)) return 'arm-flex';
-  if (['quadriceps', 'hamstrings', 'calves', 'glutes'].includes(m)) return 'run';
-  if (['chest', 'abs'].includes(m)) return 'human';
-  if (['back', 'shoulders', 'traps'].includes(m)) return 'human-handsup';
-  return 'dumbbell';
-};
 
 export default function ExerciseBrowserScreen() {
   const theme = useTheme();
@@ -61,33 +39,31 @@ export default function ExerciseBrowserScreen() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados locales para los filtros
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeMuscle, setActiveMuscle] = useState(filterMuscle || '');
-  const [activeEquipment, setActiveEquipment] = useState('');
+  const { filteredExercises, filters, setFilter } = useExerciseFiltering(exercises, {
+    search: '',
+    muscleFilter: filterMuscle || '',
+    equipmentFilter: '',
+    customOnly: false,
+  });
 
-  useEffect(() => {
-    const loadExercises = async () => {
-      try { 
-        setExercises(await exerciseService.getAll()); 
-      } catch (e) { 
-        console.error(e);
-      } finally { 
-        setLoading(false); 
-      }
-    };
-    loadExercises();
+  const loadExercises = useCallback(async () => {
+    try {
+      setLoading(true);
+      setExercises(await exerciseService.getAll());
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Error al cargar ejercicios', position: 'top' });
+      // eslint-disable-next-line no-console
+      console.error('[ExerciseBrowser] loadExercises error:', e);
+    } finally {
+      setLoading(false);
+    }
   }, [exerciseService]);
 
-  const filteredExercises = useMemo(() => {
-    return exercises.filter(exercise => {
-      const matchSearch = searchQuery === '' || getExerciseName(exercise).toLowerCase().includes(searchQuery.toLowerCase());
-      const matchMuscle = activeMuscle === '' || exercise.primaryMuscles?.includes(activeMuscle as (typeof exercise.primaryMuscles)[number]);
-      const matchEquipment = activeEquipment === '' || exercise.equipment === activeEquipment;
-      
-      return matchSearch && matchMuscle && matchEquipment;
-    });
-  }, [exercises, searchQuery, activeMuscle, activeEquipment]);
+  useFocusEffect(
+    useCallback(() => {
+      void loadExercises();
+    }, [loadExercises]),
+  );
 
   // Estructura de datos para la lista (separando sugerencias si es "replace")
   const listData = useMemo(() => {
@@ -117,23 +93,20 @@ export default function ExerciseBrowserScreen() {
         nameEs: item.nameEs, 
         muscle: item.primaryMuscles?.[0] || 'other' 
       });
-    } else if (action === 'replace' && targetId) {
-      replaceExerciseActiveWorkout(targetId, {
-        id: createClientId(),
-        exerciseId: item.id, 
-        name: item.name, 
-        nameEs: item.nameEs,
-        sets: [{ id: createClientId(), weight: 0, reps: 0, isCompleted: false, type: 'normal' }],
-        status: 'pending',
-      });
     } else {
-      addExerciseToActiveWorkout({
+      const activeWorkoutPayload = {
         id: createClientId(),
         exerciseId: item.id, 
         name: item.name, 
         nameEs: item.nameEs,
-        sets: [{ id: createClientId(), weight: 0, reps: 0, isCompleted: false, type: 'normal' }],
-      });
+        sets: [{ id: createClientId(), weight: 0, reps: 0, isCompleted: false, type: 'normal' as const }],
+      };
+
+      if (action === 'replace' && targetId) {
+        replaceExerciseActiveWorkout(targetId, { ...activeWorkoutPayload, status: 'pending' });
+      } else {
+        addExerciseToActiveWorkout(activeWorkoutPayload);
+      }
     }
     router.back();
   }, [target, action, targetId, addExerciseToRoutine, replaceExerciseActiveWorkout, addExerciseToActiveWorkout]);
@@ -171,16 +144,16 @@ export default function ExerciseBrowserScreen() {
             borderColor="$borderColor"
           >
             <MaterialCommunityIcons
-              name={getMuscleIconName(item.primaryMuscles?.[0])}
+              name={getMuscleIconName(item.primaryMuscles?.[0]) as React.ComponentProps<typeof MaterialCommunityIcons>['name']}
               size={24}
-              color={theme.textSecondary?.val as string}
+              color={theme.textSecondary?.val ?? '#999'}
             />
           </YStack>
 
           <YStack flex={1}>
             <AppText variant="bodyLg" fontWeight="600">{getExerciseName(item)}</AppText>
-            <AppText variant="label" color="textTertiary" marginTop={4}>
-              {item.primaryMuscles?.map(m => MUSCLE_LABELS[m] ?? m).join(', ') || 'Otro'} • {EQUIPMENT_LABELS[item.equipment] ?? item.equipment}
+            <AppText variant="label" color="textTertiary" marginTop="$xs">
+              {item.primaryMuscles?.map(muscle => MUSCLE_LABELS[muscle] ?? muscle).join(', ') || 'Otro'} • {EQUIPMENT_LABELS[item.equipment] ?? item.equipment}
             </AppText>
           </YStack>
 
@@ -202,11 +175,20 @@ export default function ExerciseBrowserScreen() {
   }, [handleSelect, theme.textSecondary?.val]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val as string }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val ?? '#fff' }} edges={['top', 'bottom']}>
       {/* Header */}
       <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingVertical="$md">
         <AppText variant="titleSm">Buscar Ejercicio</AppText>
-        <IconButton icon={<AppIcon icon={X} color="color" size={24} />} onPress={() => router.back()} />
+        <XStack gap="$sm" alignItems="center">
+          <IconButton
+            icon={<AppIcon icon={Plus} color="background" size={20} />}
+            size={36}
+            backgroundColor="$primary"
+            onPress={() => router.push(ROUTES.EXERCISE_CREATE)}
+            accessibilityLabel="Crear ejercicio"
+          />
+          <IconButton icon={<AppIcon icon={X} color="color" size={24} />} onPress={() => router.back()} accessibilityLabel="Cerrar" />
+        </XStack>
       </XStack>
 
       {/* Search Bar */}
@@ -223,11 +205,11 @@ export default function ExerciseBrowserScreen() {
         >
           <AppIcon icon={Search} color="textTertiary" size={20} />
           <TextInput
-            style={{ flex: 1, color: theme.color?.val as string, fontSize: FONT_SCALE.sizes[3] }}
+            style={{ flex: 1, color: theme.color?.val ?? '#000', fontSize: FONT_SCALE.sizes[3] }}
             placeholder="Ej. Press de banca..."
-            placeholderTextColor={theme.textTertiary?.val as string}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            placeholderTextColor={theme.textTertiary?.val ?? '#666'}
+            value={filters.search}
+            onChangeText={(text) => setFilter('search', text)}
             autoFocus={!target}
           />
         </XStack>
@@ -235,78 +217,70 @@ export default function ExerciseBrowserScreen() {
 
       {/* Filters (Muscles & Equipment) */}
       <YStack marginBottom="$md" gap="$sm">
+        {/* Chip "Mis ejercicios" */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+          <ToggleChip
+            variant="solid"
+            label="Mis ejercicios"
+            isActive={filters.customOnly ?? false}
+            onPress={() => setFilter('customOnly', !filters.customOnly)}
+          />
+        </ScrollView>
+
         {/* Fila de Músculos */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-          {MUSCLE_OPTIONS.map(muscle => {
-            const isActive = activeMuscle === muscle;
-            return (
-              <Pressable key={muscle} onPress={() => setActiveMuscle(isActive ? '' : muscle)}>
-                <YStack
-                  alignItems="center"
-                  justifyContent="center"
-                  paddingHorizontal="$md"
-                  paddingVertical="$sm"
-                  borderRadius="$full"
-                  backgroundColor={isActive ? "$primary" : "$surfaceSecondary"}
-                  borderWidth={1}
-                  borderColor={isActive ? "$primary" : "$borderColor"}
-                >
-                  <AppText
-                    variant="bodySm"
-                    fontWeight={isActive ? '700' : '500'}
-                    color={isActive ? "background" : "color"}
-                    style={{ textTransform: 'capitalize' }}
-                  >
-                    {MUSCLE_LABELS[muscle] ?? muscle}
-                  </AppText>
-                </YStack>
-              </Pressable>
-            );
-          })}
+          {MUSCLE_OPTIONS.map(muscle => (
+            <ToggleChip
+              key={muscle}
+              variant="solid"
+              label={MUSCLE_LABELS[muscle] ?? muscle}
+              isActive={(filters.muscleFilter ?? '') === muscle}
+              onPress={() => setFilter('muscleFilter', (filters.muscleFilter ?? '') === muscle ? '' : muscle)}
+              accessibilityLabel={`Filtrar por ${MUSCLE_LABELS[muscle] ?? muscle}`}
+            />
+          ))}
         </ScrollView>
 
         {/* Fila de Equipamiento */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-          {EQUIPMENT_OPTIONS.map(equipment => {
-            const isActive = activeEquipment === equipment;
-            return (
-              <Pressable key={equipment} onPress={() => setActiveEquipment(isActive ? '' : equipment)}>
-                <YStack
-                  alignItems="center"
-                  justifyContent="center"
-                  paddingHorizontal="$md"
-                  paddingVertical="$sm"
-                  borderRadius="$sm"
-                  backgroundColor={isActive ? "$secondary" : "transparent"}
-                  borderWidth={1}
-                  borderColor={isActive ? "$secondary" : "$borderColor"}
-                >
-                  <AppText
-                    variant="label"
-                    fontWeight={isActive ? '700' : '600'}
-                    color={isActive ? "background" : "textSecondary"}
-                  >
-                    {EQUIPMENT_LABELS[equipment] ?? equipment}
-                  </AppText>
-                </YStack>
-              </Pressable>
-            );
-          })}
+          {EQUIPMENT_OPTIONS.map(equipment => (
+            <ToggleChip
+              key={equipment}
+              variant="secondary"
+              label={EQUIPMENT_LABELS[equipment] ?? equipment}
+              isActive={(filters.equipmentFilter ?? '') === equipment}
+              onPress={() => setFilter('equipmentFilter', (filters.equipmentFilter ?? '') === equipment ? '' : equipment)}
+              accessibilityLabel={`Filtrar por ${EQUIPMENT_LABELS[equipment] ?? equipment}`}
+            />
+          ))}
         </ScrollView>
       </YStack>
 
       {/* List */}
-      <FlatList
+      <FlashList
         data={listData}
         keyExtractor={(item) => item.id}
-        initialNumToRender={15}
-        windowSize={5}
+        getItemType={(item) => item.type}
         renderItem={renderExerciseItem}
         ListEmptyComponent={
-          <YStack padding="$5xl" alignItems="center">
-            <AppText variant="bodyMd" color="textSecondary">
-              {loading ? 'Cargando...' : 'No se encontraron ejercicios con esos filtros'}
-            </AppText>
+          <YStack padding="$5xl" alignItems="center" gap="$md">
+            {loading ? (
+              <AppText variant="bodyMd" color="textSecondary">Cargando...</AppText>
+            ) : exercises.length === 0 ? (
+              <>
+                <EmptyStateIcon icon={Dumbbell} size={48} color="textTertiary" />
+                <AppText variant="titleSm" color="textSecondary" textAlign="center">
+                  No tenés ejercicios aún
+                </AppText>
+                <AppText variant="bodyMd" color="textTertiary" textAlign="center">
+                  Creá tu primer ejercicio tocando el botón + de arriba a la derecha
+                </AppText>
+              </>
+            ) : (
+              <AppText variant="bodyMd" color="textSecondary">
+                No se encontraron ejercicios con esos filtros
+              </AppText>
+            )}
           </YStack>
         }
       />

@@ -41,7 +41,7 @@ export type UpdateInput<T> = Partial<Omit<T, 'id' | 'createdAt'>>;
 // ─── Re-exports ───────────────────────────────────────────────
 // Convenience re-exports of the most commonly used domain types.
 
-export type { Exercise, ExerciseType } from '../domain/entities/Exercise';
+export type { Exercise, ExerciseType, LoadType } from '../domain/entities/Exercise';
 export type { Routine, RoutineExercise } from '../domain/entities/Routine';
 export type { Workout, WorkoutExercise } from '../domain/entities/Workout';
 export type { WorkoutSet } from '../domain/entities/WorkoutSet';
@@ -55,6 +55,8 @@ export type { MuscleGroup } from '../domain/valueObjects/MuscleGroup';
 export type { Equipment } from '../domain/valueObjects/Equipment';
 export type { SetType } from '../domain/valueObjects/SetType';
 export type { SessionContext } from '../domain/valueObjects/SessionContext';
-export type { WarmupStyle, WeightSuggestion } from '../application/useCases/exercises/SuggestWeight';
+export type { WarmupStyle, WarmupSuggestion, WarmupSet } from '../application/useCases/exercises/SuggestWarmup';
+export type { WeightSuggestion } from '../application/useCases/exercises/SuggestWeight';
 export type { TrainingFrequencyResult } from '../application/useCases/stats/GetTrainingFrequencyUseCase';
 export type { MuscleVolumeDistribution } from '../application/useCases/stats/GetMuscleBalanceUseCase';
+export type { CachedWeightSuggestion } from '../domain/repositories/ExerciseLoadCacheRepository';

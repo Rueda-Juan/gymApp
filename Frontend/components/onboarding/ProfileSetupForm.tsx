@@ -1,54 +1,73 @@
-import React from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { XStack, YStack, useTheme } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 
 import { AppText } from '@/components/ui/AppText';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppButton } from '@/components/ui/AppButton';
+import type { UserProfile } from '@/store/useUser';
+
+const SAFE_AREA_STYLE = { flex: 1 } as const;
+const SCROLL_CONTENT_STYLE = {
+  flexGrow: 1,
+  justifyContent: 'center' as const,
+  paddingHorizontal: 20,
+  paddingVertical: 20,
+} as const;
+
+const GENDER_OPTIONS = [
+  { value: 'male', label: 'Hombre' },
+  { value: 'female', label: 'Mujer' },
+  { value: 'other', label: 'Otro' },
+] as const;
+
+type Gender = 'male' | 'female' | 'other';
 
 interface ProfileSetupFormProps {
-  name: string;
-  setName: (v: string) => void;
-  gender: 'male' | 'female' | 'other' | '';
-  setGender: (v: 'male' | 'female' | 'other') => void;
-  age: string;
-  setAge: (v: string) => void;
-  onSubmit: () => void;
+  onComplete: (profile: Partial<UserProfile>) => void;
 }
 
-export function ProfileSetupForm({
-  name,
-  setName,
-  gender,
-  setGender,
-  age,
-  setAge,
-  onSubmit,
-}: ProfileSetupFormProps) {
-  const theme = useTheme();
+export function ProfileSetupForm({ onComplete }: ProfileSetupFormProps) {
+  const [name, setName] = useState('');
+  const [gender, setGender] = useState<Gender | ''>('');
+  const [age, setAge] = useState('');
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      Alert.alert('Datos incompletos', 'Por favor, ingresa tu nombre.');
+      return;
+    }
+    onComplete({
+      name: name.trim(),
+      gender: gender || 'other',
+      age: parseInt(age, 10) || null,
+      createdAt: Date.now(),
+    });
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}>
+    <SafeAreaView style={SAFE_AREA_STYLE}>
+      <ScrollView contentContainerStyle={SCROLL_CONTENT_STYLE}>
         <YStack alignItems="center" gap="$md">
           <AppText variant="titleLg" textAlign="center">Bienvenido a GymApp</AppText>
           <AppText variant="bodyMd" color="textSecondary" textAlign="center">
             Completa tu perfil antes de empezar
           </AppText>
 
-          <AppInput placeholder="Nombre" value={name} onChangeText={setName} />
+          <AppInput placeholder="Nombre" value={name} onChangeText={setName} autoFocus />
 
           <AppText variant="label" color="textSecondary">Sexo / Género</AppText>
           <XStack gap="$sm">
-            {(['male', 'female', 'other'] as const).map((option) => {
-              const isSelected = gender === option;
+            {GENDER_OPTIONS.map(({ value, label }) => {
+              const isSelected = gender === value;
               return (
                 <Pressable
-                  key={option}
-                  onPress={() => setGender(option)}
+                  key={value}
+                  onPress={() => setGender(value)}
                   style={{ flex: 1 }}
-                  accessibilityRole="button"
+                  accessibilityRole="radio"
+                  accessibilityLabel={label}
                   accessibilityState={{ selected: isSelected }}
                 >
                   <YStack
@@ -56,7 +75,7 @@ export function ProfileSetupForm({
                     borderWidth={1}
                     borderColor={isSelected ? '$primary' : '$borderColor'}
                     backgroundColor={isSelected ? '$primarySubtle' : '$surfaceSecondary'}
-                    paddingVertical={12}
+                    paddingVertical="$sm"
                     alignItems="center"
                   >
                     <AppText
@@ -64,7 +83,7 @@ export function ProfileSetupForm({
                       fontWeight={isSelected ? '700' : '500'}
                       color={isSelected ? 'primary' : 'textSecondary'}
                     >
-                      {option === 'male' ? 'Hombre' : option === 'female' ? 'Mujer' : 'Otro'}
+                      {label}
                     </AppText>
                   </YStack>
                 </Pressable>
@@ -74,7 +93,7 @@ export function ProfileSetupForm({
 
           <AppInput placeholder="Edad" keyboardType="numeric" value={age} onChangeText={setAge} />
 
-          <AppButton label="Guardar perfil" onPress={onSubmit} />
+          <AppButton label="Guardar perfil" onPress={handleSubmit} />
         </YStack>
       </ScrollView>
     </SafeAreaView>

@@ -1,28 +1,23 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
-import { useExerciseFiltering } from '../useExerciseFiltering';
+import { useExerciseFiltering } from '@/hooks/application/useExerciseFiltering';
 
 jest.mock('@/utils/exercise', () => ({
   getExerciseName: (ex: { name: string; nameEs?: string }) => ex.nameEs ?? ex.name,
 }));
 
-interface TestExercise {
-  id: string;
-  name: string;
-  nameEs?: string;
-  primaryMuscles?: string[];
-  equipment?: string;
-}
+import type { Exercise } from 'backend/shared/types';
 
-const EXERCISES: TestExercise[] = [
+// Cast so we don't have to define all 30 properties
+const EXERCISES = [
   { id: '1', name: 'Bench Press', nameEs: 'Press de Banca', primaryMuscles: ['chest'], equipment: 'barbell' },
   { id: '2', name: 'Squat', nameEs: 'Sentadilla', primaryMuscles: ['quadriceps'], equipment: 'barbell' },
   { id: '3', name: 'Bicep Curl', nameEs: 'Curl de Bíceps', primaryMuscles: ['biceps'], equipment: 'dumbbell' },
   { id: '4', name: 'Tricep Extension', nameEs: 'Extensión de Tríceps', primaryMuscles: ['triceps'], equipment: 'cable' },
   { id: '5', name: 'Pull Up', nameEs: 'Dominada', primaryMuscles: ['back'], equipment: undefined },
-];
+] as unknown as Exercise[];
 
-function renderHook(exercises: TestExercise[] = EXERCISES) {
+function renderHook(exercises: Exercise[] = EXERCISES) {
   let result: ReturnType<typeof useExerciseFiltering>;
 
   function TestComponent() {
@@ -255,7 +250,7 @@ describe('useExerciseFiltering', () => {
       // Previene: crash al acceder primaryMuscles[0] en ejercicio sin músculos
       const noMuscleExercise = [
         { id: '99', name: 'Mystery', primaryMuscles: undefined, equipment: undefined },
-      ];
+      ] as unknown as Exercise[];
       const { getResult } = renderHook(noMuscleExercise);
 
       expect(getResult().exercisesByMuscle.get('other')).toHaveLength(1);

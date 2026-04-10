@@ -11,8 +11,16 @@ export class DeleteExerciseUseCase {
     }
 
     const inUse = await this.exerciseRepository.isInUse(id);
+
     if (inUse) {
-      throw new ValidationError('No se puede eliminar un ejercicio que está siendo usado en rutinas o entrenamientos', { general: ['En uso'] });
+      if (existing.isCustom) {
+        await this.exerciseRepository.archive(id);
+        return;
+      }
+      throw new ValidationError(
+        'No se puede eliminar un ejercicio del catálogo que está en uso',
+        { general: ['En uso'] },
+      );
     }
 
     await this.exerciseRepository.delete(id);

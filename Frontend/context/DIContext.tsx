@@ -7,36 +7,58 @@ import { runMigrations } from 'backend/infrastructure/database/migrations';
 
 const DIContext = createContext<AppContainer | null>(null);
 
-export const DIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Error screen renders before the theme provider is available (DB init failure
+// happens before any React tree is mounted), so raw hex fallbacks are
+// intentional here — do NOT replace with Tamagui tokens.
+const ERROR_FALLBACK_COLORS = {
+  background:  '#000',
+  title:       '#fff',
+  description: '#999',
+  errorText:   '#ef4444',
+} as const;
+
+interface DIProviderProps {
+  children: React.ReactNode;
+}
+
+export function DIProvider({ children }: DIProviderProps) {
   const [container, setContainer] = useState<AppContainer | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const theme = useTheme();
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
 
     async function initDB() {
       try {
+        // open DB and run migrations
+        // lightweight logs help verify migration execution in Metro/Expo logs
+        // without changing migration behavior
+        // eslint-disable-next-line no-console
+        console.log('[DI] Opening DB and running migrations...');
         const db = await getDatabase();
         await runMigrations(db);
+        // eslint-disable-next-line no-console
+        console.log('[DI] Migrations completed');
+
         const appContainer = createContainer(db);
 
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setContainer(appContainer);
         }
       } catch (e) {
-        console.error('Error inicializando la base de datos:', e);
-        if (isMounted) {
-          setError(e instanceof Error ? e : new Error('Error desconocido en la BD local'));
+        const wrappedError = e instanceof Error ? e : new Error('Error desconocido en la BD local');
+        // Log regardless of mount state — this failure warrants a crash report
+        // eslint-disable-next-line no-console
+        console.error('Error inicializando la base de datos:', wrappedError);
+        if (!controller.signal.aborted) {
+          setError(wrappedError);
         }
       }
     }
 
     initDB();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => controller.abort();
   }, []);
 
   if (error) {
@@ -64,15 +86,15 @@ export const DIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       {children}
     </DIContext.Provider>
   );
-};
+}
 
-export const useDI = () => {
+export function useDI() {
   const context = useContext(DIContext);
   if (!context) {
     throw new Error('useDI debe usarse dentro de un DIProvider');
   }
   return context;
-};
+}
 
 const styles = StyleSheet.create({
   errorContainer: {
@@ -80,22 +102,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#000',
+    backgroundColor: ERROR_FALLBACK_COLORS.background,
   },
   errorTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#fff',
+    color: ERROR_FALLBACK_COLORS.title,
     marginBottom: 8,
   },
   errorDescription: {
     fontSize: 14,
-    color: '#999',
+    color: ERROR_FALLBACK_COLORS.description,
     textAlign: 'center',
     marginBottom: 16,
   },
   errorMessage: {
     fontSize: 12,
-    color: '#ef4444',
+    color: ERROR_FALLBACK_COLORS.errorText,
   },
 });

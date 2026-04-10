@@ -1,44 +1,98 @@
 import { XStack, YStack, useTheme, View } from 'tamagui';
-import React, { useEffect, useState, useMemo } from 'react';
+import React from 'react';
 import { ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ChevronLeft, Trash2, Calendar, Link2 } from 'lucide-react-native';
-import { format, parseISO } from 'date-fns';
 
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { IconButton } from '@/components/ui/AppButton';
-import { CardBase } from '@/components/ui/card';
+import { CardBase } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
-import { useWorkout } from '@/hooks/useWorkout';
+import { useWorkout } from '@/hooks/domain/useWorkout';
+import { useWorkoutDetail } from '@/hooks/domain/useWorkoutDetail';
+import { useWorkoutStats } from '@/hooks/domain/useWorkoutStats';
 import { getExerciseName } from '@/utils/exercise';
+import type { WorkoutExercise } from 'backend/domain/entities/Workout';
+import type { WorkoutSet } from 'backend/domain/entities/WorkoutSet';
 
-interface WorkoutDetailSet {
-  id: string;
-  weight: number;
-  reps: number;
-  isCompleted?: boolean;
-  completed?: boolean;
+const SCROLL_BOTTOM_INSET = 100;
+
+interface SupersetBarProps {
+  firstInGroup: boolean;
+  lastInGroup: boolean;
 }
 
-interface WorkoutDetailExercise {
-  id: string;
-  name?: string;
-  nameEs?: string | null;
-  supersetGroup?: number | null;
-  exercise?: { name: string; nameEs?: string | null };
-  sets: WorkoutDetailSet[];
+function SupersetBar({ firstInGroup, lastInGroup }: SupersetBarProps) {
+  return (
+    <View
+      width={3}
+      backgroundColor="$primary"
+      borderTopLeftRadius={firstInGroup ? 4 : 0}
+      borderTopRightRadius={firstInGroup ? 4 : 0}
+      borderBottomLeftRadius={lastInGroup ? 4 : 0}
+      borderBottomRightRadius={lastInGroup ? 4 : 0}
+      marginRight="$sm"
+    />
+  );
 }
 
-interface WorkoutDetail {
-  id: string;
-  routineName: string | null;
-  startTime: string | null;
-  durationMinutes: number | null;
-  durationSeconds: number | null;
-  totalVolume: number | null;
-  totalSets: number | null;
-  exercises: WorkoutDetailExercise[];
+function SetRow({ set, index }: { set: WorkoutSet; index: number }) {
+  return (
+    <XStack
+      key={set.id}
+      justifyContent="space-between"
+      paddingVertical="$sm"
+      borderBottomWidth={1}
+      borderBottomColor="$borderColor"
+      accessibilityLabel={`Set ${index + 1}: ${set.weight} kg por ${set.reps} repeticiones`}
+    >
+      <AppText variant="bodyMd" color="textSecondary">SET {index + 1}</AppText>
+      <AppText variant="bodyMd">{set.weight} kg x {set.reps}</AppText>
+    </XStack>
+  );
+}
+
+function ExerciseBlock({
+  exercise,
+  index,
+  allExercises,
+}: {
+  exercise: WorkoutExercise;
+  index: number;
+  allExercises: WorkoutExercise[];
+}) {
+  const inSuperset = exercise.supersetGroup != null;
+  const firstInGroup = inSuperset && (index === 0 || allExercises[index - 1]?.supersetGroup !== exercise.supersetGroup);
+  const lastInGroup = inSuperset && (index === allExercises.length - 1 || allExercises[index + 1]?.supersetGroup !== exercise.supersetGroup);
+
+  return (
+    <YStack>
+      {firstInGroup && (
+        <XStack alignItems="center" gap="$xs" marginBottom="$xs">
+          <AppIcon icon={Link2} size={12} color="primary" />
+          <AppText variant="label" color="primary" fontWeight="700">SUPERSET</AppText>
+        </XStack>
+      )}
+      <XStack marginBottom={inSuperset && !lastInGroup ? '$sm' : '$2xl'}>
+        {inSuperset && <SupersetBar firstInGroup={firstInGroup} lastInGroup={lastInGroup} />}
+        <YStack
+          flex={1}
+          accessibilityRole="summary"
+          accessibilityLabel={`Ejercicio: ${getExerciseName({ name: exercise.name ?? '', nameEs: exercise.nameEs })}`}
+        >
+          <XStack justifyContent="space-between" marginBottom="$md">
+            <AppText variant="subtitle" color="primary">
+              {getExerciseName({ name: exercise.name ?? '', nameEs: exercise.nameEs }) || 'Ejercicio'}
+            </AppText>
+          </XStack>
+          {exercise.sets.map((set, setIndex) => (
+            <SetRow key={set.id} set={set} index={setIndex} />
+          ))}
+        </YStack>
+      </XStack>
+    </YStack>
+  );
 }
 
 export default function HistoryDetailScreen() {
@@ -46,70 +100,37 @@ export default function HistoryDetailScreen() {
   const theme = useTheme();
   const workoutService = useWorkout();
 
-  const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const loadWorkout = async () => {
-      try { 
-        setWorkout((await workoutService.getWorkoutById(id as string)) as unknown as WorkoutDetail | null); 
-      } catch (error) { 
-        console.error(error);
-        setLoadError(true); 
-      } finally { 
-        setLoading(false); 
-      }
-    };
-    if (id) loadWorkout();
-  }, [id, workoutService]);
+  const { workout, loading, loadError } = useWorkoutDetail(id);
+  const { totalVolume, totalSets, formattedDate, formattedDuration } = useWorkoutStats(workout);
 
   const handleDelete = () => {
-    if (isDeleting) return;
-    Alert.alert('Eliminar Registro', '¿Estás seguro de que quieres eliminar este entrenamiento del historial?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { 
-        text: 'Eliminar', 
-        style: 'destructive', 
-        onPress: async () => {
-          setIsDeleting(true);
-          try { 
-            await workoutService.deleteWorkout(id as string); 
-            router.back(); 
-          } catch { 
-            Alert.alert('Error', 'No se pudo eliminar');
-            setIsDeleting(false);
-          }
-        }
-      },
-    ]);
+    if (!id) return;
+    Alert.alert(
+      'Eliminar Registro',
+      '¿Estás seguro de que quieres eliminar este entrenamiento del historial?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await workoutService.deleteWorkout(id);
+              router.back();
+            } catch {
+              Alert.alert('Error', 'No se pudo eliminar el entrenamiento');
+            }
+          },
+        },
+      ],
+    );
   };
-
-  const computedVolume = useMemo(() => {
-    if (!workout) return 0;
-    if (workout.totalVolume != null) return workout.totalVolume;
-    return (workout.exercises ?? []).reduce((acc: number, ex) =>
-      acc + (ex.sets ?? []).reduce((sAcc: number, s) =>
-        sAcc + ((s.isCompleted || s.completed ? s.weight * s.reps : 0)), 0), 0);
-  }, [workout]);
-
-  const computedSets = useMemo(() => {
-    if (!workout) return 0;
-    if (workout.totalSets != null) return workout.totalSets;
-    return (workout.exercises ?? []).reduce((acc: number, ex) => acc + (ex.sets?.length ?? 0), 0);
-  }, [workout]);
-
-  const formattedDate = useMemo(() => {
-    if (!workout?.startTime) return '—';
-    try { return format(parseISO(workout.startTime), 'dd/MM/yyyy HH:mm'); } catch { return workout.startTime; }
-  }, [workout?.startTime]);
 
   if (loading) {
     return (
       <Screen>
         <YStack flex={1} alignItems="center" justifyContent="center">
-          <ActivityIndicator size="large" color={theme.primary?.val as string} />
+          <ActivityIndicator size="large" color={theme.primary?.val} />
         </YStack>
       </Screen>
     );
@@ -117,11 +138,19 @@ export default function HistoryDetailScreen() {
 
   if (!workout) {
     return (
-      <Screen>
-        <YStack flex={1} alignItems="center" justifyContent="center">
-          <AppText variant="bodyMd">
+      <Screen safeAreaEdges={['top', 'left', 'right']}>
+        <XStack alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$sm" gap="$sm">
+          <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Volver" />
+        </XStack>
+        <YStack flex={1} alignItems="center" justifyContent="center" padding="$xl">
+          <AppText variant="bodyMd" color="textSecondary">
             {loadError ? 'Error al cargar el entrenamiento' : 'Entrenamiento no encontrado'}
           </AppText>
+          <IconButton
+            icon={<AppIcon icon={ChevronLeft} size={24} color="color" />}
+            onPress={() => router.back()}
+            accessibilityLabel="Volver al historial"
+          />
         </YStack>
       </Screen>
     );
@@ -130,90 +159,44 @@ export default function HistoryDetailScreen() {
   return (
     <Screen safeAreaEdges={['top', 'left', 'right']}>
       <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$md">
-        <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} />
-        <AppText variant="titleSm">{workout.routineName || 'Entrenamiento'}</AppText>
-        <IconButton icon={<AppIcon icon={Trash2} size={20} color="danger" />} onPress={handleDelete} />
+        <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Volver" />
+        <AppText variant="titleSm">Entrenamiento</AppText>
+        <IconButton icon={<AppIcon icon={Trash2} size={20} color="danger" />} onPress={handleDelete} accessibilityLabel="Eliminar entrenamiento" />
       </XStack>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        {/* Summary Card */}
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: SCROLL_BOTTOM_INSET }}
+        showsVerticalScrollIndicator={false}
+      >
         <CardBase padding="$md" marginBottom="$xl">
           <XStack justifyContent="space-between" marginBottom="$lg">
             <XStack alignItems="center" gap="$xs">
               <AppIcon icon={Calendar} size={16} color="textTertiary" />
-              <AppText variant="bodySm" color="textSecondary">
-                {formattedDate}
-              </AppText>
+              <AppText variant="bodySm" color="textSecondary">{formattedDate}</AppText>
             </XStack>
-            <AppText variant="bodySm" color="textTertiary">
-              {workout.durationMinutes != null
-                ? `${workout.durationMinutes} min`
-                : workout.durationSeconds != null
-                  ? `${Math.round(workout.durationSeconds / 60)} min`
-                  : '—'}
-            </AppText>
+            <AppText variant="bodySm" color="textTertiary">{formattedDuration}</AppText>
           </XStack>
 
           <XStack>
             <YStack flex={1}>
               <AppText variant="label" color="textTertiary">VOLUMEN</AppText>
-              <AppText variant="titleSm" marginTop="$xs">
-                {`${computedVolume} kg`}
-              </AppText>
+              <AppText variant="titleSm" marginTop="$xs">{`${totalVolume} kg`}</AppText>
             </YStack>
             <YStack flex={1}>
               <AppText variant="label" color="textTertiary">SETS</AppText>
-              <AppText variant="titleSm" marginTop="$xs">
-                {computedSets}
-              </AppText>
+              <AppText variant="titleSm" marginTop="$xs">{totalSets}</AppText>
             </YStack>
           </XStack>
         </CardBase>
 
-        {/* Exercises List */}
-        {workout.exercises.map((ex, exIdx) => {
-          const exercises = workout.exercises;
-          const inSuperset = ex.supersetGroup != null;
-          const firstInGroup = inSuperset && (exIdx === 0 || exercises[exIdx - 1]?.supersetGroup !== ex.supersetGroup);
-          const lastInGroup = inSuperset && (exIdx === exercises.length - 1 || exercises[exIdx + 1]?.supersetGroup !== ex.supersetGroup);
-
-          return (
-            <YStack key={ex.id}>
-              {firstInGroup && (
-                <XStack alignItems="center" gap="$xs" marginBottom="$xs">
-                  <AppIcon icon={Link2} size={12} color="primary" />
-                  <AppText variant="label" color="primary" fontWeight="700">SUPERSET</AppText>
-                </XStack>
-              )}
-              <XStack marginBottom={inSuperset && !lastInGroup ? '$sm' : '$2xl'}>
-                {inSuperset && (
-                  <View
-                    width={3}
-                    backgroundColor="$primary"
-                    borderTopLeftRadius={firstInGroup ? 4 : 0}
-                    borderTopRightRadius={firstInGroup ? 4 : 0}
-                    borderBottomLeftRadius={lastInGroup ? 4 : 0}
-                    borderBottomRightRadius={lastInGroup ? 4 : 0}
-                    marginRight="$sm"
-                  />
-                )}
-                <YStack flex={1}>
-                  <XStack justifyContent="space-between" marginBottom="$md">
-                    <AppText variant="subtitle" color="primary">{getExerciseName(ex.exercise ?? { name: ex.name ?? '', nameEs: ex.nameEs }) || 'Ejercicio'}</AppText>
-                  </XStack>
-
-                  {ex.sets.map((set, setIndex) => (
-                    <XStack key={set.id} justifyContent="space-between" paddingVertical="$sm" borderBottomWidth={1} borderBottomColor="$borderColor">
-                      <AppText variant="bodyMd" color="textSecondary">SET {setIndex + 1}</AppText>
-                      <AppText variant="bodyMd">{set.weight} kg x {set.reps}</AppText>
-                    </XStack>
-                  ))}
-                </YStack>
-              </XStack>
-            </YStack>
-          );
-        })}
-
+        {workout.exercises.map((ex, exIdx) => (
+          <ExerciseBlock
+            key={ex.id}
+            exercise={ex}
+            index={exIdx}
+            allExercises={workout.exercises}
+          />
+        ))}
       </ScrollView>
     </Screen>
   );

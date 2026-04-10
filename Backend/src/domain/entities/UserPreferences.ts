@@ -7,4 +7,6 @@ export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
   /** Global default rest time in seconds between sets */
   defaultRestSeconds: number;
+  /** Whether tactile feedback is enabled for the app */
+  hapticsEnabled: boolean;
 }

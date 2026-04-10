@@ -1,4 +1,5 @@
-import type { RoutineExercise as RoutineExercisePayload } from 'backend/shared/types';
+import type { RoutineExercise as RoutineExercisePayload, Routine } from 'backend/shared/types';
+import { getExerciseName } from '@/utils/exercise';
 
 /**
  * Parses a rep range string like "8-12" or "10" into { min, max }.
@@ -52,4 +53,27 @@ export function mapStoreExercisesToPayload(
       supersetGroup: e.supersetGroup ?? null,
     };
   });
+}
+
+export function formatRoutineExerciseNames(exercises: Routine['exercises']): string {
+  const segments: string[] = [];
+  let i = 0;
+  while (i < exercises.length) {
+    const ex = exercises[i];
+    const name = ex.exercise ? getExerciseName(ex.exercise) : '';
+    if (ex.supersetGroup != null) {
+      const groupNames = [name];
+      let j = i + 1;
+      while (j < exercises.length && exercises[j].supersetGroup === ex.supersetGroup) {
+        groupNames.push(exercises[j].exercise ? getExerciseName(exercises[j].exercise!) : '');
+        j++;
+      }
+      segments.push(groupNames.filter(Boolean).join(' + '));
+      i = j;
+    } else {
+      if (name) segments.push(name);
+      i++;
+    }
+  }
+  return segments.join(', ');
 }

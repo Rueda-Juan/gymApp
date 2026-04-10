@@ -27,14 +27,18 @@ export interface RecordAllSetsResult {
   newRecords: NewPersonalRecord[];
 }
 
+interface ExerciseProcessResult {
+  volume: number;
+  reps: number;
+  setsCount: number;
+  newRecords: NewPersonalRecord[];
+}
+
 /**
  * RecordAllSetsUseCase — batch-persists all completed sets at workout finish.
  *
  * All writes (sets + exercise_stats + personal_records + daily_stats) run
  * inside a single atomic SQLite transaction to prevent partial state.
- *
- * Idempotency: if the workout has no exercises with completed sets, returns
- * the empty result without touching the DB.
  */
 export class RecordAllSetsUseCase {
   constructor(
@@ -53,7 +57,7 @@ export class RecordAllSetsUseCase {
     }
 
     const totalCompletedSets = exercises.reduce(
-      (acc, ex) => acc + ex.sets.filter(s => s.completed && s.reps > 0).length,
+      (acc, ex) => acc + ex.sets.filter((s) => s.completed && s.reps > 0).length,
       0,
     );
 
@@ -71,51 +75,15 @@ export class RecordAllSetsUseCase {
       let sessionTotalSets = 0;
 
       for (const exercise of exercises) {
-        const exerciseCompletedSets = exercise.sets.filter(
-          s => s.completed && s.reps > 0,
-        );
-
-        if (exerciseCompletedSets.length === 0) continue;
-
-        const existingStats = await this.statsRepo.getExerciseStats(exercise.exerciseId);
-        let rollingStats: ExerciseStats | null = existingStats;
-
-        for (const set of exerciseCompletedSets) {
-          const setWithId: WorkoutSet = {
-            ...set,
-            id: set.id || generateId(),
-            createdAt: set.createdAt ?? now,
-          };
-
-          await this.workoutRepo.addSet(workoutId, exercise.exerciseId, setWithId);
-
-          const brokenRecords = detectBrokenRecords(rollingStats, setWithId);
-          for (const record of brokenRecords) {
-            await this.statsRepo.savePersonalRecord({
-              id: generateId(),
-              exerciseId: exercise.exerciseId,
-              recordType: record.recordType,
-              value: record.value,
-              setId: setWithId.id,
-              date: now,
-            });
-            allNewRecords.push({
-              exerciseId: exercise.exerciseId,
-              recordType: record.recordType,
-              value: record.value,
-            });
-          }
-
-          rollingStats = computeUpdatedExerciseStats(rollingStats, exercise.exerciseId, setWithId);
-
-          sessionTotalVolume += calculateSetVolume(setWithId.weight, setWithId.reps);
-          sessionTotalReps += setWithId.reps;
-          sessionTotalSets += 1;
-        }
-
-        await this.statsRepo.updateExerciseStats(rollingStats!);
+        const result = await this.processExerciseSets(workoutId, exercise, now);
+        
+        sessionTotalVolume += result.volume;
+        sessionTotalReps += result.reps;
+        sessionTotalSets += result.setsCount;
+        allNewRecords.push(...result.newRecords);
       }
 
+      // Update Daily Stats Daily Accumulator
       const currentDailyStats = await this.statsRepo.getDailyStats(dateStr);
       await this.statsRepo.upsertDailyStats({
         date: dateStr,
@@ -135,5 +103,64 @@ export class RecordAllSetsUseCase {
     });
 
     return { newRecords: allNewRecords };
+  }
+
+  private async processExerciseSets(
+    workoutId: string,
+    exercise: WorkoutExercise,
+    now: Date,
+  ): Promise<ExerciseProcessResult> {
+    const exerciseCompletedSets = exercise.sets.filter(
+      (s) => s.completed && s.reps > 0,
+    );
+
+    const result: ExerciseProcessResult = {
+      volume: 0,
+      reps: 0,
+      setsCount: 0,
+      newRecords: [],
+    };
+
+    if (exerciseCompletedSets.length === 0) return result;
+
+    const existingStats = await this.statsRepo.getExerciseStats(exercise.exerciseId);
+    let rollingStats: ExerciseStats | null = existingStats;
+
+    for (const set of exerciseCompletedSets) {
+      const setWithId: WorkoutSet = {
+        ...set,
+        id: set.id || generateId(),
+        createdAt: set.createdAt ?? now,
+      };
+
+      await this.workoutRepo.addSet(workoutId, exercise.exerciseId, setWithId);
+
+      // Evaluate PRs
+      const brokenRecords = detectBrokenRecords(rollingStats, setWithId);
+      for (const record of brokenRecords) {
+        await this.statsRepo.savePersonalRecord({
+          id: generateId(),
+          exerciseId: exercise.exerciseId,
+          recordType: record.recordType,
+          value: record.value,
+          setId: setWithId.id,
+          date: now,
+        });
+        result.newRecords.push({
+          exerciseId: exercise.exerciseId,
+          recordType: record.recordType,
+          value: record.value,
+        });
+      }
+
+      // Roll up stats
+      rollingStats = computeUpdatedExerciseStats(rollingStats, exercise.exerciseId, setWithId);
+      result.volume += calculateSetVolume(setWithId.weight, setWithId.reps);
+      result.reps += setWithId.reps;
+      result.setsCount += 1;
+    }
+
+    await this.statsRepo.updateExerciseStats(rollingStats!);
+    return result;
   }
 }

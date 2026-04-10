@@ -20,6 +20,7 @@ export const AppInput = forwardRef<React.ElementRef<typeof Input>, AppInputProps
       fontSize={isCompact ? FONT_SCALE.sizes[3] : FONT_SCALE.sizes[4]}
       fontWeight={FONT_SCALE.weights.regular}
       paddingHorizontal="$sm"
+      accessibilityLabel={props.accessibilityLabel ?? props.placeholder}
       {...props}
     />
   );

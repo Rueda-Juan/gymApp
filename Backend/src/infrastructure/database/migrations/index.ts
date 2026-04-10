@@ -12,7 +12,6 @@ import * as m009 from './009_personal_records';
 import * as m010 from './010_daily_stats';
 import * as m011 from './011_add_rir_and_rep_range';
 import * as m012 from './012_add_anatomical_svg_to_exercises';
-import * as m013 from './013_seed_wger_exercises';
 import * as m014 from './014_add_set_type';
 import * as m015 from './015_add_workout_exercise_notes';
 import * as m016 from './016_add_rest_seconds';
@@ -21,11 +20,10 @@ import * as m018 from './018_body_weight_log';
 import * as m019 from './019_superset_groups';
 import * as m020 from './020_add_max_reps';
 import * as m021 from './021_primary_muscles_array';
-import * as m022 from './022_fix_exercise_muscles';
-import * as m023 from './023_fix_more_exercise_muscles';
-import * as m024 from './024_fix_exercise_muscles_batch3';
-import * as m025 from './025_fix_exercise_muscles_batch4';
-import * as m026 from './026_add_name_es_column';
+import * as m027 from './027_add_exercise_key';
+import * as m029 from './029_add_custom_exercise_fields';
+import * as m030 from './030_add_exercise_load_cache';
+import * as m031 from './031_remove_wger_seed_exercises';
 
 interface Migration {
   version: number;
@@ -39,10 +37,9 @@ interface Migration {
 const migrations: Migration[] = [
   m001, m002, m003, m004, m005,
   m006, m007, m008, m009, m010,
-  m011, m012, m013, m014, m015,
+  m011, m012, m014, m015,
   m016, m017, m018, m019, m020,
-  m021, m022, m023, m024, m025,
-  m026
+  m021, m027, m029, m030, m031,
 ];
 
 /**

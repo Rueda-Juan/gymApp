@@ -1,107 +1,195 @@
-import React from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Button as TamaguiButton, ButtonProps, XStack, useTheme } from 'tamagui';
 import { AppText } from './AppText';
-import { ActivityIndicator, GestureResponderEvent, Platform } from 'react-native';
-import { ThemeColorKey } from '@/theme/types';
-import * as Haptics from 'expo-haptics';
+import { ActivityIndicator, GestureResponderEvent } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { FONT_SCALE } from '@/tamagui.config';
+import { triggerLightHaptic } from '@/utils/haptics';
+import { usePressScale } from '@/hooks/ui/usePressScale';
 
-type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'danger';
-type ButtonSize = 'sm' | 'md' | 'lg';
+const BUTTON_CONFIG = {
+  primary: {
+    bg: '$color.primary',
+    textColor: '$color.onPrimary',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  ghost: {
+    bg: 'transparent',
+    textColor: '$color.primary',
+    borderWidth: 1,
+    borderColor: '$color.primary',
+  },
+};
 
-interface AppButtonProps extends Omit<ButtonProps, 'variant' | 'icon'> {
-  appVariant?: ButtonVariant;
-  size?: ButtonSize;
+const SIZE_CONFIG = {
+  lg: { height: 56, borderRadius: 16, fontSize: FONT_SCALE.sizes[4] },
+  sm: { height: 36, borderRadius: 8, fontSize: FONT_SCALE.sizes[2] },
+};
+
+export function AppButton({
+  appVariant = 'primary',
+  size = 'lg',
+  label,
+  icon,
+  iconRight,
+  children,
+  fullWidth = true,
+  loading = false,
+  thermalBreathing = false,
+  disabled,
+  onPress,
+  flex,
+  ...rest
+}: ButtonProps & {
+  appVariant?: keyof typeof BUTTON_CONFIG;
+  size?: keyof typeof SIZE_CONFIG;
   label?: string;
   icon?: React.ReactNode;
+  iconRight?: React.ReactNode;
   children?: React.ReactNode;
   fullWidth?: boolean;
   loading?: boolean;
-}
-
-const BUTTON_CONFIG: Record<ButtonVariant, { bg: string; textColor: ThemeColorKey; borderWidth: number; borderColor: string }> = {
-  primary: { bg: '$primary', textColor: 'white', borderWidth: 0, borderColor: 'transparent' },
-  outline: { bg: 'transparent', textColor: 'primary', borderWidth: 1, borderColor: '$borderColor' },
-  ghost: { bg: '$surfaceSecondary', textColor: 'color', borderWidth: 0, borderColor: 'transparent' },
-  danger: { bg: '$danger', textColor: 'color', borderWidth: 0, borderColor: 'transparent' },
-};
-
-const SIZE_CONFIG: Record<ButtonSize, { height: number; borderRadius: number; fontSize: number }> = {
-  sm: { height: 36, borderRadius: 8, fontSize: FONT_SCALE.sizes[2] },
-  md: { height: 44, borderRadius: 12, fontSize: FONT_SCALE.sizes[3] },
-  lg: { height: 56, borderRadius: 16, fontSize: FONT_SCALE.sizes[4] },
-};
-
-export function AppButton({ appVariant = 'primary', size = 'lg', label, icon, children, fullWidth = true, loading = false,
-  disabled, ...props }: AppButtonProps) {
-  const styleToken = BUTTON_CONFIG[appVariant];
-  const sizeToken = SIZE_CONFIG[size];
+  thermalBreathing?: boolean;
+  flex?: number;
+}) {
   const isDisabled = disabled || loading;
   const theme = useTheme();
+  const { handlePressIn, handlePressOut, animatedScale } = usePressScale(isDisabled);
+  const breathingOpacity = useSharedValue(1);
+  const styleToken = BUTTON_CONFIG[appVariant];
+  const sizeToken = SIZE_CONFIG[size];
   const spinnerColor = theme[styleToken.textColor]?.val ?? theme.color?.val;
   const leftElement = loading
     ? <ActivityIndicator size="small" color={spinnerColor} />
     : icon;
-  const handlePress = (e: GestureResponderEvent) => {
+
+  const handlePress = useCallback((e: GestureResponderEvent) => {
     if (!isDisabled) {
-      if (Platform.OS !== 'web') {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-      props.onPress?.(e);
+      triggerLightHaptic();
+      onPress?.(e);
     }
-  };
+  }, [isDisabled, onPress]);
+
+  useEffect(() => {
+    if (thermalBreathing && !isDisabled) {
+      breathingOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.8, { duration: 1500 }),
+          withTiming(1, { duration: 1500 })
+        ),
+        -1,
+        true
+      );
+    } else {
+      breathingOpacity.value = 1;
+    }
+  }, [thermalBreathing, isDisabled, breathingOpacity]);
+
+  const breathingStyle = useAnimatedStyle(() => ({
+    opacity: thermalBreathing && !isDisabled ? breathingOpacity.value : 1
+  }));
+
+  // testID para testing robusto
+  const testID = rest.testID || 'AppButton';
+
+  const outerStyle = [
+    fullWidth ? { width: '100%' } : undefined,
+    animatedScale,
+    breathingStyle,
+    flex ? { flex: flex as any } : undefined,
+  ];
 
   return (
-    <TamaguiButton
-      disabled={isDisabled}
-      pointerEvents={isDisabled ? 'none' : 'auto'}
-      onPress={handlePress}
-      height={sizeToken.height}
-      borderRadius={sizeToken.borderRadius}
-      borderWidth={styleToken.borderWidth}
-      borderColor={styleToken.borderColor}
-      backgroundColor={styleToken.bg}
-      width={fullWidth ? '100%' : undefined}
-      opacity={isDisabled ? 0.6 : 1}
-      {...props}
-    >
-      <XStack alignItems="center" justifyContent="center" gap="$sm">
-        {leftElement && (
-          <XStack minWidth={20} alignItems="center" justifyContent="center">
-            {leftElement}
-          </XStack>
-        )}
-        {label ? (
-          <AppText variant="bodyMd"
-            color={styleToken.textColor}
-            style={{ fontSize: sizeToken.fontSize, fontWeight: '700' }}>
-            {label}
-          </AppText>
-        ) : (
-          loading ? null : children
-        )}
-      </XStack>
-    </TamaguiButton>
+    <Animated.View style={outerStyle}>
+      <TamaguiButton
+        disabled={isDisabled}
+        pointerEvents={isDisabled ? 'none' : 'auto'}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        height={sizeToken.height}
+        borderRadius={sizeToken.borderRadius}
+        borderWidth={styleToken.borderWidth}
+        borderColor={styleToken.borderColor}
+        backgroundColor={styleToken.bg}
+        width={fullWidth ? '100%' : undefined}
+        flex={flex}
+        opacity={isDisabled ? 0.6 : 1}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ disabled: isDisabled }}
+        testID={testID}
+        {...rest}
+      >
+        <XStack alignItems="center" justifyContent="center" gap="$sm" flex={1} minWidth={0}>
+          {leftElement && (
+            <XStack minWidth={20} alignItems="center" justifyContent="center">
+              {leftElement}
+            </XStack>
+          )}
+          {label ? (
+            <AppText
+              variant="bodyMd"
+              // Mejorar tipado: AppText debe aceptar string | ThemeColorKey
+              color={styleToken.textColor as any}
+              style={{ fontSize: sizeToken.fontSize, fontWeight: '700' }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              testID="AppButtonLabel"
+            >
+              {label}
+            </AppText>
+          ) : (
+            loading ? null : children
+          )}
+          {iconRight && !loading && (
+            <XStack minWidth={20} alignItems="center" justifyContent="center">
+              {iconRight}
+            </XStack>
+          )}
+        </XStack>
+      </TamaguiButton>
+    </Animated.View>
   );
 }
 
-interface IconButtonProps extends Omit<ButtonProps, 'icon'> {
+type IconButtonProps = Omit<ButtonProps, 'icon'> & {
   icon: React.ReactNode;
   size?: number;
   backgroundColor?: string;
-}
+  accessibilityLabel: string;
+  disabled?: boolean;
+};
 
-export function IconButton({ icon, size = 40, backgroundColor = '$surfaceSecondary', ...props }: IconButtonProps) {
+export function IconButton({
+  icon,
+  size = 40,
+  backgroundColor = '$surfaceSecondary',
+  accessibilityLabel,
+  disabled,
+  ...props
+}: IconButtonProps) {
+  const { handlePressIn, handlePressOut, animatedScale } = usePressScale(!!disabled);
+
   return (
-    <TamaguiButton
-      {...props}
-      width={size}
-      height={size}
-      borderRadius={size / 2}
-      backgroundColor={backgroundColor}
-      padding={0}
-    >
-      {icon}
-    </TamaguiButton>
+    <Animated.View style={animatedScale}>
+      <TamaguiButton
+        {...props}
+        disabled={disabled}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        width={size}
+        height={size}
+        borderRadius={typeof size === 'number' ? size / 2 : 20}
+        backgroundColor={backgroundColor}
+        padding={0}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+      >
+        {icon}
+      </TamaguiButton>
+    </Animated.View>
   );
 }
+

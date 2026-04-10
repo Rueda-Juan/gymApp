@@ -3,17 +3,17 @@ import { Text as TamaguiText, TextProps as TamaguiTextProps } from 'tamagui';
 import { ThemeColorKey } from '@/theme/types';
 import { FONT_SCALE } from '@/tamagui.config';
 
-type TextVariant = 'titleLg' | 'titleMd' | 'titleSm' | 'subtitle' | 'bodyLg' | 'bodyMd' | 'bodySm' | 'label';
+export type AppTextVariant = 'titleLg' | 'titleMd' | 'titleSm' | 'subtitle' | 'bodyLg' | 'bodyMd' | 'bodySm' | 'label';
 
 interface AppTextProps extends Omit<TamaguiTextProps, 'color'> {
-  variant?: TextVariant;
+  variant?: AppTextVariant;
   color?: ThemeColorKey;
   tabularNums?: boolean;
 }
 
-const variantMapping: Record<TextVariant, {
+const variantMapping: Record<AppTextVariant, {
   fontSize: number;
-  fontWeight: string;
+  fontWeight: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
   letterSpacing?: number;
   textTransform?: 'none' | 'capitalize' | 'uppercase' | 'lowercase';
 }> = {
