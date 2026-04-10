@@ -136,10 +136,7 @@ export default function StatsScreen() {
             Volumen Semanal
           </AppText>
           <WeeklyVolumeBarChart
-            data={(stats?.weeklyStats || [])
-              .map((item) => ({ x: item.date, y: Number(item.totalVolume) || 0 }))
-              .filter((p) => !isNaN(p.y))
-            }
+            data={weeklyChartData}
             xTickFormat={(t) => {
               try {
                 return format(new Date(t), 'EE');

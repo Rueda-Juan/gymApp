@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Switch, Alert, ActivityIndicator } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { User, Bell, Lock, CircleHelp, Info, LogOut, Moon, Hourglass, Wind } from 'lucide-react-native';
+import useRestTimer from '@/hooks/ui/useRestTimer';
 
 import { Screen } from '@/components/ui/Screen';
 import { CardBase } from '@/components/ui/Card';
@@ -18,12 +19,6 @@ import { router } from 'expo-router';
 import { ROUTES } from '@/constants/routes';
 
 const REST_TIMER_PRESETS = [60, 90, 120, 180] as const;
-const MIN_REST_TIMER_SECONDS = 15;
-const MAX_REST_TIMER_SECONDS = 600;
-
-function clampRestTimerSeconds(seconds: number) {
-  return Math.min(MAX_REST_TIMER_SECONDS, Math.max(MIN_REST_TIMER_SECONDS, seconds));
-}
 
 
 const THEME_OPTIONS = ['system', 'light', 'dark'] as const;
@@ -35,8 +30,6 @@ const MOTION_LABELS: Record<typeof MOTION_OPTIONS[number], string> = { system: '
 export default function SettingsScreen() {
   const availablePlates = useSettings(s => s.availablePlates);
   const defaultBarWeight = useSettings(s => s.defaultBarWeight);
-  const restTimerSeconds = useSettings(s => s.restTimerSeconds);
-  const setRestTimerSeconds = useSettings(s => s.setRestTimerSeconds);
   const themeMode = useSettings(s => s.themeMode);
   const setThemeMode = useSettings(s => s.setThemeMode);
   const motionPreference = useSettings(s => s.motionPreference);
@@ -48,44 +41,8 @@ export default function SettingsScreen() {
   const resetUser = useUser(s => s.resetUser);
   const { wipeDatabase } = useDI();
   const theme = useTheme();
-  const restTimerDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [restTimerInput, setRestTimerInput] = React.useState(() => String(restTimerSeconds));
   const [resetLoading, setResetLoading] = React.useState(false);
-
-  React.useEffect(() => {
-    setRestTimerInput(String(restTimerSeconds));
-  }, [restTimerSeconds]);
-
-  React.useEffect(() => {
-    return () => {
-      if (restTimerDebounceRef.current) {
-        clearTimeout(restTimerDebounceRef.current);
-      }
-    };
-  }, []);
-
-  const applyRestTimerSeconds = React.useCallback((seconds: number) => {
-    const clampedSeconds = clampRestTimerSeconds(seconds);
-    setRestTimerSeconds(clampedSeconds);
-    setRestTimerInput(String(clampedSeconds));
-  }, [setRestTimerSeconds]);
-
-  const handleRestTimerInputChange = React.useCallback((value: string) => {
-    setRestTimerInput(value);
-
-    if (restTimerDebounceRef.current) {
-      clearTimeout(restTimerDebounceRef.current);
-    }
-
-    restTimerDebounceRef.current = setTimeout(() => {
-      const nextSeconds = Number(value);
-      if (!Number.isNaN(nextSeconds) && nextSeconds > 0) {
-        const clampedSeconds = clampRestTimerSeconds(nextSeconds);
-        setRestTimerSeconds(clampedSeconds);
-        setRestTimerInput(String(clampedSeconds));
-      }
-    }, 600);
-  }, [setRestTimerSeconds]);
+  const { restTimerInput, setRestTimerInput, restTimerSeconds, applyRestTimerSeconds, handleRestTimerInputChange } = useRestTimer();
 
   return (
     <Screen scroll safeAreaEdges={['top', 'left', 'right']}>

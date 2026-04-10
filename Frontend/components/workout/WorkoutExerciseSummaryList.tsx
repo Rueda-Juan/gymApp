@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { XStack, YStack, View } from 'tamagui';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import AnimatedViewShared from '@/components/ui/AnimatedViewShared';
 import { Star, Link2 } from 'lucide-react-native';
 
 import { CardBase } from '@/components/ui/Card';
@@ -110,10 +111,9 @@ export function WorkoutExerciseSummaryList({ exercises, newRecords }: WorkoutExe
                 <YStack flex={1} style={animatedCardShadow}>
                   <CardBase padding="$md" {...elevation.flat}>
                     <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
-                      {/* @ts-ignore - sharedTransitionTag exists at runtime */}
-                      <Animated.View sharedTransitionTag={`ex-name-${ex.exerciseId}`}>
+                      <AnimatedViewShared sharedTransitionTag={`ex-name-${ex.exerciseId}`}>
                         <AppText variant="titleSm">{exerciseName}</AppText>
-                      </Animated.View>
+                      </AnimatedViewShared>
                       {exercisePRs.length > 0 && (
                         <YStack alignItems="flex-end" gap={2}>
                           <XStack

@@ -1,6 +1,6 @@
 import React from 'react';
-import Animated from 'react-native-reanimated';
 import { Pressable, ScrollView } from 'react-native';
+import AnimatedViewShared from '@/components/ui/AnimatedViewShared';
 import { XStack, YStack } from 'tamagui';
 import { useBottomBarHeightContext } from '@/context/BottomBarHeightContext';
 import { MoreVertical, Plus, SkipForward, TrendingUp } from 'lucide-react-native';
@@ -74,12 +74,11 @@ export function ActiveWorkoutExerciseDetail({
         paddingBottom="$sm"
       >
         <YStack flex={1} marginRight="$md">
-          {/* @ts-ignore - sharedTransitionTag exists at runtime but might be missing in @types/react-native-reanimated for SDK 54 */}
-          <Animated.View sharedTransitionTag={`ex-name-${exercise.exerciseId}`}>
+          <AnimatedViewShared sharedTransitionTag={`ex-name-${exercise.exerciseId}`}>
             <AppText variant="titleMd" numberOfLines={1}>
               {getExerciseName(exercise)}
             </AppText>
-          </Animated.View>
+          </AnimatedViewShared>
           <AppText variant="bodySm" color="textSecondary" marginTop="$xs">
             {completedSets}/{totalSets} sets completados
           </AppText>

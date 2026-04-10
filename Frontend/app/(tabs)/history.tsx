@@ -208,7 +208,7 @@ export default function HistoryScreen() {
           keyExtractor={item => item.id}
           stickySectionHeadersEnabled={false}
           showsVerticalScrollIndicator={false}
-          removeClippedSubviews={true}
+          removeClippedSubviews={false}
           maxToRenderPerBatch={10}
           windowSize={10}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: LIST_BOTTOM_PADDING }}

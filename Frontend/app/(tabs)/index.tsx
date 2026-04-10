@@ -15,6 +15,10 @@ import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { PressableCard } from '@/components/ui/PressableCard';
+import HomeHeader from '@/components/home/HomeHeader';
+import HomeCTA from '@/components/home/HomeCTA';
+import LastWorkoutCard from '@/components/home/LastWorkoutCard';
+import AnimatedViewShared from '@/components/ui/AnimatedViewShared';
 import { ContentReveal } from '@/components/feedback/ContentReveal';
 import { DashboardSkeleton } from '@/components/layout/Loaders';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
@@ -46,10 +50,8 @@ export default function HomeScreen() {
 
   const navigateToStats = useCallback(() => router.push(ROUTES.STATS), []);
 
-  // Animated.View sometimes receives a runtime-only prop `sharedTransitionTag`.
-  // Create a typed alias to avoid using // @ts-ignore in JSX.
-  type WithSharedTransition = { sharedTransitionTag?: string } & React.ComponentProps<typeof Animated.View>;
-  const AnimatedViewShared = Animated.View as unknown as React.ComponentType<WithSharedTransition>;
+  // `AnimatedViewShared` is a typed alias for Animated.View that accepts
+  // the runtime-only `sharedTransitionTag` prop.
 
   if (!user?.name) {
     return <ProfileSetupForm onComplete={setUser} />;
@@ -60,55 +62,16 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Header */}
-        <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingTop="$xl" paddingBottom="$lg">
-          <Pressable onPress={() => router.push(ROUTES.SETTINGS_PROFILE)} accessibilityLabel="Editar perfil">
-            <YStack>
-              <AppText variant="bodyLg" color="textSecondary">Bienvenido</AppText>
-              <AppText variant="titleLg">{user?.name}</AppText>
-            </YStack>
-          </Pressable>
-        </XStack>
+        <HomeHeader userName={user?.name} onEditProfile={() => router.push(ROUTES.SETTINGS_PROFILE)} />
 
         {/* CTA */}
         <Animated.View entering={FadeInDown.springify()}>
-          <YStack paddingHorizontal="$xl" paddingBottom="$xl">
-            {isActive ? (
-              <Pressable
-                onPress={() => router.push(ROUTES.ACTIVE_WORKOUT)}
-                accessibilityLabel="Continuar entrenamiento en curso"
-              >
-                <YStack
-                  backgroundColor="$primarySubtle"
-                  borderWidth={1.5}
-                  borderColor="$primary"
-                  height={CTA_HEIGHT}
-                  borderRadius="$lg"
-                  borderCurve="continuous"
-                  paddingHorizontal="$lg"
-                  justifyContent="center"
-                >
-                  <XStack alignItems="center" gap="$sm">
-                    <AppIcon icon={Activity} color="primary" size={20} />
-                    <AppText variant="bodySm" color="primary" fontWeight="700">
-                      ENTRENAMIENTO EN CURSO
-                    </AppText>
-                  </XStack>
-                  <AppText variant="titleSm" color="primary" marginTop="$xs">
-                    Continuar {routineName}
-                  </AppText>
-                </YStack>
-              </Pressable>
-            ) : (
-              <AppButton
-                appVariant="primary"
-                backgroundColor="$primary"
-                label="Nueva Sesión"
-                icon={<AppIcon icon={Play} color="surface" fill="surface" size={24} />}
-                onPress={() => router.push(ROUTES.ROUTINES_FROM_HOME)}
-                thermalBreathing
-              />
-            )}
-          </YStack>
+          <HomeCTA
+            isActive={isActive}
+            routineName={routineName}
+            onContinue={() => router.push(ROUTES.ACTIVE_WORKOUT)}
+            onNewSession={() => router.push(ROUTES.ROUTINES_FROM_HOME)}
+          />
         </Animated.View>
 
         <ContentReveal
@@ -170,49 +133,11 @@ export default function HomeScreen() {
           {/* Last Workout */}
           {lastWorkout && (
             <Animated.View entering={FadeInDown.delay(Math.min(STAGGER_DELAY_MS * 3, MAX_STAGGER_MS)).springify()}>
-              <YStack gap="$md" marginBottom="$xl" paddingHorizontal="$xl" marginTop="$xl">
-                <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
-                  <AppText variant="titleSm">Último Entrenamiento</AppText>
-                  <Pressable onPress={() => router.push(ROUTES.HISTORY)} accessibilityLabel="Ver historial completo">
-                    <AppText variant="bodyMd" color="primary" fontWeight="600">Ver todo</AppText>
-                  </Pressable>
-                </XStack>
-
-                <PressableCard
-                  onPress={() => router.push(`/(workouts)/summary?id=${lastWorkout.id}`)}
-                  accessibilityLabel="Ver último entrenamiento"
-                >
-                  <Card padding="$none" {...elevation.flat}>
-                    <XStack justifyContent="space-between" alignItems="center" padding="$md" borderBottomWidth={1} borderBottomColor="$borderColor">
-                      <YStack>
-                        <AppText variant="subtitle">Sesión de Entrenamiento</AppText>
-                        <AppText variant="bodySm" color="textTertiary" marginTop="$xs">
-                          {formatDistanceToNow(new Date(lastWorkout.date), { addSuffix: true, locale: es })}
-                        </AppText>
-                      </YStack>
-                      <Badge label="ENTRENADO" variant="success" />
-                    </XStack>
-                    <XStack justifyContent="space-between" padding="$md">
-                      <YStack gap="$xs">
-                        <XStack alignItems="center" gap="$xs">
-                          <AppIcon icon={Clock} color="textSecondary" strokeWidth={2} size={16} />
-                          <AppText variant="bodySm" color="textSecondary">
-                            {Math.floor(lastWorkout.durationSeconds / 60)}
-                          </AppText>
-                          <AppText variant="bodySm" color="textTertiary"> min</AppText>
-                        </XStack>
-                        <XStack alignItems="center" gap="$xs">
-                          <AppIcon icon={Dumbbell} color="textSecondary" size={16} />
-                          <AppText variant="bodySm" color="textSecondary">
-                            {lastWorkout.exercises.length}
-                          </AppText>
-                          <AppText variant="bodySm" color="textTertiary"> ejercicios</AppText>
-                        </XStack>
-                      </YStack>
-                    </XStack>
-                  </Card>
-                </PressableCard>
-              </YStack>
+              <LastWorkoutCard
+                lastWorkout={lastWorkout}
+                onViewAll={() => router.push(ROUTES.HISTORY)}
+                onViewLast={() => router.push(`/(workouts)/summary?id=${lastWorkout.id}`)}
+              />
             </Animated.View>
           )}
 

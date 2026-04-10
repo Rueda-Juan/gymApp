@@ -76,7 +76,7 @@ export function ContentReveal({ loading, skeleton, children }: ContentRevealProp
         {children}
       </Animated.View>
       {showSkeleton && (
-        <Animated.View style={[StyleSheet.absoluteFill, skeletonAnimatedStyle]} pointerEvents="none">
+        <Animated.View style={[StyleSheet.absoluteFillObject, skeletonAnimatedStyle]} pointerEvents="none">
           {skeleton}
         </Animated.View>
       )}

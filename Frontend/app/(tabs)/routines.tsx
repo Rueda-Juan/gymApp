@@ -1,11 +1,11 @@
 import { XStack, YStack } from 'tamagui';
 import React, { useState, useCallback, useMemo } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '@/components/ui/Screen';
-import { Plus, Play, Dumbbell } from 'lucide-react-native';
-import { CardBase } from '@/components/ui/Card';
+import { Plus, Dumbbell } from 'lucide-react-native';
+import RoutineCard from '@/components/cards/RoutineCard';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/Badge';
@@ -22,11 +22,8 @@ import { ContentReveal } from '@/components/feedback/ContentReveal';
 import { EmptyStateIcon } from '@/components/feedback/EmptyStateIcon';
 import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
 import { SearchBar } from '@/components/ui/SearchBar';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { animatedCardShadow, elevation } from '@/constants/elevation';
 import Toast from 'react-native-toast-message';
 import type { Routine, Workout } from 'backend/shared/types';
-import { formatRoutineExerciseNames } from '@/utils/routine';
 
 interface RoutineWithLastPerformed extends Routine {
   lastPerformed: string | null;
@@ -113,57 +110,12 @@ export default function RoutinesScreen() {
   }), [routines, search, activeFilter]);
 
   const renderRoutineCard = useCallback(({ item: routine, index }: { item: RoutineWithLastPerformed; index: number }) => (
-    <Animated.View
-      entering={FadeInDown.delay(Math.min(index * 100, MAX_ANIMATION_DELAY_MS)).springify()}
-      style={animatedCardShadow}
-    >
-      <CardBase gap="$md" padding="$md" {...elevation.flat}>
-        <XStack justifyContent="space-between" alignItems="stretch" flex={1}>
-          <Pressable
-            style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}
-            onPress={() => router.push(`/routine/${routine.id}`)}
-            accessibilityRole="button"
-            accessibilityLabel={`Abrir rutina ${routine.name}`}
-          >
-            <YStack padding="$md" gap="$xs" flex={1}>
-              <AppText variant="label" color="textTertiary">
-                {routine.lastPerformed ? `Última vez: ${routine.lastPerformed}` : 'Aún sin datos'}
-              </AppText>
-              <AppText variant="titleMd" numberOfLines={1}>{routine.name}</AppText>
-              <AppText variant="bodyMd" color="textSecondary" numberOfLines={2}>
-                {formatRoutineExerciseNames(routine.exercises)}
-              </AppText>
-              {routine.muscles && routine.muscles.length > 0 && (
-                <XStack flexWrap="wrap" gap="$sm" marginTop="$sm">
-                  {routine.muscles.map((muscle: string) => (
-                    <Badge key={muscle} label={muscle} variant="primary" />
-                  ))}
-                </XStack>
-              )}
-            </YStack>
-          </Pressable>
-
-          <YStack
-            width={64}
-            alignSelf="stretch"
-            alignItems="center"
-            justifyContent="center"
-            borderLeftWidth={1}
-            borderLeftColor="$borderColor"
-          >
-            <Pressable
-              onPress={() => handleStartWorkout(routine)}
-              accessibilityLabel={`Iniciar ${routine.name}`}
-              accessibilityRole="button"
-            >
-              <YStack width={48} height={48} alignItems="center" justifyContent="center">
-                <AppIcon icon={Play} color="primary" size={24} />
-              </YStack>
-            </Pressable>
-          </YStack>
-        </XStack>
-      </CardBase>
-    </Animated.View>
+    <RoutineCard
+      routine={routine}
+      index={index}
+      onOpen={() => router.push(`/routine/${routine.id}`)}
+      onStart={handleStartWorkout}
+    />
   ), [handleStartWorkout]);
 
   const renderEmptyList = useCallback(() => (

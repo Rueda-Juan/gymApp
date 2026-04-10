@@ -9,10 +9,9 @@ export function logEvent(name: string, payload?: Record<string, any>) {
     console.debug(`[instr] ${name}`, payload ?? {});
 
     // If an analytics SDK is available globally, call it
-    // @ts-ignore
-    if (typeof globalThis?.analytics?.logEvent === 'function') {
-      // @ts-ignore
-      globalThis.analytics.logEvent(name, payload ?? {});
+    const analytics = (globalThis as any)?.analytics;
+    if (analytics && typeof analytics.logEvent === 'function') {
+      analytics.logEvent(name, payload ?? {});
     }
   } catch (err) {
     // eslint-disable-next-line no-console

@@ -1,6 +1,6 @@
 import { XStack, YStack } from 'tamagui';
 import React from 'react';
-import Animated from 'react-native-reanimated';
+import AnimatedViewShared from '@/components/ui/AnimatedViewShared';
 import { Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, X, Trash2, Clock, Dumbbell } from 'lucide-react-native';
@@ -53,12 +53,11 @@ export function RoutineFormTemplate({ title, routineId, isSaving, onSave, onDele
         />
         <YStack flex={1} alignItems="center" paddingHorizontal="$md">
           {routineId ? (
-            /* @ts-ignore - sharedTransitionTag exists at runtime but might be missing in @types/react-native-reanimated for SDK 54 */
-            <Animated.View sharedTransitionTag={`routine-title-${routineId}`}>
+            <AnimatedViewShared sharedTransitionTag={`routine-title-${routineId}`}>
               <AppText variant="titleSm" numberOfLines={1}>
                 {title}
               </AppText>
-            </Animated.View>
+            </AnimatedViewShared>
           ) : (
             <AppText variant="titleSm" numberOfLines={1}>
               {title}

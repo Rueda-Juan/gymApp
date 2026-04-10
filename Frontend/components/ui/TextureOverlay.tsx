@@ -10,16 +10,16 @@ export function TextureOverlay() {
   const theme = useTheme();
   
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 9999 }]}>
+    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { zIndex: 9999 }]}>
       <Image
         source={{ uri: NOISE_PATTERN }}
-        style={[StyleSheet.absoluteFill, { opacity: 0.08 }]}
+        style={[StyleSheet.absoluteFillObject, { opacity: 0.08 }]}
         resizeMode="repeat"
       />
       {/* Sutil viñeta industrial para dar profundidad al "Acero" */}
       <View 
         style={[
-          StyleSheet.absoluteFill, 
+          StyleSheet.absoluteFillObject, 
           { 
             backgroundColor: 'transparent',
             borderWidth: 0,
