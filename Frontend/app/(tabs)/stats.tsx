@@ -29,6 +29,8 @@ const STRENGTH_HISTORY_LIMIT = 20;
 
 const SheetItemSeparator = () => <YStack height={1} backgroundColor="$borderColor" />;
 
+type WeeklyChartPoint = { x: string; y: number };
+
 export default function StatsScreen() {
   const theme = useTheme();
   const exerciseService = useExercises();
@@ -96,7 +98,7 @@ export default function StatsScreen() {
     </Pressable>
   ), [selectStrengthExercise, strengthExercise]);
 
-  const weeklyChartData = useMemo(() => (stats?.weeklyStats || [])
+  const weeklyChartData = useMemo<WeeklyChartPoint[]>(() => (stats?.weeklyStats || [])
     .map((item) => ({ x: item.date, y: Number(item.totalVolume) || 0 }))
     .filter((p) => !isNaN(p.y)), [stats?.weeklyStats]);
 

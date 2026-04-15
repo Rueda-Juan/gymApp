@@ -12,6 +12,7 @@ export interface WorkoutSetState {
   isCompleted: boolean;
   type: 'warmup' | 'normal' | 'failure' | 'dropset';
   rir?: number | null;
+  partialReps?: boolean;
 }
 
 export interface WorkoutExerciseState {

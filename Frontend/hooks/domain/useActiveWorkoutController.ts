@@ -154,6 +154,16 @@ export function useActiveWorkoutController({
   const handleFinish = useCallback(async () => {
     if (!workoutId || isFinishing) return;
     setIsFinishing(true);
+
+    const hasAnyCompletedSets = exercises.some(ex => ex.sets.some(s => s.isCompleted));
+    if (!hasAnyCompletedSets) {
+      cancelWorkout();
+      expoRouter.replace(ROUTES.TABS_HOME);
+      Toast.show({ type: 'info', text1: 'Sesión descartada', text2: 'No se guardó el entrenamiento porque estaba vacío.' });
+      setIsFinishing(false);
+      return;
+    }
+
     try {
       const result = await workoutService.recordAllSets(workoutId, exercises);
       await workoutService.finishWorkout(workoutId);

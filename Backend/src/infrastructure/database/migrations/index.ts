@@ -24,6 +24,7 @@ import * as m027 from './027_add_exercise_key';
 import * as m029 from './029_add_custom_exercise_fields';
 import * as m030 from './030_add_exercise_load_cache';
 import * as m031 from './031_remove_wger_seed_exercises';
+import * as m032 from './032_add_partial_reps';
 
 interface Migration {
   version: number;
@@ -39,7 +40,7 @@ const migrations: Migration[] = [
   m006, m007, m008, m009, m010,
   m011, m012, m014, m015,
   m016, m017, m018, m019, m020,
-  m021, m027, m029, m030, m031,
+  m021, m027, m029, m030, m031, m032,
 ];
 
 /**

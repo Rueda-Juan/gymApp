@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useWorkout } from '@/hooks/domain/useWorkout';
 import Toast from 'react-native-toast-message';
+import type { MuscleGroup } from 'backend/domain/valueObjects/MuscleGroup';
+
+export type { MuscleGroup };
 
 const PREVIOUS_HISTORY_LIMIT = 200;
 
@@ -16,6 +19,8 @@ export interface SummaryExercise {
   exerciseId: string;
   name?: string;
   nameEs?: string | null;
+  primaryMuscles?: MuscleGroup[];
+  secondaryMuscles?: MuscleGroup[];
   supersetGroup?: number | null;
   sets: SummarySet[];
 }

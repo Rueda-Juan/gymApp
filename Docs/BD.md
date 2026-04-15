@@ -1,695 +1,282 @@
-# Especificación Técnica – Base de Datos
+````md
+# Base de Datos (BD) — Versión Simplificada
 
-## Aplicación Personal de Entrenamiento (estilo Hevy)
+## Objetivo
+Base de datos local **offline-first** para registrar entrenamientos, rutinas, progreso y estadísticas rápidas.
 
----
-
-## 1. Objetivo del sistema de base de datos
-
-El sistema de base de datos debe permitir:
-
-- Registrar entrenamientos de hipertrofia
-- Guardar sets, peso, repeticiones y tiempo
-- Almacenar rutinas reutilizables
-- Mantener estadísticas precalculadas
-- Registrar progreso histórico
-- Permitir backups completos
-- Funcionar completamente **offline**
-
-### Optimizaciones objetivo
-
-| Criterio                         | Prioridad |
-| -------------------------------- | --------- |
-| Lecturas rápidas en estadísticas | 🔴 Alta   |
-| Gran cantidad de sets históricos | 🔴 Alta   |
-| Bajo consumo de almacenamiento   | 🟡 Media  |
-| Baja latencia                    | 🔴 Alta   |
+**Motor:** SQLite (`expo-sqlite`)
 
 ---
 
-## 2. Motor de base de datos
-
-**SQLite** — Motor seleccionado.
-
-| Razón                                   | Detalle                          |
-| --------------------------------------- | -------------------------------- |
-| Offline nativo                          | Sin necesidad de servidor        |
-| Integrado en Android                    | Disponible out-of-the-box        |
-| Extremadamente rápido para apps locales | Operaciones en microsegundos     |
-| Soporte completo SQL                    | Índices, triggers, transacciones |
-| Ideal para datasets pequeños a medianos | Hasta ~1 GB sin problemas        |
-
-### Librería de acceso
-
-En React Native / Expo:
-
-```text
-expo-sqlite
-```
-
-> [!NOTE]
-> **Alternativas evaluadas**: `react-native-sqlite-storage`, `WatermelonDB` (si el dataset creciera mucho). Para este proyecto **`expo-sqlite` es suficiente**.
-
-### Configuración inicial
+## Configuración inicial
 
 ```sql
--- Integridad referencial (obligatorio)
 PRAGMA foreign_keys = ON;
-
--- Mejor rendimiento de escritura/lectura concurrente
 PRAGMA journal_mode = WAL;
-```
+````
+
+* `foreign_keys`: asegura integridad referencial
+* `WAL`: mejora rendimiento de lectura/escritura
 
 ---
 
-## 3. Modelo de datos conceptual
+## Tablas principales
 
-El sistema tiene tres grupos principales de entidades:
+### exercises
 
-```mermaid
-graph TD
-    subgraph "Datos Estructurales"
-        A[exercises]
-    end
-
-    subgraph "Datos del Usuario"
-        B[routines]
-        C[routine_exercises]
-        D[workouts]
-        E[workout_exercises]
-        F[sets]
-    end
-
-    subgraph "Datos Derivados"
-        G[exercise_stats]
-        H[personal_records]
-        I[daily_stats]
-        J[exercise_load_cache]
-    end
-
-    A --> C
-    B --> C
-    B --> D
-    A --> E
-    D --> E
-    D --> F
-    A --> F
-    A --> G
-    A --> H
-    F --> H
-    D --> I
-    A --> J
-```
-
----
-
-## 4. Diagrama Entidad-Relación (ERD)
-
-```mermaid
-erDiagram
-    exercises ||--o{ routine_exercises : "incluido en"
-    routines ||--|{ routine_exercises : "contiene"
-    routines ||--o{ workouts : "instancia de"
-    exercises ||--o{ workout_exercises : "ejecutado en"
-    workouts ||--|{ workout_exercises : "contiene"
-    workouts ||--|{ sets : "registra"
-    exercises ||--o{ sets : "tiene"
-    exercises ||--o| exercise_stats : "estadísticas"
-    exercises ||--o| exercise_load_cache : "recomendación"
-    exercises ||--o{ personal_records : "récords"
-    sets ||--o{ personal_records : "origen"
-    user_preferences ||--o| user_preferences : "config"
-    body_weight_log ||--o| body_weight_log : "peso"
-
-    exercises {
-        text id PK
-        text name
-        text name_es
-        text primary_muscles
-        text secondary_muscles
-        text equipment
-        text exercise_type
-        text load_type
-        real weight_increment
-        text animation_path
-        text description
-        text anatomical_representation_svg
-        text exercise_key
-        boolean is_custom
-        text created_by
-        boolean is_archived
-    }
-
-    routines {
-        text id PK
-        text name
-        text notes
-        datetime created_at
-    }
-
-    routine_exercises {
-        text id PK
-        text routine_id FK
-        text exercise_id FK
-        integer order_index
-        integer target_sets
-        integer min_reps
-        integer max_reps
-        integer rest_seconds
-        integer superset_group
-    }
-
-    workouts {
-        text id PK
-        text routine_id FK
-        datetime date
-        integer duration_seconds
-        text notes
-    }
-
-    workout_exercises {
-        text id PK
-        text workout_id FK
-        text exercise_id FK
-        integer order_index
-        boolean skipped
-        text notes
-        integer superset_group
-    }
-
-    sets {
-        text id PK
-        text workout_id FK
-        text exercise_id FK
-        integer set_number
-        real weight
-        integer reps
-        text set_type
-        integer rir
-        integer rest_seconds
-        integer duration_seconds
-        boolean completed
-        boolean skipped
-        datetime created_at
-    }
-
-    exercise_stats {
-        text exercise_id PK
-        real max_weight
-        real max_volume
-        real max_reps
-        real estimated_1rm
-        integer total_sets
-        integer total_reps
-        real total_volume
-        datetime last_performed
-        datetime updated_at
-    }
-
-    exercise_load_cache {
-        text exercise_id PK
-        real recommended_weight
-        text basis
-        real last_weight
-        integer last_reps
-        integer sessions_analyzed
-        datetime updated_at
-    }
-
-    personal_records {
-        text id PK
-        text exercise_id FK
-        text record_type
-        real value
-        text set_id FK
-        datetime date
-    }
-
-    daily_stats {
-        date date PK
-        real total_volume
-        integer total_sets
-        integer total_reps
-        integer workout_count
-        integer total_duration
-    }
-
-    user_preferences {
-        text key PK
-        text value
-        datetime updated_at
-    }
-
-    body_weight_log {
-        text id PK
-        real weight
-        datetime date
-        text notes
-        datetime created_at
-    }
-```
-
----
-
-## 5. Tablas principales — DDL
-
-### 5.1 `exercises`
-
-Contiene la base de datos de ejercicios disponibles.
-
-- **Propósito**: Catálogo de ejercicios con metadatos
-- **Filas estimadas**: ~200–500
-- **Índices**: PK auto-indexado
+Catálogo de ejercicios.
 
 ```sql
 CREATE TABLE exercises (
-    id               TEXT PRIMARY KEY,
-    name             TEXT NOT NULL,
-    name_es          TEXT,
-    primary_muscles  TEXT NOT NULL, -- JSON array
-    secondary_muscles TEXT,        -- JSON array
-    equipment        TEXT,
-    exercise_type    TEXT DEFAULT 'compound',
-    weight_increment REAL DEFAULT 2.5,
-    animation_path   TEXT,         -- ruta relativa al archivo WebP local
-    description      TEXT,
-    anatomical_representation_svg TEXT,
-    exercise_key     TEXT NOT NULL UNIQUE,
-    is_custom        BOOLEAN DEFAULT 0,
-    created_by       TEXT,
-    load_type        TEXT DEFAULT 'weighted',
-    is_archived      BOOLEAN DEFAULT 0
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  primary_muscles TEXT NOT NULL,
+  secondary_muscles TEXT,
+  equipment TEXT,
+  exercise_type TEXT DEFAULT 'compound',
+  load_type TEXT DEFAULT 'weighted',
+  description TEXT,
+  animation_path TEXT,
+  is_custom BOOLEAN DEFAULT 0,
+  is_archived BOOLEAN DEFAULT 0
 );
 ```
 
-> [!NOTE]
-> `animation_path` referencia archivos en `assets/exercises/animations/`. Las animaciones **no** se almacenan en la BD para evitar inflarla.
-
 ---
 
-### 5.2 `routines`
+### routines
 
-Plantillas de entrenamiento reutilizables.
-
-- **Propósito**: Definición de rutinas guardadas por el usuario
-- **Filas estimadas**: ~10–50
+Rutinas guardadas.
 
 ```sql
 CREATE TABLE routines (
-    id         TEXT PRIMARY KEY,
-    name       TEXT NOT NULL,
-    notes      TEXT,
-    created_at DATETIME DEFAULT (datetime('now'))
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  notes TEXT,
+  created_at DATETIME DEFAULT (datetime('now'))
 );
 ```
 
 ---
 
-### 5.3 `routine_exercises`
+### routine_exercises
 
-Ejercicios incluidos en una rutina (tabla de unión 1:N).
-
-- **Propósito**: Relación entre rutina y ejercicios con orden y metas
-- **Índices**: `routine_id`, `exercise_id`
+Ejercicios dentro de una rutina.
 
 ```sql
 CREATE TABLE routine_exercises (
-    id           TEXT PRIMARY KEY,
-    routine_id   TEXT NOT NULL,
-    exercise_id  TEXT NOT NULL,
-    order_index  INTEGER NOT NULL DEFAULT 0,
-    target_sets  INTEGER,
-    min_reps     INTEGER,
-    max_reps     INTEGER,
-    rest_seconds   INTEGER DEFAULT 90,
-    superset_group INTEGER,
+  id TEXT PRIMARY KEY,
+  routine_id TEXT NOT NULL,
+  exercise_id TEXT NOT NULL,
+  order_index INTEGER NOT NULL,
+  target_sets INTEGER,
+  min_reps INTEGER,
+  max_reps INTEGER,
+  rest_seconds INTEGER DEFAULT 90,
 
-    FOREIGN KEY (routine_id)  REFERENCES routines(id)  ON DELETE CASCADE,
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
+  FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE CASCADE,
+  FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
 );
-
-CREATE INDEX idx_routine_exercises_routine  ON routine_exercises(routine_id);
-CREATE INDEX idx_routine_exercises_exercise ON routine_exercises(exercise_id);
 ```
 
 ---
 
-### 5.4 `workouts`
+### workouts
 
-Instancias reales de entrenamiento.
-
-- **Propósito**: Registro de sesiones de entrenamiento
-- **Filas estimadas**: ~2 000
-- **Índices**: `date`, `routine_id`
+Sesiones realizadas.
 
 ```sql
 CREATE TABLE workouts (
-    id               TEXT PRIMARY KEY,
-    routine_id       TEXT,
-    date             DATETIME NOT NULL DEFAULT (datetime('now')),
-    duration_seconds INTEGER DEFAULT 0,
-    notes            TEXT,
+  id TEXT PRIMARY KEY,
+  routine_id TEXT,
+  date DATETIME DEFAULT (datetime('now')),
+  duration_seconds INTEGER DEFAULT 0,
+  notes TEXT,
 
-    FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE SET NULL
+  FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE SET NULL
 );
-
-CREATE INDEX idx_workouts_date       ON workouts(date);
-CREATE INDEX idx_workouts_routine_id ON workouts(routine_id);
 ```
 
 ---
 
-### 5.5 `workout_exercises`
+### workout_exercises
 
-Ejercicios dentro de un entrenamiento activo.
-
-- **Propósito**: Relación entre workout y ejercicios ejecutados
-- **Índices**: `workout_id`, `exercise_id`
+Ejercicios ejecutados en una sesión.
 
 ```sql
 CREATE TABLE workout_exercises (
-    id          TEXT PRIMARY KEY,
-    workout_id  TEXT NOT NULL,
-    exercise_id TEXT NOT NULL,
-    order_index INTEGER NOT NULL DEFAULT 0,
-    skipped     BOOLEAN DEFAULT 0,
-    notes       TEXT,
-    superset_group INTEGER,
+  id TEXT PRIMARY KEY,
+  workout_id TEXT NOT NULL,
+  exercise_id TEXT NOT NULL,
+  order_index INTEGER NOT NULL,
+  skipped BOOLEAN DEFAULT 0,
 
-    FOREIGN KEY (workout_id)  REFERENCES workouts(id)  ON DELETE CASCADE,
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
+  FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
+  FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
 );
-
-CREATE INDEX idx_workout_exercises_workout  ON workout_exercises(workout_id);
-CREATE INDEX idx_workout_exercises_exercise ON workout_exercises(exercise_id);
 ```
 
 ---
 
-### 5.6 `sets`
+### sets
 
-Registro individual de cada set realizado.
-
-- **Propósito**: Dato atómico de cada serie (peso, reps, tiempo)
-- **Filas estimadas**: ~50 000
-- **Índices**: `exercise_id`, `workout_id`, `created_at`
+Unidad principal del sistema.
 
 ```sql
 CREATE TABLE sets (
-    id               TEXT PRIMARY KEY,
-    workout_id       TEXT NOT NULL,
-    exercise_id      TEXT NOT NULL,
-    set_number       INTEGER NOT NULL,
-    weight           REAL DEFAULT 0 CHECK (weight >= 0),
-    reps             INTEGER DEFAULT 0 CHECK (reps >= 0),
-    set_type         TEXT DEFAULT 'normal' CHECK (set_type IN ('normal','warmup','dropset','failure')),
-    rir              INTEGER CHECK (rir >= 0 AND rir <= 10),
-    rest_seconds     INTEGER,
-    duration_seconds INTEGER DEFAULT 0,   -- para ejercicios por tiempo
-    completed        BOOLEAN DEFAULT 0,
-    skipped          BOOLEAN DEFAULT 0,
-    created_at       DATETIME DEFAULT (datetime('now')),
+  id TEXT PRIMARY KEY,
+  workout_id TEXT NOT NULL,
+  exercise_id TEXT NOT NULL,
+  set_number INTEGER NOT NULL,
+  weight REAL DEFAULT 0,
+  reps INTEGER DEFAULT 0,
+  rir INTEGER,
+  duration_seconds INTEGER DEFAULT 0,
+  completed BOOLEAN DEFAULT 0,
+  created_at DATETIME DEFAULT (datetime('now')),
 
-    FOREIGN KEY (workout_id)  REFERENCES workouts(id)  ON DELETE CASCADE,
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
+  FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
+  FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE RESTRICT
 );
-
-CREATE INDEX idx_sets_exercise   ON sets(exercise_id);
-CREATE INDEX idx_sets_workout    ON sets(workout_id);
-CREATE INDEX idx_sets_created_at ON sets(created_at);
 ```
 
 ---
 
-## 6. Tablas de estadísticas precalculadas
+## Tablas de estadísticas
 
-> [!IMPORTANT]
-> Estas tablas evitan cálculos pesados en tiempo real. Se actualizan mediante lógica de aplicación cada vez que se inserta, modifica o borra un set.
+### exercise_stats
 
-### 6.1 `exercise_stats`
-
-Estadísticas agregadas por ejercicio.
-
-- **Propósito**: Cache de métricas por ejercicio
-- **Clave**: `exercise_id` (1:1 con `exercises`)
+Cache rápida por ejercicio.
 
 ```sql
 CREATE TABLE exercise_stats (
-    exercise_id    TEXT PRIMARY KEY,
-    max_weight     REAL DEFAULT 0,
-    max_volume     REAL DEFAULT 0,       -- max(weight * reps) en un solo set
-    max_reps       INTEGER DEFAULT 0,
-    estimated_1rm  REAL DEFAULT 0,
-    total_sets     INTEGER DEFAULT 0,
-    total_reps     INTEGER DEFAULT 0,
-    total_volume   REAL DEFAULT 0,       -- sum(weight * reps) total
-    last_performed DATETIME,
-    updated_at     DATETIME DEFAULT (datetime('now')),
+  exercise_id TEXT PRIMARY KEY,
+  max_weight REAL DEFAULT 0,
+  estimated_1rm REAL DEFAULT 0,
+  total_sets INTEGER DEFAULT 0,
+  total_reps INTEGER DEFAULT 0,
+  total_volume REAL DEFAULT 0,
+  last_performed DATETIME,
 
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+  FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
 );
 ```
 
 ---
 
-### 6.1.1 `exercise_load_cache`
-
-Caché de recomendación de peso (Progressive Overload o peso sugerido).
-
-- **Propósito**: Evitar recalcular peso sugerido en tiempo real en workflows críticos.
-- **Clave**: `exercise_id` (1:1 con `exercises`)
-
-```sql
-CREATE TABLE exercise_load_cache (
-    exercise_id        TEXT PRIMARY KEY,
-    recommended_weight REAL NOT NULL,
-    basis              TEXT NOT NULL CHECK(basis IN ('progressive_overload', 'last_set', 'deload', 'failure_recovery', 'default')),
-    last_weight        REAL,
-    last_reps          INTEGER,
-    sessions_analyzed  INTEGER NOT NULL DEFAULT 0,
-    updated_at         DATETIME NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
-);
-```
-
----
-
-### 6.2 `personal_records`
-
-Récords personales categorizados.
-
-- **Propósito**: Historial de PRs por tipo
-- **Índices**: `exercise_id`, `record_type`
+### personal_records
 
 ```sql
 CREATE TABLE personal_records (
-    id           TEXT PRIMARY KEY,
-    exercise_id  TEXT NOT NULL,
-    record_type  TEXT NOT NULL CHECK (record_type IN ('max_weight', 'max_reps', 'max_volume', 'estimated_1rm')),
-    value        REAL NOT NULL,
-    set_id       TEXT,
-    date         DATETIME NOT NULL DEFAULT (datetime('now')),
+  id TEXT PRIMARY KEY,
+  exercise_id TEXT NOT NULL,
+  record_type TEXT NOT NULL,
+  value REAL NOT NULL,
+  date DATETIME DEFAULT (datetime('now')),
 
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE,
-    FOREIGN KEY (set_id)      REFERENCES sets(id)      ON DELETE SET NULL
+  FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
 );
-
-CREATE INDEX idx_personal_records_exercise ON personal_records(exercise_id);
-CREATE INDEX idx_personal_records_type     ON personal_records(record_type);
 ```
 
 ---
 
-### 6.3 `daily_stats`
-
-Estadísticas diarias de entrenamiento.
-
-- **Propósito**: Resumen por día para gráficos y métricas rápidas
-- **Clave**: `date`
+### daily_stats
 
 ```sql
 CREATE TABLE daily_stats (
-    date           DATE PRIMARY KEY,
-    total_volume   REAL DEFAULT 0,
-    total_sets     INTEGER DEFAULT 0,
-    total_reps     INTEGER DEFAULT 0,
-    workout_count  INTEGER DEFAULT 0,
-    total_duration INTEGER DEFAULT 0     -- en segundos
+  date DATE PRIMARY KEY,
+  total_volume REAL DEFAULT 0,
+  total_sets INTEGER DEFAULT 0,
+  total_reps INTEGER DEFAULT 0,
+  workout_count INTEGER DEFAULT 0,
+  total_duration INTEGER DEFAULT 0
 );
 ```
 
 ---
 
-### 6.4 `user_preferences`
+## Tablas auxiliares
 
-Configuraciones del usuario en formato llave-valor.
-
-- **Propósito**: Guardar preferencias globales
-- **Filas estimadas**: < 10
+### user_preferences
 
 ```sql
 CREATE TABLE user_preferences (
-    key          TEXT PRIMARY KEY,
-    value        TEXT NOT NULL,
-    updated_at   DATETIME DEFAULT (datetime('now'))
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
 );
 ```
 
 ---
 
-### 6.5 `body_weight_log`
-
-Historial de peso corporal del usuario.
-
-- **Propósito**: Seguir el progreso de ganancia/pérdida de peso
+### body_weight_log
 
 ```sql
 CREATE TABLE body_weight_log (
-    id           TEXT PRIMARY KEY,
-    weight       REAL NOT NULL,
-    date         DATE NOT NULL,
-    notes        TEXT,
-    created_at   DATETIME DEFAULT (datetime('now'))
-);
-
-CREATE INDEX idx_body_weight_date ON body_weight_log(date);
-```
-
----
-
-## 7. Estrategia de índices
-
-Los índices están diseñados para optimizar las consultas más frecuentes:
-
-| Índice                           | Tabla               | Columna(s)    | Justificación                           |
-| -------------------------------- | ------------------- | ------------- | --------------------------------------- |
-| `idx_sets_exercise`              | `sets`              | `exercise_id` | Consultas de historial por ejercicio    |
-| `idx_sets_workout`               | `sets`              | `workout_id`  | Carga de sets de un workout             |
-| `idx_sets_created_at`            | `sets`              | `created_at`  | Consultas por rango de fechas           |
-| `idx_workouts_date`              | `workouts`          | `date`        | Listado cronológico de entrenamientos   |
-| `idx_workouts_routine_id`        | `workouts`          | `routine_id`  | Filtrar workouts por rutina             |
-| `idx_routine_exercises_routine`  | `routine_exercises` | `routine_id`  | Carga de ejercicios de una rutina       |
-| `idx_routine_exercises_exercise` | `routine_exercises` | `exercise_id` | Buscar en qué rutinas está un ejercicio |
-| `idx_workout_exercises_workout`  | `workout_exercises` | `workout_id`  | Carga de ejercicios de un workout       |
-| `idx_workout_exercises_exercise` | `workout_exercises` | `exercise_id` | Historial de un ejercicio por workout   |
-| `idx_personal_records_exercise`  | `personal_records`  | `exercise_id` | PRs por ejercicio                       |
-| `idx_personal_records_type`      | `personal_records`  | `record_type` | Filtrar por tipo de récord              |
-
-> [!TIP]
-> Los Primary Keys en SQLite generan índice automáticamente. No se crean índices adicionales en tablas pequeñas (`exercises`, `routines`) para evitar overhead de escritura innecesario.
-
----
-
-## 8. Estrategia de migraciones
-
-### Tabla de control de versiones
-
-```sql
-CREATE TABLE schema_migrations (
-    version    INTEGER PRIMARY KEY,
-    applied_at DATETIME DEFAULT (datetime('now'))
+  id TEXT PRIMARY KEY,
+  weight REAL NOT NULL,
+  date DATE NOT NULL,
+  notes TEXT
 );
 ```
 
-### Flujo de migración
+---
 
-```mermaid
-flowchart LR
-    A["App se inicia"] --> B{"¿Existe BD?"}
-    B -- No --> C["Crear BD + migración inicial"]
-    B -- Sí --> D{"¿schema_migrations\n está actualizada?"}
-    D -- Sí --> E["Continuar"]
-    D -- No --> F["Ejecutar migraciones\npendientes en orden"]
-    F --> E
-    C --> E
-```
-
-### Reglas de migración
-
-1. Cada cambio estructural crea una nueva migración
-2. La versión se incrementa secuencialmente
-3. Las migraciones se ejecutan automáticamente al iniciar la app
-4. Cada migración **debe ser idempotente** y envuelta en transacción
-
-### Ejemplo: Migración inicial
+## Índices importantes
 
 ```sql
--- migrations/001_initial_schema.sql
-BEGIN;
-
--- Todas las tablas definidas en la sección 5 y 6
--- ...
-
-INSERT INTO schema_migrations (version) VALUES (1);
-
-COMMIT;
+CREATE INDEX idx_sets_exercise ON sets(exercise_id);
+CREATE INDEX idx_sets_workout ON sets(workout_id);
+CREATE INDEX idx_workouts_date ON workouts(date);
+CREATE INDEX idx_routine_exercises_routine ON routine_exercises(routine_id);
 ```
 
 ---
 
-## 9. Flujo de actualización de estadísticas
+## Flujo de guardado
 
-Cuando se **guarda un set**:
-
-```mermaid
-flowchart TD
-    A["Guardar set"] --> B["INSERT en sets"]
-    B --> C["UPDATE exercise_stats"]
-    C --> D{"¿Nuevo PR?"}
-    D -- Sí --> E["INSERT en personal_records"]
-    D -- No --> F["Continuar"]
-    E --> F
-    F --> G["UPSERT en daily_stats"]
+```text
+Guardar set
+   ↓
+INSERT sets
+   ↓
+UPDATE exercise_stats
+   ↓
+Verificar PR
+   ↓
+UPSERT daily_stats
 ```
 
-> [!WARNING]
-> Todo este flujo **debe ejecutarse dentro de una transacción** para garantizar consistencia. Si algún paso falla, se debe hacer rollback completo.
+Todo dentro de **una transacción**.
 
 ---
 
-## 10. Integridad de datos
+## Tamaño estimado
 
-### Constraints aplicados
+```text
+exercises:      < 100 KB
+routines:       < 10 KB
+workouts:       ~ 200 KB
+sets:           ~ 5 MB
+stats + PRs:    ~ 1 MB
 
-| Tipo            | Aplicación                                                  |
-| --------------- | ----------------------------------------------------------- |
-| **PRIMARY KEY** | Toda tabla tiene PK definida                                |
-| **FOREIGN KEY** | Todas las relaciones usan FK explícitas                     |
-| **NOT NULL**    | Columnas requeridas marcadas                                |
-| **CHECK**       | `weight >= 0`, `reps >= 0`, `record_type IN (...)`          |
-| **DEFAULT**     | Timestamps, valores numéricos iniciales                     |
-| **ON DELETE**   | `CASCADE` para datos hijos, `SET NULL` para refs opcionales |
+TOTAL:          10–30 MB
+```
 
-### Estrategia de borrado
-
-Cuando se borra un **workout**:
-
-1. Borrar `sets` asociados (CASCADE)
-2. Borrar `workout_exercises` asociados (CASCADE)
-3. Recalcular `exercise_stats` para cada ejercicio afectado
-4. Recalcular `daily_stats` del día correspondiente
-
-> [!CAUTION]
-> El borrado y recálculo **debe ejecutarse en una sola transacción** para evitar datos inconsistentes.
+SQLite maneja este tamaño sin problemas.
 
 ---
 
-## 11. Estrategia de backups
+## Backups
 
-Los backups se realizan en formato **JSON** y se suben a **Google Drive**.
-
-### Estructura del backup
+Formato JSON:
 
 ```json
 {
   "version": 1,
-  "created_at": "2025-01-15T10:30:00Z",
   "data": {
     "exercises": [],
     "routines": [],
-    "routine_exercises": [],
     "workouts": [],
-    "workout_exercises": [],
     "sets": [],
     "exercise_stats": [],
     "personal_records": [],
@@ -698,63 +285,24 @@ Los backups se realizan en formato **JSON** y se suben a **Google Drive**.
 }
 ```
 
-### Política de retención
-
-- **1 backup actual** + **1 backup anterior**
-- Subida a Google Drive API
-
 ---
 
-## 12. Estimaciones de tamaño
+## Idea clave
 
-| Tabla               | Filas estimadas | Tamaño estimado |
-| ------------------- | --------------- | --------------- |
-| `exercises`         | ~200–500        | < 100 KB        |
-| `routines`          | ~10–50          | < 10 KB         |
-| `routine_exercises` | ~50–250         | < 50 KB         |
-| `workouts`          | ~2 000          | ~200 KB         |
-| `workout_exercises` | ~10 000         | ~1 MB           |
-| `sets`              | ~50 000         | ~5 MB           |
-| `exercise_stats`    | ~200–500        | < 100 KB        |
-| `personal_records`  | ~1 000–5 000    | ~500 KB         |
-| `daily_stats`       | ~700–1 500      | < 200 KB        |
-| **Total estimado**  |                 | **10–30 MB**    |
-
-> [!TIP]
-> SQLite maneja bases de datos de este tamaño sin ningún problema, incluso con años de uso intensivo.
-
----
-
-## 13. Optimización futura
-
-Si el historial crece significativamente:
-
-```sql
--- Tabla de estadísticas mensuales para agregaciones rápidas
-CREATE TABLE monthly_stats (
-    year           INTEGER NOT NULL,
-    month          INTEGER NOT NULL,
-    total_volume   REAL DEFAULT 0,
-    total_sets     INTEGER DEFAULT 0,
-    total_reps     INTEGER DEFAULT 0,
-    workout_count  INTEGER DEFAULT 0,
-    total_duration INTEGER DEFAULT 0,
-
-    PRIMARY KEY (year, month)
-);
-```
-
----
-
-## 14. Almacenamiento de animaciones
+La tabla más importante es:
 
 ```text
-assets/
-└── exercises/
-    └── animations/
-        ├── bench_press.webp
-        ├── squat.webp
-        └── deadlift.webp
+sets
 ```
 
-La BD solo almacena la **ruta relativa** en `exercises.animation_path`. Las animaciones se sirven desde el filesystem para evitar inflar la base de datos.
+Todo lo demás deriva de ahí:
+
+* historial
+* progreso
+* PRs
+* estadísticas
+* gráficos
+* sugerencia de peso
+
+```
+```

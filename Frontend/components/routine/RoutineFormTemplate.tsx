@@ -16,6 +16,98 @@ import { useRoutineEditor } from '@/hooks/domain/useRoutineEditor';
 import { useSettings } from '@/store/useSettings';
 import { calculateEstimatedDurationMinutes } from '@/utils/routine';
 import { ROUTES } from '@/constants/routes';
+// Header extraído
+function RoutineFormHeader({ title, routineId, isSaving, onSave }: Pick<RoutineFormTemplateProps, 'title' | 'routineId' | 'isSaving' | 'onSave'>) {
+  return (
+    <XStack
+      justifyContent="space-between"
+      alignItems="center"
+      paddingHorizontal="$lg"
+      height={56}
+      borderBottomWidth={1}
+      borderBottomColor="$borderColor"
+    >
+      <IconButton
+        icon={<AppIcon icon={X} size={24} color="textSecondary" />}
+        onPress={() => router.back()}
+        accessibilityLabel="Cerrar"
+      />
+      <YStack flex={1} alignItems="center" paddingHorizontal="$md">
+        {routineId ? (
+          <AnimatedViewShared sharedTransitionTag={`routine-title-${routineId}`}>
+            <AppText variant="titleSm" numberOfLines={1}>
+              {title}
+            </AppText>
+          </AnimatedViewShared>
+        ) : (
+          <AppText variant="titleSm" numberOfLines={1}>
+            {title}
+          </AppText>
+        )}
+      </YStack>
+      <AppButton
+        appVariant="primary"
+        size="sm"
+        label={isSaving ? "Guardando..." : "Guardar"}
+        fullWidth={false}
+        onPress={onSave}
+        disabled={isSaving}
+        loading={isSaving}
+        thermalBreathing
+      />
+    </XStack>
+  );
+}
+
+// Footer extraído
+function RoutineFormFooter({ onDelete }: Pick<RoutineFormTemplateProps, 'onDelete'>) {
+  return (
+    <YStack>
+      <Pressable
+        onPress={() => router.push(ROUTES.EXERCISE_BROWSER_ROUTINE)}
+        accessibilityRole="button"
+        accessibilityLabel="Agregar ejercicio"
+      >
+        <YStack
+          borderWidth={1.5}
+          borderColor="$borderStrong"
+          borderStyle="dashed"
+          borderRadius="$lg"
+          padding="$lg"
+          alignItems="center"
+          justifyContent="center"
+          gap="$sm"
+          marginTop="$lg"
+        >
+          <AppIcon icon={Plus} size={24} color="primary" />
+          <AppText variant="bodyMd" color="primary" fontWeight="600">
+            Agregar ejercicio
+          </AppText>
+        </YStack>
+      </Pressable>
+      {onDelete && (
+        <Pressable
+          onPress={onDelete}
+          accessibilityRole="button"
+          accessibilityLabel="Eliminar rutina"
+        >
+          <XStack
+            alignItems="center"
+            justifyContent="center"
+            marginTop="$3xl"
+            padding="$md"
+            gap="$sm"
+          >
+            <AppIcon icon={Trash2} size={18} color="error" />
+            <AppText variant="bodyMd" color="error" fontWeight="600">
+              Eliminar Rutina
+            </AppText>
+          </XStack>
+        </Pressable>
+      )}
+    </YStack>
+  );
+}
 
 export interface RoutineFormTemplateProps {
   title: string;
@@ -37,45 +129,7 @@ export function RoutineFormTemplate({ title, routineId, isSaving, onSave, onDele
 
   return (
     <Screen safeAreaEdges={['top', 'left', 'right']}>
-      {/* Header */}
-      <XStack
-        justifyContent="space-between"
-        alignItems="center"
-        paddingHorizontal="$lg"
-        height={56}
-        borderBottomWidth={1}
-        borderBottomColor="$borderColor"
-      >
-        <IconButton
-          icon={<AppIcon icon={X} size={24} color="color" />}
-          onPress={() => router.back()}
-          accessibilityLabel="Cerrar"
-        />
-        <YStack flex={1} alignItems="center" paddingHorizontal="$md">
-          {routineId ? (
-            <AnimatedViewShared sharedTransitionTag={`routine-title-${routineId}`}>
-              <AppText variant="titleSm" numberOfLines={1}>
-                {title}
-              </AppText>
-            </AnimatedViewShared>
-          ) : (
-            <AppText variant="titleSm" numberOfLines={1}>
-              {title}
-            </AppText>
-          )}
-        </YStack>
-        <AppButton
-          appVariant="primary"
-          size="sm"
-          label={isSaving ? "Guardando..." : "Guardar"}
-          fullWidth={false}
-          onPress={onSave}
-          disabled={isSaving}
-          loading={isSaving}
-          thermalBreathing
-        />
-      </XStack>
-
+      <RoutineFormHeader title={title} routineId={routineId} isSaving={isSaving} onSave={onSave} />
       <RoutineEditorList
         exercises={exercises}
         onReorder={reorderExercises}
@@ -111,10 +165,6 @@ export function RoutineFormTemplate({ title, routineId, isSaving, onSave, onDele
                   </XStack>
                 </XStack>
               )}
-            </CardBase>
-
-            {/* Notas Card */}
-            <CardBase padding="$lg" marginBottom="$2xl">
               <AppText variant="label" color="textSecondary" marginBottom="$sm">
                 Notas (Opcional)
               </AppText>
@@ -123,64 +173,16 @@ export function RoutineFormTemplate({ title, routineId, isSaving, onSave, onDele
                 onChangeText={setNotes}
                 placeholder="Escribe alguna nota..."
                 multiline
+                scrollEnabled={true}
                 minHeight={80}
                 maxHeight={160}
                 textAlignVertical="top"
               />
             </CardBase>
-
             <AppText variant="titleSm" marginBottom="$md">Ejercicios</AppText>
           </YStack>
         }
-        listFooterComponent={
-          <YStack>
-            {/* Agregar Ejercicio — botón dashed */}
-            <Pressable
-              onPress={() => router.push(ROUTES.EXERCISE_BROWSER_ROUTINE)}
-              accessibilityRole="button"
-              accessibilityLabel="Agregar ejercicio"
-            >
-              <YStack
-                borderWidth={1.5}
-                borderColor="$borderStrong"
-                borderStyle="dashed"
-                borderRadius="$lg"
-                padding="$lg"
-                alignItems="center"
-                justifyContent="center"
-                gap="$sm"
-                marginTop="$lg"
-              >
-                <AppIcon icon={Plus} size={24} color="primary" />
-                <AppText variant="bodyMd" color="primary" fontWeight="600">
-                  Agregar ejercicio
-                </AppText>
-              </YStack>
-            </Pressable>
-
-            {/* Eliminar Rutina */}
-            {onDelete && (
-              <Pressable
-                onPress={onDelete}
-                accessibilityRole="button"
-                accessibilityLabel="Eliminar rutina"
-              >
-                <XStack
-                  alignItems="center"
-                  justifyContent="center"
-                  marginTop="$3xl"
-                  padding="$md"
-                  gap="$sm"
-                >
-                  <AppIcon icon={Trash2} size={18} color="danger" />
-                  <AppText variant="bodyMd" color="danger" fontWeight="600">
-                    Eliminar Rutina
-                  </AppText>
-                </XStack>
-              </Pressable>
-            )}
-          </YStack>
-        }
+        listFooterComponent={<RoutineFormFooter onDelete={onDelete} />}
       />
     </Screen>
   );

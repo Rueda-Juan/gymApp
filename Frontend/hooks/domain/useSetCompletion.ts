@@ -4,6 +4,8 @@ import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useRestTimer } from '@/store/useRestTimer';
 import { useSettings } from '@/store/useSettings';
 import { triggerMediumHaptic } from '@/utils/haptics';
+import Toast from 'react-native-toast-message';
+import { useAchievementEvaluator } from './useAchievementEvaluator';
 
 /**
  * useSetCompletion — Encapsula la lógica de completar un set.
@@ -27,6 +29,7 @@ export function useSetCompletion() {
   const updateSetValues = useActiveWorkout(s => s.updateSetValues);
   const { startTimer } = useRestTimer();
   const restTimerSeconds = useSettings(s => s.restTimerSeconds);
+  const { evaluateSet } = useAchievementEvaluator();
 
   const completeSet = useCallback(
     (
@@ -54,12 +57,47 @@ export function useSetCompletion() {
 
       triggerMediumHaptic();
 
+      const finalWeight = !hasManualValues && setIndex > 0 && exercise.sets[setIndex-1].weight > 0
+        ? exercise.sets[setIndex-1].weight 
+        : set.weight;
+      const finalReps = !hasManualValues && setIndex > 0 && exercise.sets[setIndex-1].reps > 0
+        ? exercise.sets[setIndex-1].reps 
+        : set.reps;
+
+      // Trigger asíncrono para evaluar Récord Personal en caliente (PLAN-C)
+      if (finalWeight > 0 && finalReps > 0) {
+        evaluateSet(exerciseId, {
+          id: set.id,
+          weight: finalWeight,
+          reps: finalReps,
+          completed: true,
+          createdAt: new Date(),
+        } as any).then((brokenRecords) => {
+          if (brokenRecords && brokenRecords.length > 0) {
+            const typesMap: Record<string, string> = {
+              'max_weight': '¡Nuevo Récord de Peso!',
+              'max_reps': '¡Nuevo Récord de Reps!',
+              'max_volume': '¡Nuevo Récord de Volumen!',
+              'estimated_1rm': '¡Nuevo 1RM Estimado!'
+            };
+            const bestRecord = brokenRecords.find(r => r.recordType === 'max_weight') || brokenRecords[0];
+            Toast.show({
+              type: 'success',
+              text1: typesMap[bestRecord.recordType],
+              text2: `Alcanzaste ${bestRecord.value} en la última serie.`,
+              position: 'top',
+              visibilityTime: 4000,
+            });
+          }
+        });
+      }
+
       if (shouldStartRestTimer) {
         startTimer(restTimerSeconds);
         router.push('/(workouts)/rest-timer');
       }
     },
-    [toggleSetComplete, updateSetValues, startTimer, restTimerSeconds],
+    [toggleSetComplete, updateSetValues, startTimer, restTimerSeconds, evaluateSet],
   );
 
   return { completeSet };

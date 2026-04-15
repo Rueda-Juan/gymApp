@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, YStack, XStack } from 'tamagui';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppText } from '@/components/ui/AppText';
 import { ValueToggleChip } from '@/components/ui/ValueToggleChip';
 import {
-  MUSCLE_OPTIONS,
   EQUIPMENT_OPTIONS,
-  MUSCLE_LABELS,
   EQUIPMENT_LABELS,
 } from '@/constants/exercise';
+import { MuscleSelector } from '@/components/workout/MuscleSelector';
+import { BodyAnatomySvg } from '@/components/ui/BodyAnatomySvg';
 import type { MuscleGroup, Equipment, ExerciseType, LoadType } from 'backend/shared/types';
 
 const SCROLL_BOTTOM_INSET = 92;
@@ -28,6 +28,9 @@ interface Props {
   handleSetLoadType: (l: LoadType) => void;
   description: string;
   setDescription: (v: string) => void;
+  isSaving?: boolean;
+  svgInteractive?: boolean;
+  onSvgSelectMuscle?: (muscle: string | null) => void;
 }
 
 export function CreateExerciseForm(props: Props) {
@@ -46,6 +49,9 @@ export function CreateExerciseForm(props: Props) {
     handleSetLoadType,
     description,
     setDescription,
+    isSaving,
+    svgInteractive,
+    onSvgSelectMuscle,
   } = props;
 
   const EXERCISE_TYPES: { value: ExerciseType; label: string }[] = [
@@ -60,6 +66,10 @@ export function CreateExerciseForm(props: Props) {
     { value: 'timed', label: 'Tiempo' },
   ];
 
+  const activeMuscles = useMemo(() => {
+    return [...primaryMuscles, ...secondaryMuscles];
+  }, [primaryMuscles, secondaryMuscles]);
+
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: SCROLL_BOTTOM_INSET }}>
       <YStack gap="$md">
@@ -68,37 +78,30 @@ export function CreateExerciseForm(props: Props) {
           <AppInput value={name} onChangeText={setName} placeholder="Nombre del ejercicio" />
         </YStack>
 
+        <YStack alignItems="center" justifyContent="center" height={300} width="100%" marginVertical="$sm">
+          <BodyAnatomySvg
+            activeMuscles={activeMuscles}
+            interactive={svgInteractive}
+            onSelectMuscle={onSvgSelectMuscle}
+          />
+        </YStack>
+
         <YStack>
           <AppText variant="label">Músculos primarios</AppText>
-          <XStack flexWrap="wrap" gap="$2">
-            {MUSCLE_OPTIONS.map((muscle) => (
-              <ValueToggleChip
-                key={muscle}
-                value={muscle}
-                label={MUSCLE_LABELS[muscle]}
-                isActive={primaryMuscles.includes(muscle as MuscleGroup)}
-                onToggle={togglePrimaryMuscle}
-                accessibilityLabel={`Músculo primario: ${MUSCLE_LABELS[muscle]}${primaryMuscles.includes(muscle as MuscleGroup) ? ' (Seleccionado)' : ''}`}
-              />
-            ))}
-          </XStack>
+          <MuscleSelector
+            selectedMuscles={primaryMuscles}
+            onToggle={togglePrimaryMuscle}
+            type="primary"
+          />
         </YStack>
 
         <YStack>
           <AppText variant="label">Músculos secundarios</AppText>
-          <XStack flexWrap="wrap" gap="$2">
-            {MUSCLE_OPTIONS.map((muscle) => (
-              <ValueToggleChip
-                key={`${muscle}-secondary`}
-                value={muscle}
-                label={MUSCLE_LABELS[muscle]}
-                isActive={secondaryMuscles.includes(muscle as MuscleGroup)}
-                onToggle={toggleSecondaryMuscle}
-                variant="secondary"
-                accessibilityLabel={`Músculo secundario: ${MUSCLE_LABELS[muscle]}${secondaryMuscles.includes(muscle as MuscleGroup) ? ' (Seleccionado)' : ''}`}
-              />
-            ))}
-          </XStack>
+          <MuscleSelector
+            selectedMuscles={secondaryMuscles}
+            onToggle={toggleSecondaryMuscle}
+            type="secondary"
+          />
         </YStack>
 
         <YStack>

@@ -67,6 +67,7 @@ import { WipeDatabaseUseCase } from '../application/useCases/backup/WipeDatabase
 
 // --- Records Use Cases ---
 import { GetPersonalRecordsUseCase, GetBestPersonalRecordUseCase, GetPRCountSinceUseCase } from '../application/useCases/stats/GetPersonalRecords';
+import { EvaluateSetPRUseCase } from '../application/useCases/stats/EvaluateSetPRUseCase';
 
 export interface AppContainer {
   // Exercises
@@ -130,6 +131,7 @@ export interface AppContainer {
   readonly getPersonalRecords: GetPersonalRecordsUseCase;
   readonly getBestPersonalRecord: GetBestPersonalRecordUseCase;
   readonly getPRCountSince: GetPRCountSinceUseCase;
+  readonly evaluateSetPR: EvaluateSetPRUseCase;
 }
 
 export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
@@ -212,5 +214,6 @@ export function createContainer(db: SQLite.SQLiteDatabase): AppContainer {
     getPersonalRecords: new GetPersonalRecordsUseCase(statsRepo),
     getBestPersonalRecord: new GetBestPersonalRecordUseCase(statsRepo),
     getPRCountSince: new GetPRCountSinceUseCase(statsRepo),
+    evaluateSetPR: new EvaluateSetPRUseCase(statsRepo),
   };
 }

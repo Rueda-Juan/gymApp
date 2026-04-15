@@ -14,6 +14,7 @@ function createSet(overrides: Partial<WorkoutSet> = {}): WorkoutSet {
     setNumber: 1,
     weight: 100,
     reps: 8,
+    partialReps: null,
     rir: null,
     restSeconds: null,
     setType: 'normal',

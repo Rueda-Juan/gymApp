@@ -17,6 +17,7 @@ import { useRestTimerAnimation } from '@/hooks/ui/useRestTimerAnimation';
 import { usePreviousSets } from '@/hooks/domain/usePreviousSets';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
+import { AppButton } from '@/components/ui/AppButton';
 import { getExerciseName } from '@/utils/exercise';
 import { WorkoutHeader } from '@/components/workout/WorkoutHeader';
 import { ActiveWorkoutExerciseDetail } from '@/components/workout/ActiveWorkoutExerciseDetail';
@@ -120,13 +121,11 @@ function RenderContents() {
     [state.navDirection, m.isReduced, m.exiting],
   );
 
-  if (!currentExercise) return null;
-
   return (
     <Screen scroll={false} safeAreaEdges={['top', 'left', 'right']}>
       <WorkoutHeader
         formattedTime={formattedTime}
-        routineName={routineName ?? ''}
+        routineName={routineName ?? 'Entrenamiento Libre'}
         currentExerciseIndex={currentExerciseIndex}
         totalExercises={exercises.length}
         isFocusMode={state.isFocusMode}
@@ -146,7 +145,14 @@ function RenderContents() {
         onIncrease={actions.handleIncreaseTimer}
       />
 
-      {isInSuperset && supersetOrder.length > 0 ? (
+      {exercises.length === 0 ? (
+         <YStack flex={1} alignItems="center" justifyContent="center" padding="$xl" gap="$md">
+           <AppText variant="bodyLg" color="textSecondary" textAlign="center">
+             Comienza agregando tu primer ejercicio a esta sesión libre
+           </AppText>
+           <AppButton label="Agregar ejercicio" onPress={actions.handleOpenExercisePickerFromOptions} />
+         </YStack>
+      ) : isInSuperset && supersetOrder.length > 0 ? (
         <YStack flex={1}>
           <Animated.ScrollView
             ref={scrollRef}

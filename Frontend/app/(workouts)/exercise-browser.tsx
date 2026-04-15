@@ -1,5 +1,5 @@
-import { XStack, YStack, ScrollView, useTheme } from 'tamagui';
-import React, { useState, useMemo, useCallback } from 'react';
+import { XStack, YStack, ScrollView, View, useTheme } from 'tamagui';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { TextInput, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, X, Dumbbell, Plus } from 'lucide-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -24,6 +25,7 @@ import { FONT_SCALE } from '@/tamagui.config';
 import { useExerciseFiltering } from '@/hooks/application/useExerciseFiltering';
 import { MUSCLE_OPTIONS, EQUIPMENT_OPTIONS, MUSCLE_LABELS, EQUIPMENT_LABELS, getMuscleIconName } from '@/constants/exercise';
 import type { Exercise } from 'backend/domain/entities/Exercise';
+import { MuscleFilterSheet } from '@/components/workout/MuscleFilterSheet';
 
 export default function ExerciseBrowserScreen() {
   const theme = useTheme();
@@ -38,6 +40,7 @@ export default function ExerciseBrowserScreen() {
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
+  const muscleSheetRef = useRef<BottomSheetModal>(null);
 
   const { filteredExercises, filters, setFilter } = useExerciseFiltering(exercises, {
     search: '',
@@ -61,8 +64,26 @@ export default function ExerciseBrowserScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void loadExercises();
-    }, [loadExercises]),
+      const mountedRef = { current: true };
+
+      const safeLoad = async () => {
+        try {
+          if (mountedRef.current) setLoading(true);
+          const all = await exerciseService.getAll();
+          if (mountedRef.current) setExercises(all ?? []);
+        } catch (e) {
+          Toast.show({ type: 'error', text1: 'Error al cargar ejercicios', position: 'top' });
+          // eslint-disable-next-line no-console
+          console.error('[ExerciseBrowser] loadExercises error:', e);
+        } finally {
+          if (mountedRef.current) setLoading(false);
+        }
+      };
+
+      void safeLoad();
+
+      return () => { mountedRef.current = false; };
+    }, [exerciseService]),
   );
 
   // Estructura de datos para la lista (separando sugerencias si es "replace")
@@ -124,6 +145,7 @@ export default function ExerciseBrowserScreen() {
       <Pressable
         onPress={() => handleSelect(item)}
         accessibilityLabel={`Seleccionar ejercicio ${getExerciseName(item)}`}
+        accessibilityRole="button"
       >
         <XStack
           alignItems="center"
@@ -227,22 +249,16 @@ export default function ExerciseBrowserScreen() {
           />
         </ScrollView>
 
-        {/* Fila de Músculos */}
+        {/* Chips de Categorías Rápidas */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-          {MUSCLE_OPTIONS.map(muscle => (
-            <ToggleChip
-              key={muscle}
-              variant="solid"
-              label={MUSCLE_LABELS[muscle] ?? muscle}
-              isActive={(filters.muscleFilter ?? '') === muscle}
-              onPress={() => setFilter('muscleFilter', (filters.muscleFilter ?? '') === muscle ? '' : muscle)}
-              accessibilityLabel={`Filtrar por ${MUSCLE_LABELS[muscle] ?? muscle}`}
-            />
-          ))}
-        </ScrollView>
-
-        {/* Fila de Equipamiento */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+          <ToggleChip
+            variant="solid"
+            label={filters.muscleFilter ? `Músculo: ${MUSCLE_LABELS[filters.muscleFilter as keyof typeof MUSCLE_LABELS] ?? filters.muscleFilter}` : 'Todos los músculos'}
+            isActive={!!filters.muscleFilter}
+            onPress={() => muscleSheetRef.current?.present()}
+            accessibilityLabel="Filtrar por músculo (jerárquico)"
+          />
+          <View width={1} height={20} backgroundColor="$borderColor" alignSelf="center" />
           {EQUIPMENT_OPTIONS.map(equipment => (
             <ToggleChip
               key={equipment}
@@ -255,6 +271,14 @@ export default function ExerciseBrowserScreen() {
           ))}
         </ScrollView>
       </YStack>
+
+      {/* Muscle Filter Sheet */}
+      <MuscleFilterSheet
+        ref={muscleSheetRef}
+        selectedMuscle={filters.muscleFilter ?? ''}
+        onSelect={(muscle) => setFilter('muscleFilter', muscle)}
+        onClose={() => muscleSheetRef.current?.dismiss()}
+      />
 
       {/* List */}
       <FlashList

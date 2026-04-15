@@ -11,9 +11,10 @@ interface HomeCTAProps {
   routineName?: string | null;
   onContinue: () => void;
   onNewSession: () => void;
+  onFreeSession: () => void;
 }
 
-export default function HomeCTA({ isActive, routineName, onContinue, onNewSession }: HomeCTAProps) {
+export default function HomeCTA({ isActive, routineName, onContinue, onNewSession, onFreeSession }: HomeCTAProps) {
   return (
     <YStack paddingHorizontal="$xl" paddingBottom="$xl">
       {isActive ? (
@@ -40,14 +41,21 @@ export default function HomeCTA({ isActive, routineName, onContinue, onNewSessio
           </YStack>
         </Pressable>
       ) : (
-        <AppButton
-          appVariant="primary"
-          backgroundColor="$primary"
-          label="Nueva Sesión"
-          icon={<AppIcon icon={Play} color="surface" fill="surface" size={24} />}
-          onPress={onNewSession}
-          thermalBreathing
-        />
+        <YStack gap="$md">
+          <AppButton
+            appVariant="primary"
+            backgroundColor="$primary"
+            label="Elegir Rutina"
+            icon={<AppIcon icon={Play} color="surface" fill="surface" size={24} />}
+            onPress={onNewSession}
+            thermalBreathing
+          />
+          <AppButton
+            appVariant="ghost"
+            label="Entrenamiento Libre"
+            onPress={onFreeSession}
+          />
+        </YStack>
       )}
     </YStack>
   );

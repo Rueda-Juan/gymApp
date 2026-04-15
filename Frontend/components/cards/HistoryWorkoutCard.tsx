@@ -97,6 +97,7 @@ function DeleteSwipeAction({ dragX, onPress }: DeleteSwipeActionProps) {
       style={DELETE_ACTION_PRESSABLE_STYLE}
       onPress={onPress}
       accessibilityLabel="Eliminar entrenamiento"
+      accessibilityRole="button"
     >
       <Animated.View style={[animatedStyle, DELETE_ACTION_CONTAINER_STYLE]}>
         <AppIcon icon={Trash2} color="background" size={24} />
@@ -139,6 +140,7 @@ export const HistoryWorkoutCard = React.memo(function HistoryWorkoutCard({ item,
         <Pressable
           onPress={() => router.push({ pathname: ROUTES.WORKOUT_SUMMARY, params: { id: item.id } })}
           accessibilityLabel={`Ver detalle de ${item.name || title}`}
+          accessibilityRole="button"
         >
           <CardBase padding="$md" gap="$sm" shadowOpacity={0} elevation={0}>
             <XStack justifyContent="space-between" alignItems="center">

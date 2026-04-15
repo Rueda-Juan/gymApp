@@ -71,6 +71,7 @@ export default function HomeScreen() {
             routineName={routineName}
             onContinue={() => router.push(ROUTES.ACTIVE_WORKOUT)}
             onNewSession={() => router.push(ROUTES.ROUTINES_FROM_HOME)}
+            onFreeSession={() => router.push(ROUTES.ACTIVE_WORKOUT)}
           />
         </Animated.View>
 
@@ -146,7 +147,7 @@ export default function HomeScreen() {
             <YStack marginTop="$xl">
               <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" marginBottom="$md">
                 <AppText variant="titleSm">Mis Rutinas</AppText>
-                <Pressable onPress={() => router.push(ROUTES.ROUTINES)} accessibilityLabel="Ver todas las rutinas">
+                <Pressable onPress={() => router.push(ROUTES.ROUTINES)} accessibilityLabel="Ver todas las rutinas" accessibilityRole="button">
                   <AppText variant="bodyMd" color="primary" fontWeight="600">Ver todas</AppText>
             </Pressable>
           </XStack>

@@ -27,6 +27,7 @@ function mapExerciseStateToBackend(ex: WorkoutExerciseState, orderIndex: number)
         setNumber: idx + 1,
         weight: s.weight,
         reps: s.reps,
+        partialReps: s.partialReps ? 1 : 0,
         rir: s.rir ?? null,
         setType: asSetType(s.type),
         restSeconds: null,

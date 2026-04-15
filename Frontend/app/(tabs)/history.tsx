@@ -41,12 +41,14 @@ export default function HistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const mounted = { current: true };
+
       const loadWorkouts = async () => {
         try {
-          setLoading(true);
+          if (mounted.current) setLoading(true);
           const data = await workoutService.getHistory(HISTORY_LIMIT);
 
-          const mapped: HistoryWorkout[] = data.map((w) => {
+          const mapped: HistoryWorkout[] = (data ?? []).map((w: Workout) => {
             const dateStr = (() => {
               try {
                 return format(new Date(w.date), 'EEEE d MMM yyyy', { locale: es });
@@ -62,21 +64,24 @@ export default function HistoryScreen() {
             const _searchIndex = `${dateStr} ${routineName} ${notes} ${exerciseNames}`.toLowerCase();
 
             return {
-              ...(w as any),
+              ...((w as unknown) as Omit<Workout, 'date'>),
               date: w.date instanceof Date ? w.date.toISOString() : String(w.date),
               _searchIndex,
             } as HistoryWorkout;
           });
 
-          setWorkouts(mapped);
+          if (mounted.current) setWorkouts(mapped);
         } catch (error) {
           console.error('[History] Failed to load workouts:', error);
           Toast.show({ type: 'error', text1: 'Error al cargar historial', position: 'top' });
         } finally {
-          setLoading(false);
+          if (mounted.current) setLoading(false);
         }
       };
-      loadWorkouts();
+
+      void loadWorkouts();
+
+      return () => { mounted.current = false; };
     }, [workoutService])
   );
 

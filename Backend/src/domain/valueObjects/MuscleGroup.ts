@@ -1,4 +1,5 @@
 export const MUSCLE_GROUPS = [
+  // General Categories (Backward Compatibility)
   'chest',
   'back',
   'shoulders',
@@ -11,6 +12,22 @@ export const MUSCLE_GROUPS = [
   'calves',
   'abs',
   'traps',
+  'adductors',
+
+  // Granular Sub-divisions
+  'upper-chest',
+  'mid-chest',
+  'lower-chest',
+  'lats',
+  'upper-back',
+  'mid-back',
+  'lower-back',
+  'front-delts',
+  'side-delts',
+  'rear-delts',
+  'upper-abs',
+  'lower-abs',
+  'obliques',
 ] as const;
 
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];

@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { Exercise } from 'backend/shared/types';
 import { getExerciseName } from '@/utils/exercise';
+import { HIERARCHICAL_MUSCLES } from '@/constants/exercise';
 
 interface FilterState {
   search: string;
@@ -53,9 +54,14 @@ export function useExerciseFiltering<T extends Exercise>(
         ? getExerciseName(exercise).toLowerCase().includes(filters.search.toLowerCase())
         : true;
 
+      const categoryMatch = HIERARCHICAL_MUSCLES.find((h) => h.category === filters.muscleFilter);
+      const musclesToMatch = categoryMatch?.subdivisions
+        ? [filters.muscleFilter, ...categoryMatch.subdivisions]
+        : [filters.muscleFilter || ''];
+
       const matchesMuscle =
         !filters.muscleFilter ||
-        (exercise.primaryMuscles as string[] | undefined)?.includes(filters.muscleFilter) ||
+        (exercise.primaryMuscles as string[] | undefined)?.some(m => musclesToMatch.includes(m)) ||
         false;
 
       const matchesEquipment =

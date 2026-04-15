@@ -6,6 +6,7 @@ import type { WorkoutRepository } from '../../domain/repositories/WorkoutReposit
 import { DatabaseError } from '../../shared/errors';
 import { fromSQLiteDateTime, toSQLiteDateTime } from '../../shared/utils/dateUtils';
 import { generateId } from '../../shared/utils/generateId';
+import { safeJsonParse } from '../../shared/utils/safeJsonParse';
 import { createLogger } from '../../shared/utils/Logger';
 
 const log = createLogger('WorkoutRepo');
@@ -35,6 +36,7 @@ interface SetRow {
   set_number: number;
   weight: number;
   reps: number;
+  partial_reps: number | null;
   rir: number | null;
   set_type: string;
   rest_seconds: number | null;
@@ -59,12 +61,15 @@ interface JoinedExerciseSetRow {
   // exercises columns
   ex_name: string;
   ex_name_es: string | null;
+  ex_primary_muscles: string | null;
+  ex_secondary_muscles: string | null;
   // sets columns (nullable due to LEFT JOIN)
   s_id: string | null;
   s_exercise_id: string | null;
   s_set_number: number | null;
   s_weight: number | null;
   s_reps: number | null;
+  s_partial_reps: number | null;
   s_rir: number | null;
   s_set_type: string | null;
   s_rest_seconds: number | null;
@@ -82,6 +87,7 @@ function mapSetRow(row: SetRow): WorkoutSet {
     setNumber: row.set_number,
     weight: row.weight,
     reps: row.reps,
+    partialReps: row.partial_reps,
     rir: row.rir ?? null,
     setType: row.set_type as SetType,
     restSeconds: row.rest_seconds,
@@ -178,8 +184,8 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
           for (const set of exercise.sets) {
             await this.db.runAsync(
               `INSERT OR REPLACE INTO sets
-               (id, workout_id, exercise_id, set_number, weight, reps, rir, set_type, rest_seconds, duration_seconds, completed, skipped, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+               (id, workout_id, exercise_id, set_number, weight, reps, partial_reps, rir, set_type, rest_seconds, duration_seconds, completed, skipped, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
                 set.id,
                 workout.id,
@@ -187,6 +193,7 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
                 set.setNumber,
                 set.weight,
                 set.reps,
+                set.partialReps ?? 0,
                 set.rir,
                 set.setType,
                 set.restSeconds,
@@ -218,8 +225,8 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
     try {
       await this.db.runAsync(
         `INSERT INTO sets
-         (id, workout_id, exercise_id, set_number, weight, reps, rir, set_type, rest_seconds, duration_seconds, completed, skipped, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, workout_id, exercise_id, set_number, weight, reps, partial_reps, rir, set_type, rest_seconds, duration_seconds, completed, skipped, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           set.id,
           workoutId,
@@ -227,6 +234,7 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
           set.setNumber,
           set.weight,
           set.reps,
+          set.partialReps ?? 0,
           set.rir,
           set.setType,
           set.restSeconds,
@@ -245,11 +253,12 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
     try {
       await this.db.runAsync(
         `UPDATE sets
-         SET weight = ?, reps = ?, rir = ?, set_type = ?, rest_seconds = ?, duration_seconds = ?, completed = ?, skipped = ?
+         SET weight = ?, reps = ?, partial_reps = ?, rir = ?, set_type = ?, rest_seconds = ?, duration_seconds = ?, completed = ?, skipped = ?
          WHERE id = ? AND workout_id = ?`,
         [
           set.weight,
           set.reps,
+          set.partialReps ?? 0,
           set.rir,
           set.setType,
           set.restSeconds,
@@ -417,11 +426,14 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
          we.superset_group AS we_superset_group,
          ex.name        AS ex_name,
          ex.name_es     AS ex_name_es,
+         ex.primary_muscles AS ex_primary_muscles,
+         ex.secondary_muscles AS ex_secondary_muscles,
          s.id               AS s_id,
          s.exercise_id      AS s_exercise_id,
          s.set_number       AS s_set_number,
          s.weight           AS s_weight,
          s.reps             AS s_reps,
+         s.partial_reps     AS s_partial_reps,
          s.rir              AS s_rir,
          s.set_type         AS s_set_type,
          s.rest_seconds     AS s_rest_seconds,
@@ -453,6 +465,8 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
           skipped: Boolean(jr.we_skipped),
           notes: jr.we_notes,
           supersetGroup: jr.we_superset_group,
+          primaryMuscles: safeJsonParse(jr.ex_primary_muscles, []),
+          secondaryMuscles: safeJsonParse(jr.ex_secondary_muscles, []),
           sets: [],
         };
         exerciseMap.set(jr.we_id, exercise);
@@ -466,6 +480,7 @@ export class SQLiteWorkoutRepository implements WorkoutRepository {
           setNumber: jr.s_set_number!,
           weight: jr.s_weight!,
           reps: jr.s_reps!,
+          partialReps: jr.s_partial_reps,
           rir: jr.s_rir ?? null,
           setType: jr.s_set_type as SetType,
           restSeconds: jr.s_rest_seconds,

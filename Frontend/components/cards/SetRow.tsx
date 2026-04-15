@@ -23,6 +23,7 @@ export interface SetData {
   isCompleted: boolean;
   type: 'warmup' | 'normal' | 'failure' | 'dropset';
   rir?: number | null;
+  partialReps?: boolean;
 }
 
 export interface SetRowProps {
@@ -224,6 +225,19 @@ export const SetRow = React.memo(function SetRow({
             onClose={() => setShowRirSelector(false)}
           />
         </View>
+
+        {/* Partial Reps Toggle */}
+        <Pressable
+          onPress={() => onUpdate({ partialReps: !set.partialReps })}
+          style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center', borderRadius: 6, backgroundColor: set.partialReps ? theme.warning?.val : 'transparent' }}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: !!set.partialReps }}
+          accessibilityLabel={`Marcar set ${index + 1} como repeticiones parciales`}
+        >
+          <AppText variant="label" color={set.partialReps ? 'background' : 'textTertiary'} fontWeight="700">
+            P
+          </AppText>
+        </Pressable>
 
         <Animated.View style={[
           { borderRadius: 8, width: 44, height: 44 },

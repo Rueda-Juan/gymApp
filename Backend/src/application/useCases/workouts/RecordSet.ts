@@ -61,6 +61,7 @@ export class RecordSetUseCase {
       skipped: data.skipped ?? false,
       restSeconds: data.restSeconds ?? null,
       rir: data.rir ?? null,
+      partialReps: data.partialReps ?? null,
       createdAt: now,
     };
 

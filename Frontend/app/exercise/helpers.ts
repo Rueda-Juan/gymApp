@@ -13,3 +13,5 @@ export function getErrorMessage(error: unknown): string {
   }
   return defaultMsg;
 }
+
+export default function ExerciseHelpersDummy() { return null; }

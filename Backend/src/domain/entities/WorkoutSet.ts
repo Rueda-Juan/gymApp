@@ -11,6 +11,8 @@ export interface WorkoutSet {
   setNumber: number;
   weight: number;
   reps: number;
+  /** Partial repetitions recorded for this set. */
+  partialReps: number | null;
   /** Repetitions In Reserve — how many reps the user had left before failure. Null if not reported. */
   rir: number | null;
   /** Purpose/intensity of the set */

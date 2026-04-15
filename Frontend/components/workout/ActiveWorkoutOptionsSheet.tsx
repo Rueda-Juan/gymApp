@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Alert, Pressable } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Minus, Plus, X, ChevronRight } from 'lucide-react-native';
@@ -6,6 +6,9 @@ import { XStack, YStack } from 'tamagui';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { useBottomSheetStyles } from '@/hooks/ui/useBottomSheetStyles';
+import { BodyAnatomySvg } from '@/components/ui/BodyAnatomySvg';
+import { Collapsible } from '@/components/ui/Collapsible';
+import type { MuscleGroup } from 'backend/domain/valueObjects/MuscleGroup';
 import type { Exercise } from 'backend/shared/types';
 import type { WorkoutExerciseState } from '@/store/useActiveWorkout';
 
@@ -91,10 +94,20 @@ export function ActiveWorkoutOptionsSheet({
   }, [globalRestSeconds, onSetRestTimerSeconds]);
 
   const handleIncreaseRest = useCallback(() => {
-    onSetRestTimerSeconds(Math.min(MAX_REST_SECONDS, globalRestSeconds + REST_TIMER_STEP));
-  }, [globalRestSeconds, onSetRestTimerSeconds]);
+     onSetRestTimerSeconds(Math.min(MAX_REST_SECONDS, globalRestSeconds + REST_TIMER_STEP));
+   }, [globalRestSeconds, onSetRestTimerSeconds]);
+ 
+   const sessionMuscles = useMemo(() => {
+     const musclesSet = new Set<MuscleGroup>();
+     exercises.forEach(ex => {
+       const detail = allExercises.find(a => a.id === ex.exerciseId);
+       detail?.primaryMuscles?.forEach(m => musclesSet.add(m));
+       detail?.secondaryMuscles?.forEach(m => musclesSet.add(m));
+     });
+     return Array.from(musclesSet);
+   }, [exercises, allExercises]);
 
-  return (
+   return (
     <BottomSheet
       ref={sheetRef}
       index={-1}
@@ -159,6 +172,16 @@ export function ActiveWorkoutOptionsSheet({
             </Pressable>
           </XStack>
         </XStack>
+
+        {sessionMuscles.length > 0 && (
+          <YStack marginTop="$lg" borderTopWidth={1} borderTopColor="$borderColor" paddingTop="$lg">
+            <Collapsible title="Músculos Objetivo de la Sesión">
+              <YStack height={200} width="100%" alignItems="center" justifyContent="center">
+                <BodyAnatomySvg activeMuscles={sessionMuscles} />
+              </YStack>
+            </Collapsible>
+          </YStack>
+        )}
       </BottomSheetScrollView>
     </BottomSheet>
   );

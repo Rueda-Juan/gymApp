@@ -26,6 +26,7 @@ export function MiniPlayer() {
 
   return (
     <Animated.View
+      pointerEvents="box-none"
       entering={motionHelpers.entering(FadeInDown.duration(motion.duration.slow))}
       exiting={motionHelpers.exiting(FadeOutDown.duration(motion.duration.slow))}
       style={{
@@ -35,6 +36,7 @@ export function MiniPlayer() {
         bottom: insets.bottom + TAB_BAR_OFFSET,
         zIndex: FLOATING_Z_INDEX,
       }}
+      accessible={false}
     >
       <XStack
         height="$miniPlayerHeight"

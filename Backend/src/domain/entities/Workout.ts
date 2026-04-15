@@ -1,3 +1,4 @@
+import type { MuscleGroup } from '../valueObjects/MuscleGroup';
 import type { WorkoutSet } from './WorkoutSet';
 
 /**
@@ -22,6 +23,8 @@ export interface WorkoutExercise {
   exerciseId: string;
   name?: string;
   nameEs?: string | null;
+  primaryMuscles?: MuscleGroup[];
+  secondaryMuscles?: MuscleGroup[];
   orderIndex: number;
   skipped: boolean;
   notes: string | null;

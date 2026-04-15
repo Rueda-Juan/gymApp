@@ -11,6 +11,7 @@ export const WorkoutSetSchema = z.object({
   reps: z.number().int().min(0, 'Las reps no pueden ser negativas'),
   setType: z.enum(SET_TYPES).default('normal'),
   rir: z.number().int().min(0).max(10).nullable().default(null),
+  partialReps: z.number().int().min(0).nullable().default(null),
   restSeconds: z.number().int().min(0).nullable().default(null),
   durationSeconds: z.number().int().min(0).default(0),
   completed: z.boolean().default(false),

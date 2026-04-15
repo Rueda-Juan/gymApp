@@ -93,6 +93,16 @@ export default function CreateExerciseScreen() {
     }
   }, [name, primaryMuscles, secondaryMuscles, equipment, exerciseType, loadType, description, exerciseService]);
 
+  // Handler para selección directa en el SVG (deshabilitado)
+  // const handleSvgSelectMuscle = useCallback((muscle: string | null) => {
+  //   if (!muscle) return;
+  //   setPrimaryMuscles((prev) =>
+  //     prev.includes(muscle as MuscleGroup)
+  //       ? prev.filter((m) => m !== muscle)
+  //       : [...prev, muscle as MuscleGroup]
+  //   );
+  // }, []);
+
   return (
     <Screen safeAreaEdges={[ 'top', 'left', 'right' ]}>
       <CreateExerciseHeader isSaving={isSaving} onSave={handleSave} onClose={() => router.back()} />
@@ -112,6 +122,9 @@ export default function CreateExerciseScreen() {
         handleSetLoadType={handleSetLoadType}
         description={description}
         setDescription={setDescription}
+        isSaving={isSaving}
+        svgInteractive={false}
+        onSvgSelectMuscle={undefined}
       />
 
       <CreateExerciseFooter isSaving={isSaving} onSave={handleSave} />

@@ -1,5 +1,5 @@
 import { XStack, YStack } from 'tamagui';
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { ScrollView, ActivityIndicator, Share } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -22,9 +22,10 @@ import { WorkoutExerciseSummaryList } from '@/components/workout/WorkoutExercise
 import { motion } from '@/constants/motion';
 import { useMotion } from '@/hooks/ui/useMotion';
 import { useWorkoutSummaryData } from '@/hooks/application/useWorkoutSummaryData';
-import type { SummaryWorkout, SummaryPersonalRecord } from '@/hooks/application/useWorkoutSummaryData';
+import type { SummaryWorkout, SummaryPersonalRecord, MuscleGroup } from '@/hooks/application/useWorkoutSummaryData';
 import { ROUTES } from '@/constants/routes';
 import { PRCelebrationOverlay } from '@/components/workout/PRCelebrationOverlay';
+import { BodyAnatomySvg } from '@/components/ui/BodyAnatomySvg';
 
 const SUMMARY_VOLUME_OPTIONS = { completedOnly: true, defaultCompleted: true } as const;
 
@@ -62,6 +63,16 @@ export default function WorkoutSummaryScreen() {
   const newRecords = useWorkoutSummary(s => s.newRecords) as SummaryPersonalRecord[];
   const clearNewRecords = useWorkoutSummary(s => s.clearNewRecords);
   const [showCelebration, setShowCelebration] = React.useState(false);
+
+  const activeMuscles = useMemo(() => {
+    if (!workout) return [];
+    const musclesSet = new Set<MuscleGroup>();
+    workout.exercises.forEach((ex) => {
+      ex.primaryMuscles?.forEach((m) => musclesSet.add(m));
+      ex.secondaryMuscles?.forEach((m) => musclesSet.add(m));
+    });
+    return Array.from(musclesSet);
+  }, [workout]);
 
   useEffect(() => {
     if (!loading && newRecords.length > 0) {
@@ -169,6 +180,13 @@ export default function WorkoutSummaryScreen() {
               </YStack>
             </Animated.View>
             <AppText variant="titleLg" marginTop="$lg">¡Entrenamiento Completo!</AppText>
+            
+            {activeMuscles.length > 0 && (
+              <YStack height={220} width="100%" marginTop="$lg" alignItems="center">
+                <BodyAnatomySvg activeMuscles={activeMuscles} />
+              </YStack>
+            )}
+
             <AppText variant="bodyMd" color="textSecondary" marginTop="$sm">
               Has hecho un excelente trabajo hoy
             </AppText>

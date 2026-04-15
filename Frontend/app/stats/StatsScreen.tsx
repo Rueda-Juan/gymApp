@@ -1,0 +1,36 @@
+
+import React, { useState } from 'react';
+import { View, Text, ScrollView } from 'react-native';
+import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
+import ErrorState from '../../components/shared/ErrorState';
+import EmptyState from '../../components/shared/EmptyState';
+
+import { useRouter } from 'expo-router';
+import { ROUTES } from '../../constants/routes';
+
+const StatsScreen = () => {
+  const [state, setState] = useState<'empty' | 'loading' | 'error' | 'success'>('loading');
+  React.useEffect(() => {
+    setTimeout(() => {
+      setState('success');
+    }, 1000);
+  }, []);
+
+  const router = useRouter();
+
+  if (state === 'loading') return <LoadingSkeleton />;
+  if (state === 'error') return <ErrorState message="Error al cargar estadísticas" />;
+  if (state === 'empty') return <EmptyState message="Sin estadísticas" />;
+
+  // success
+  return (
+    <ScrollView>
+      <Text>Estadísticas</Text>
+      <Text style={{ color: 'blue' }} onPress={() => router.push(ROUTES.TABS)}>
+        Volver al dashboard
+      </Text>
+    </ScrollView>
+  );
+};
+
+export default StatsScreen;
