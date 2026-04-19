@@ -16,7 +16,7 @@ interface RoutineExercise {
 interface LoadableRoutine {
   name: string;
   notes?: string | null;
-  exercises: Array<{
+  exercises: {
     exerciseId?: string;
     id?: string;
     exercise?: { name: string; nameEs?: string | null; primaryMuscles?: string[] };
@@ -28,7 +28,7 @@ interface LoadableRoutine {
     sets?: number;
     reps?: string;
     supersetGroup?: number | null;
-  }>;
+  }[];
 }
 
 interface RoutineState {
@@ -53,9 +53,16 @@ export const useRoutineStore = create<RoutineState>((set) => ({
   exercises: [],
   setName: (name) => set({ name }),
   setNotes: (notes) => set({ notes }),
-  addExercise: (exercise) => set((state) => ({
-    exercises: [...state.exercises, { ...exercise, sets: DEFAULT_SETS, reps: DEFAULT_REP_RANGE }]
-  })),
+  addExercise: (exercise) => set((state) => {
+    // Prevenir duplicados por id
+    if (state.exercises.some(e => e.id === exercise.id)) {
+      // Aquí podrías disparar un toast o feedback si lo deseas
+      return {};
+    }
+    return {
+      exercises: [...state.exercises, { ...exercise, sets: DEFAULT_SETS, reps: DEFAULT_REP_RANGE }]
+    };
+  }),
   removeExercise: (id) => set((state) => ({
     exercises: state.exercises.filter(e => e.id !== id)
   })),

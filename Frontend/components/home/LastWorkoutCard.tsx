@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+// import { Pressable } from 'react-native';
 import { YStack, XStack } from 'tamagui';
 import { PressableCard } from '@/components/ui/PressableCard';
 import { CardBase as Card } from '@/components/ui/Card';
@@ -23,9 +23,15 @@ export default function LastWorkoutCard({ lastWorkout, onViewAll, onViewLast }: 
     <YStack gap="$md" marginBottom="$xl" paddingHorizontal="$xl" marginTop="$xl">
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
         <AppText variant="titleSm">Último Entrenamiento</AppText>
-        <Pressable onPress={onViewAll} accessibilityLabel="Ver historial completo">
+        <YStack
+          onPress={onViewAll}
+          accessibilityRole="button"
+          accessibilityLabel="Ver historial completo"
+          cursor="pointer"
+          pressStyle={{ opacity: 0.85 }}
+        >
           <AppText variant="bodyMd" color="primary" fontWeight="600">Ver todo</AppText>
-        </Pressable>
+        </YStack>
       </XStack>
 
       <PressableCard onPress={onViewLast} accessibilityLabel="Ver último entrenamiento">

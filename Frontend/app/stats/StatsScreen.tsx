@@ -1,12 +1,11 @@
 
-import React, { useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
-import ErrorState from '../../components/shared/ErrorState';
-import EmptyState from '../../components/shared/EmptyState';
 
+import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ROUTES } from '../../constants/routes';
+import { Screen } from '../../components/ui/Screen';
+import { AppText } from '../../components/ui/AppText';
+
 
 const StatsScreen = () => {
   const [state, setState] = useState<'empty' | 'loading' | 'error' | 'success'>('loading');
@@ -18,18 +17,24 @@ const StatsScreen = () => {
 
   const router = useRouter();
 
-  if (state === 'loading') return <LoadingSkeleton />;
-  if (state === 'error') return <ErrorState message="Error al cargar estadísticas" />;
-  if (state === 'empty') return <EmptyState message="Sin estadísticas" />;
+  if (state === 'loading') return null; // TODO: Unificar con LoadingSkeleton Tamagui
+  if (state === 'error') return null; // TODO: Unificar con ErrorState Tamagui
+  if (state === 'empty') return null; // TODO: Unificar con EmptyState Tamagui
 
   // success
   return (
-    <ScrollView>
-      <Text>Estadísticas</Text>
-      <Text style={{ color: 'blue' }} onPress={() => router.push(ROUTES.TABS)}>
+    <Screen scroll safeAreaEdges={['top', 'bottom', 'left', 'right']}>
+      <AppText variant="titleMd" marginBottom="$lg">Estadísticas</AppText>
+      <AppText
+        color="primary"
+        marginTop="$2xl"
+        onPress={() => router.push(ROUTES.TABS)}
+        textAlign="center"
+        accessibilityRole="button"
+      >
         Volver al dashboard
-      </Text>
-    </ScrollView>
+      </AppText>
+    </Screen>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { TextInput, Pressable, Keyboard, useWindowDimensions, Platform } from 'react-native';
+import { TextInput, Keyboard, useWindowDimensions, Platform } from 'react-native';
 import { XStack, YStack, View, useTheme } from 'tamagui';
 import { Check, Flame, Trash2 } from 'lucide-react-native';
 import { useSettings } from '@/store/useSettings';
@@ -146,11 +146,15 @@ export const SetRow = React.memo(function SetRow({
             ]}
           />
           <XStack alignItems="center" height="$setRowHeight" gap="$sm" paddingHorizontal="$md" style={completedRowStyle}>
-        <Pressable
+        <YStack
           onPress={() => onUpdate({ type: set.type === 'warmup' ? 'normal' : 'warmup' })}
-          style={{ width: 32, alignItems: 'center' }}
+          width={32}
+          alignItems="center"
+          justifyContent="center"
           accessibilityRole="button"
           accessibilityLabel={set.type === 'warmup' ? `Set ${index + 1}, calentamiento. Pulsa para cambiar a normal` : `Set ${index + 1}. Pulsa para cambiar a calentamiento`}
+          cursor="pointer"
+          pressStyle={{ opacity: 0.7 }}
         >
           {set.type === 'warmup' ? (
             <AppIcon icon={Flame} color="warning" size={16} />
@@ -159,7 +163,7 @@ export const SetRow = React.memo(function SetRow({
               {index + 1}
             </AppText>
           )}
-        </Pressable>
+        </YStack>
 
         <View flex={1} height={40} position="relative">
           <AnimatedXStack
@@ -227,28 +231,39 @@ export const SetRow = React.memo(function SetRow({
         </View>
 
         {/* Partial Reps Toggle */}
-        <Pressable
+        <YStack
           onPress={() => onUpdate({ partialReps: !set.partialReps })}
-          style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center', borderRadius: 6, backgroundColor: set.partialReps ? theme.warning?.val : 'transparent' }}
+          width={28}
+          height={28}
+          justifyContent="center"
+          alignItems="center"
+          borderRadius={6}
+          backgroundColor={set.partialReps ? theme.warning?.val : 'transparent'}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: !!set.partialReps }}
           accessibilityLabel={`Marcar set ${index + 1} como repeticiones parciales`}
+          cursor="pointer"
+          pressStyle={{ opacity: 0.7 }}
         >
           <AppText variant="label" color={set.partialReps ? 'background' : 'textTertiary'} fontWeight="700">
             P
           </AppText>
-        </Pressable>
+        </YStack>
 
         <Animated.View style={[
           { borderRadius: 8, width: 44, height: 44 },
           anim.styles.animatedCheck,
         ]}>
-          <Pressable
+          <YStack
             onPress={handleToggle}
-            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+            flex={1}
+            justifyContent="center"
+            alignItems="center"
             accessibilityRole="checkbox"
             accessibilityLabel={`Completar set ${index + 1}`}
             accessibilityState={{ checked: set.isCompleted }}
+            cursor="pointer"
+            pressStyle={{ opacity: 0.7 }}
           >
             <AppIcon
               icon={Check}
@@ -256,7 +271,7 @@ export const SetRow = React.memo(function SetRow({
               size={22}
               strokeWidth={3}
             />
-          </Pressable>
+          </YStack>
         </Animated.View>
 
       </XStack>

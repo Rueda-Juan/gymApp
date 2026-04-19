@@ -16,7 +16,7 @@ import { useStatsData } from '@/hooks/application/useStatsData';
 import { getExerciseName } from '@/utils/exercise';
 import type { Exercise } from 'backend/shared/types';
 import type { WorkoutSet } from 'backend/domain/entities/WorkoutSet';
-import { WeeklyVolumeBarChart, ActivityGrid } from '@/components/charts';
+import { WeeklyVolumeBarChart, ActivityGrid } from '@/components/charts/Index';
 import { calculateEpley1RM } from '@/utils/workout';
 import { StatsSummaryGrid } from '@/components/stats/StatsSummaryGrid';
 import { BodyWeightCard } from '@/components/stats/BodyWeightCard';
@@ -64,7 +64,7 @@ export default function StatsScreen() {
       setStrengthHistory(oneRMPoints);
     } catch {
       // Log error and show toast for observability
-      // eslint-disable-next-line no-console
+       
       console.error('[Stats] Failed to load progression for exercise', exercise?.id);
       Toast.show({ type: 'error', text1: 'Error al cargar progresión', position: 'top' });
     }
@@ -78,7 +78,7 @@ export default function StatsScreen() {
         setExercisesLoaded(true);
       } catch (e) {
         // Log and surface an error to the user
-        // eslint-disable-next-line no-console
+         
         console.error('[Stats] Failed to load exercises:', e);
         Toast.show({ type: 'error', text1: 'No se pudieron cargar los ejercicios', position: 'top' });
         return;
@@ -104,7 +104,7 @@ export default function StatsScreen() {
 
   return (
     <>
-    <Screen safeAreaEdges={['top', 'left', 'right']}>
+    <Screen safeAreaEdges={['top','bottom','left','right']}>
       <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingTop="$lg" paddingBottom="$md">
         <AppText variant="titleLg">Estadísticas</AppText>
       </XStack>

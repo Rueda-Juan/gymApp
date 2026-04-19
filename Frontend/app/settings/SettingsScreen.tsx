@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
-import ErrorState from '../../components/shared/ErrorState';
 
+import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ROUTES } from '../../constants/routes';
+import { Screen } from '../../components/ui/Screen';
+import { AppText } from '../../components/ui/AppText';
+import { ToggleChip } from '../../components/ui/ToggleChip';
+
 
 const SettingsScreen = () => {
   const [state, setState] = useState<'loading' | 'error' | 'success'>('loading');
@@ -17,17 +18,35 @@ const SettingsScreen = () => {
 
   const router = useRouter();
 
-  if (state === 'loading') return <LoadingSkeleton />;
-  if (state === 'error') return <ErrorState message="Error al cargar ajustes" />;
+  if (state === 'loading') return null; // TODO: Unificar con LoadingSkeleton Tamagui
+  if (state === 'error') return null; // TODO: Unificar con ErrorState Tamagui
 
   // success
+  const { hapticsEnabled, setHapticsEnabled } = require('../../store/useSettings').useSettings();
+  const { triggerLightHaptic } = require('../../utils/haptics');
+
   return (
-    <ScrollView>
-      <Text>Ajustes</Text>
-      <Text style={{ color: 'blue' }} onPress={() => router.push(ROUTES.TABS)}>
+    <Screen scroll safeAreaEdges={['top', 'bottom', 'left', 'right']}>
+      <AppText variant="titleMd" marginBottom="$lg">Ajustes</AppText>
+      <ToggleChip
+        label={`Vibración/Haptics: ${hapticsEnabled ? 'Activado' : 'Desactivado'}`}
+        isActive={hapticsEnabled}
+        onPress={() => {
+          setHapticsEnabled(!hapticsEnabled);
+          if (!hapticsEnabled) triggerLightHaptic();
+        }}
+        accessibilityLabel="Alternar vibración/haptics"
+      />
+      <AppText
+        color="primary"
+        marginTop="$2xl"
+        onPress={() => router.push(ROUTES.TABS)}
+        textAlign="center"
+        accessibilityRole="button"
+      >
         Volver al dashboard
-      </Text>
-    </ScrollView>
+      </AppText>
+    </Screen>
   );
 };
 

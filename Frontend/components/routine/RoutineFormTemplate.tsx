@@ -1,22 +1,25 @@
 import { XStack, YStack } from 'tamagui';
-import React from 'react';
+import React, { useMemo } from 'react';
 import AnimatedViewShared from '@/components/ui/AnimatedViewShared';
-import { Pressable } from 'react-native';
+import { Pressable, Alert, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, X, Trash2, Clock, Dumbbell } from 'lucide-react-native';
+import { Plus, X, Trash2, Clock, Dumbbell, Save } from 'lucide-react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { AppButton, IconButton } from '@/components/ui/AppButton';
-import { CardBase } from '@/components/ui/Card';
+import { IconButton } from '@/components/ui/AppButton';
 import { Screen } from '@/components/ui/Screen';
 import { RoutineEditorList } from '@/components/routine/RoutineEditorList';
+import { BodyAnatomySvg } from '@/components/ui/BodyAnatomySvg';
+import { EmptyStateIcon } from '@/components/feedback/EmptyStateIcon';
 import { useRoutineEditor } from '@/hooks/domain/useRoutineEditor';
 import { useSettings } from '@/store/useSettings';
 import { calculateEstimatedDurationMinutes } from '@/utils/routine';
 import { ROUTES } from '@/constants/routes';
-// Header extraído
+
+const LIST_BOTTOM_SAFE_PADDING = 120;
+
 function RoutineFormHeader({ title, routineId, isSaving, onSave }: Pick<RoutineFormTemplateProps, 'title' | 'routineId' | 'isSaving' | 'onSave'>) {
   return (
     <XStack
@@ -45,22 +48,34 @@ function RoutineFormHeader({ title, routineId, isSaving, onSave }: Pick<RoutineF
           </AppText>
         )}
       </YStack>
-      <AppButton
-        appVariant="primary"
-        size="sm"
-        label={isSaving ? "Guardando..." : "Guardar"}
-        fullWidth={false}
+      <IconButton
+        icon={
+          isSaving
+            ? <ActivityIndicator size={20} color="white" />
+            : <AppIcon icon={Save} color="color" size={24} />
+        }
+        size={44}
+        backgroundColor="$primary"
         onPress={onSave}
+        accessibilityLabel={isSaving ? "Guardando rutina" : "Guardar rutina"}
         disabled={isSaving}
-        loading={isSaving}
-        thermalBreathing
       />
     </XStack>
   );
 }
 
-// Footer extraído
-function RoutineFormFooter({ onDelete }: Pick<RoutineFormTemplateProps, 'onDelete'>) {
+function confirmDeleteRoutine(onDelete: () => void) {
+  Alert.alert(
+    'Eliminar rutina',
+    '¿Estás seguro? Esta acción no se puede deshacer.',
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: onDelete },
+    ],
+  );
+}
+
+function RoutineFormFooter({ onDelete, exerciseCount }: Pick<RoutineFormTemplateProps, 'onDelete'> & { exerciseCount: number }) {
   return (
     <YStack>
       <Pressable
@@ -85,9 +100,19 @@ function RoutineFormFooter({ onDelete }: Pick<RoutineFormTemplateProps, 'onDelet
           </AppText>
         </YStack>
       </Pressable>
+
+      {exerciseCount === 0 && (
+        <YStack padding="$3xl" alignItems="center" gap="$md">
+          <EmptyStateIcon icon={Dumbbell} size={48} color="textTertiary" />
+          <AppText variant="bodyMd" color="textSecondary" textAlign="center">
+            Agregá ejercicios para armar tu rutina
+          </AppText>
+        </YStack>
+      )}
+
       {onDelete && (
         <Pressable
-          onPress={onDelete}
+          onPress={() => confirmDeleteRoutine(onDelete)}
           accessibilityRole="button"
           accessibilityLabel="Eliminar rutina"
         >
@@ -95,7 +120,8 @@ function RoutineFormFooter({ onDelete }: Pick<RoutineFormTemplateProps, 'onDelet
             alignItems="center"
             justifyContent="center"
             marginTop="$3xl"
-            padding="$md"
+            padding="$lg"
+            minHeight={48}
             gap="$sm"
           >
             <AppIcon icon={Trash2} size={18} color="error" />
@@ -117,7 +143,14 @@ export interface RoutineFormTemplateProps {
   onDelete?: () => void;
 }
 
-export function RoutineFormTemplate({ title, routineId, isSaving, onSave, onDelete }: RoutineFormTemplateProps) {
+export function RoutineFormTemplate({ 
+  title, 
+  routineId, 
+  isSaving, 
+  onSave, 
+  onDelete 
+}: RoutineFormTemplateProps) {
+
   const {
     name, notes, exercises,
     setName, setNotes,
@@ -127,63 +160,115 @@ export function RoutineFormTemplate({ title, routineId, isSaving, onSave, onDele
 
   const restTimerSeconds = useSettings(s => s.restTimerSeconds);
 
+  const accumulatedMuscles = useMemo(() => {
+    const muscleSet = new Set<string>();
+    exercises.forEach((ex) => {
+      if (ex.muscle && ex.muscle !== 'other') muscleSet.add(ex.muscle);
+    });
+    return Array.from(muscleSet);
+  }, [exercises]);
+
   return (
-    <Screen safeAreaEdges={['top', 'left', 'right']}>
-      <RoutineFormHeader title={title} routineId={routineId} isSaving={isSaving} onSave={onSave} />
-      <RoutineEditorList
-        exercises={exercises}
-        onReorder={reorderExercises}
-        onRemove={removeExercise}
-        onUpdate={updateExercise}
-        onLinkNext={linkExerciseNext}
-        onUnlink={unlinkExercise}
-        listHeaderComponent={
-          <YStack marginTop="$lg">
-            {/* Nombre Card */}
-            <CardBase padding="$lg" marginBottom="$lg">
-              <AppText variant="label" color="textSecondary" marginBottom="$sm">
-                Nombre
-              </AppText>
-              <AppInput
-                placeholder="Ej. Empuje (Push Day)"
-                value={name}
-                onChangeText={setName}
-              />
-              {exercises.length > 0 && (
-                <XStack marginTop="$md" gap="$lg" alignItems="center">
-                  <XStack alignItems="center" gap="$xs">
-                    <AppIcon icon={Clock} size={14} color="textTertiary" />
-                    <AppText variant="label" color="textTertiary">
-                      ~{calculateEstimatedDurationMinutes(exercises, restTimerSeconds)} min
-                    </AppText>
+    <Screen safeAreaEdges={['top', 'bottom', 'left', 'right']}>
+      <YStack flex={1}>
+        <RoutineFormHeader
+          title={title}
+          routineId={routineId}
+          isSaving={isSaving}
+          onSave={onSave}
+        />
+
+        <RoutineEditorList
+          exercises={exercises}
+          onReorder={reorderExercises}
+          onRemove={removeExercise}
+          onUpdate={updateExercise}
+          onLinkNext={linkExerciseNext}
+          onUnlink={unlinkExercise}
+
+          contentContainerStyle={{
+            paddingBottom: LIST_BOTTOM_SAFE_PADDING,
+          }}
+
+          listHeaderComponent={
+            <YStack marginTop="$lg">
+              <YStack gap="$md" marginBottom="$lg">
+
+                <AppText variant="label" color="textSecondary" marginBottom="$sm">
+                  Nombre
+                </AppText>
+
+                <AppInput
+                  placeholder="Ej. Empuje (Push Day)"
+                  value={name}
+                  onChangeText={setName}
+                  accessibilityLabel="Nombre de la rutina"
+                />
+
+                {exercises.length > 0 && (
+                  <XStack marginTop="$md" gap="$lg" alignItems="center">
+                    <XStack alignItems="center" gap="$xs">
+                      <AppIcon icon={Clock} size={14} color="textTertiary" />
+                      <AppText variant="label" color="textTertiary">
+                        ~{calculateEstimatedDurationMinutes(exercises, restTimerSeconds)} min
+                      </AppText>
+                    </XStack>
+
+                    <XStack alignItems="center" gap="$xs">
+                      <AppIcon icon={Dumbbell} size={14} color="textTertiary" />
+                      <AppText variant="label" color="textTertiary">
+                        {exercises.length} ejercicio{exercises.length !== 1 ? 's' : ''}
+                      </AppText>
+                    </XStack>
                   </XStack>
-                  <XStack alignItems="center" gap="$xs">
-                    <AppIcon icon={Dumbbell} size={14} color="textTertiary" />
-                    <AppText variant="label" color="textTertiary">
-                      {exercises.length} ejercicio{exercises.length !== 1 ? 's' : ''}
-                    </AppText>
-                  </XStack>
-                </XStack>
-              )}
-              <AppText variant="label" color="textSecondary" marginBottom="$sm">
-                Notas (Opcional)
+                )}
+
+                {accumulatedMuscles.length > 0 && (
+                  <YStack
+                    alignItems="center"
+                    justifyContent="center"
+                    height={200}
+                    width="100%"
+                    backgroundColor="$surfaceSecondary"
+                    borderColor="$borderColor"
+                    borderWidth={1}
+                    borderRadius="$xl"
+                    overflow="hidden"
+                  >
+                    <BodyAnatomySvg
+                      primaryMuscles={accumulatedMuscles}
+                    />
+                  </YStack>
+                )}
+
+                <AppText variant="label" color="textSecondary" marginBottom="$sm">
+                  Notas (Opcional)
+                </AppText>
+
+                <AppInput
+                  value={notes}
+                  onChangeText={setNotes}
+                  placeholder="Escribe alguna nota..."
+                  multiline
+                  scrollEnabled
+                  minHeight={80}
+                  maxHeight={160}
+                  textAlignVertical="top"
+                  accessibilityLabel="Notas de la rutina"
+                />
+              </YStack>
+
+              <AppText variant="titleSm" marginBottom="$md">
+                Ejercicios
               </AppText>
-              <AppInput
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="Escribe alguna nota..."
-                multiline
-                scrollEnabled={true}
-                minHeight={80}
-                maxHeight={160}
-                textAlignVertical="top"
-              />
-            </CardBase>
-            <AppText variant="titleSm" marginBottom="$md">Ejercicios</AppText>
-          </YStack>
-        }
-        listFooterComponent={<RoutineFormFooter onDelete={onDelete} />}
-      />
+            </YStack>
+          }
+
+          listFooterComponent={
+            <RoutineFormFooter onDelete={onDelete} exerciseCount={exercises.length} />
+          }
+        />
+      </YStack>
     </Screen>
   );
 }

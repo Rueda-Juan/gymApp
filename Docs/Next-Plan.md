@@ -1,301 +1,60 @@
-# Temper — PLAN-A
-
-## Screen Contracts, State Matrix & Implementation Blueprint
-
----
-
-# 1. Navigation Map (Source of Truth)
-
-```typescript
-export const routes = {
-  dashboard: '/(tabs)',
-  routines: '/(tabs)/routines',
-  history: '/(tabs)/history',
-  stats: '/(tabs)/stats',
-  settings: '/(tabs)/settings',
-  activeWorkout: '/(workouts)/[active]',
-  summary: '/(workouts)/summary',
-  exerciseDetail: '/exercise/[id]',
-}
-```
-
-**Validation checklist**
-
-* Ruta ↔ nombre de pantalla 1:1
-* Nombre de archivo Expo Router coincide con path
-* Deep link soportado
-* Parámetros tipados (`[id]`, `[active]`)
-* Analytics event name definido
-
----
-
-# 2. Objective
-
-Formalizar contratos de pantalla, inventario de componentes, matrices de estado, contratos de navegación y criterios QA para todas las vistas principales de Temper.
-
-Este documento es **pre-implementación IA** y sirve como blueprint técnico para frontend, QA y planificación.
-
----
-
-# 3. Scope
-
-## In scope
-
-* Dashboard
-* Rutinas
-* Historial
-* Estadísticas
-* Ajustes
-* Entrenamiento Activo
-* Explorador de Ejercicios
-* Resumen Post Sesión
-
-## Out of scope
-
-* Integraciones externas
-* Pantallas legacy
-* Features experimentales
-* Backend contracts
-
----
-
-# 4. Architecture Impact
-
-| Layer       | Impact |
-| ----------- | ------ |
-| Data        | Bajo   |
-| Domain      | Medio  |
-| Application | Alto   |
-| UI          | Alto   |
-| Infra       | Bajo   |
-
----
-
-# 5. Screen Contracts (Mandatory)
-
-## DashboardScreen
-
-```ts
-{
-  inputs: [user, activeWorkout, streakData, routinesPreview],
-  actions: [startWorkout, resumeWorkout, openRoutine, openStats],
-  states: [loading, empty, error, success, offline, refreshing],
-  dependencies: [useDashboardStore, useWorkoutSession, useNetworkState],
-  navigation: {
-    routines: routes.routines,
-    activeWorkout: routes.activeWorkout,
-    stats: routes.stats
-  }
-}
-```
-
-## ActiveWorkoutScreen
-
-```ts
-{
-  inputs: [session, currentExercise, restTimer, suggestions],
-  actions: [completeSet, skipRest, finishWorkout, editWeight],
-  states: [loading, success, paused, offline, syncPending, error],
-  dependencies: [useWorkoutStore, useRestTimer, useOfflineQueue]
-}
-```
-
----
-
-# 6. State Matrix by Screen
-
-## Dashboard
-
-| State      | Expected UI              |
-| ---------- | ------------------------ |
-| loading    | skeleton cards + shimmer |
-| empty      | CTA crear primera rutina |
-| error      | retry + cached fallback  |
-| offline    | persistent banner        |
-| success    | dashboard completo       |
-| refreshing | pull-to-refresh spinner  |
-
-## Historial
-
-| State   | Expected UI                |
-| ------- | -------------------------- |
-| empty   | mensaje sin entrenamientos |
-| loading | skeleton list              |
-| error   | retry + soporte cache      |
-| success | lista agrupada por semana  |
-
-## Active Workout
-
-| State       | Expected UI          |
-| ----------- | -------------------- |
-| active      | sets interactivos    |
-| paused      | overlay + resume CTA |
-| syncPending | cloud sync badge     |
-| offline     | queue persistente    |
-| error       | restore session      |
-
----
-
-# 7. Navigation Contracts
-
-Cada transición debe definir:
-
-```ts
-{
-  source: 'dashboard',
-  action: 'startWorkout',
-  destination: 'activeWorkout',
-  params: { active: string },
-  fallback: 'restore_previous_session'
-}
-```
-
-Esto evita ambigüedad para IA y E2E.
-
----
-
-# 8. Component Inventory
-
-## Global Components
-
-* AppHeader
-* ScreenContainer
-* PrimaryButton
-* SecondaryButton
-* StatCard
-* ExerciseCard
-* RestChip
-* NumericDisplay
-* BottomSheet
-* ErrorState
-* EmptyState
-* LoadingSkeleton
-* OfflineBanner
-
-## Screen-specific
-
-* WorkoutSetRow
-* ExerciseMuscleBadge
-* SessionProgressBar
-* AnimatedTrophyCard
-
----
-
-# 9. Design Tokens Structure
-
-## Files
-
-```text
-src/design/
-  tokens/
-    primitives.ts
-    semantic.ts
-    components.ts
-    motion.ts
-```
-
-## Mapping
-
-* primitives → raw palette
-* semantic → theme aliases
-* components → presets
-* motion → durations, easing, reduced motion
-
----
-
-# 10. Motion Contracts
-
-Solo Reanimated.
-
-```ts
-export const MOTION = {
-  micro: 100,
-  standard: 220,
-  screen: 280,
-  sheet: 320,
-}
-```
-
-## Accessibility
-
-* support reduce motion
-* disable non-essential transitions
-* preserve layout stability
-
----
-
-# 11. Accessibility QA Matrix
-
-## Mandatory
-
-* contraste AA 4.5:1
-* touch target >= 44x44
-* focus visible
-* semantic labels
-* screen reader order
-* reduce motion
-* dynamic type resilience
-* landscape support
-
----
-
-# 12. Testing Strategy
-
-## Unit
-
-* state rendering
-* component variants
-* edge states
-
-## Integration
-
-* store + screen contracts
-* navigation params
-* offline restore
-
-## E2E
-
-* start workout
-* finish workout
-* restore interrupted session
-* empty states
-* retry flows
-
----
-
-# 13. Risks
-
-* documentation drift
-* missing transient states
-* duplicated components
-* route mismatch
-* token mismatch
-
----
-
-# 14. Acceptance Criteria
-
-* todas las pantallas tienen contrato
-* matriz de estados completa
-* navegación tipada
-* componentes inventariados
-* tokens separados
-* QA checklist completo
-* validación frontend + QA
-
----
-
-# 15. Next AI Plan (PLAN-B)
-
-Después de este documento, el siguiente paso recomendado es:
-
-**PLAN-B — Implementation Tasks for AI**
-
-* create folders
-* scaffold screens
-* create shared components
-* wire stores
-* implement state matrix
-* add tests
-
-Este archivo queda como **fuente de verdad previa a implementación**.
+1. ARQUITECTURA GLOBAL
+
+La separación entre WeightInputModal, Sheets, useWeightEngine y WeightEngine es solo parcial.
+Hay violaciones de responsabilidad: los sheets reciben engine + result (acoplamiento UI ↔ dominio), y CableStack mantiene estado local de negocio.
+Lógica duplicada: el input de peso existe en varios lugares (WeightInputModal, useCableStack, sets).
+El patrón actual es funcional pero no completamente escalable ni predecible; la testabilidad se ve afectada por la doble fuente de verdad.
+━━━━━━━━━━━━━━━━━━━━━━━
+2. FLUJO DE DATOS (CRÍTICO)
+
+WeightInputModal crea engine + result y los pasa a los sheets.
+Sheets usan result directamente, pero CableStackSelectorSheet mantiene estado local (selected), lo que puede desincronizar la UI y el engine.
+PlateCalculatorSheet depende de sets externos, lo que fragmenta la fuente de verdad.
+Fuente de verdad real: está fragmentada entre WeightInputModal y el estado local de los sheets.
+Inconsistencia: barbell es input-driven, cable es UI-driven. No es consistente.
+━━━━━━━━━━━━━━━━━━━━━━━
+3. ANTI-PATTERNS ESPECÍFICOS
+
+Pasar engine + result juntos: smell. Indica acoplamiento innecesario y posible desincronización.
+Uso de JSON.stringify en useMemo: antipatrón. Puede causar renders innecesarios y es frágil ante cambios de orden de propiedades.
+Estado local en useCableStack: smell. La lógica de negocio debe estar en el nivel superior, no en el sheet.
+onChange en useEffect: antipatrón. Genera side-effects y flujo no determinístico.
+Lógica de selección en UI vs dominio: smell. La UI debe ser pura, la lógica de negocio debe estar en el dominio/hook.
+require() dinámico: smell. Rompe la predictibilidad y dificulta el análisis estático.
+━━━━━━━━━━━━━━━━━━━━━━━
+4. CONSISTENCIA ENTRE MODOS
+
+Son dos paradigmas distintos: barbell es input-controlado, cable es UI-controlado.
+Esto complica la mantenibilidad y la experiencia de usuario.
+Unificación: ambos deben ser input-driven, con el input controlado por WeightInputModal.
+━━━━━━━━━━━━━━━━━━━━━━━
+5. RENDIMIENTO Y RE-RENDERS
+
+useMemo con JSON.stringify es frágil y poco eficiente.
+Renders de listas y animaciones están bien, pero podrían optimizarse con React.memo y claves estables.
+Recreación de engine: debe evitarse, solo recrear si cambian type/config.
+━━━━━━━━━━━━━━━━━━━━━━━
+6. API DESIGN
+
+Sobran: engine, result, props derivados.
+Faltan: input controlado único (weight o blocks), callbacks claros.
+Todo lo derivado debe ser interno al sheet/hook.
+La API es accidental, no coherente.
+━━━━━━━━━━━━━━━━━━━━━━━
+7. PROPUESTA DE REFACTOR
+
+WeightInputModal controla el input (targetWeight o selectedBlocks) y lo pasa a los sheets.
+useWeightEngine recibe type, config, input y expone result.
+Sheets reciben solo input, onChange y usan useWeightEngine internamente.
+El engine nunca se pasa como prop.
+El estado local de selección (cable) debe ser levantado al modal o sincronizado con el input externo.
+Elimina JSON.stringify, usa dependencias explícitas y estables.
+Snippet ideal para ambos sheets:
+
+━━━━━━━━━━━━━━━━━━━━━━━
+8. VEREDICTO FINAL
+
+Estado actual: funcional pero frágil
+Riesgos: desincronización, bugs de UI, difícil de testear, APIs inconsistentes.
+Deuda técnica: ALTA
+Prioridad de refactor: ALTA. Unificar el modelo de datos y simplificar la API es crítico para escalabilidad y mantenibilidad.

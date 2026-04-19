@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "eslint-import-resolver-typescript": "^4.4.4"
+  },
+  "scripts": {
+    "lint": "expo lint"
+  }
+}

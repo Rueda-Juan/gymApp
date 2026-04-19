@@ -38,8 +38,8 @@ export const MUSCLE_LABELS: Record<MuscleKey, string> = {
   calves: 'Pantorrillas',
   adductors: 'Aductores',
   abs: 'Abdominales',
-  'upper-abs': 'Abdominales Superiores',
-  'lower-abs': 'Abdominales Inferiores',
+  'upper-abs': 'Abd. Superior',
+  'lower-abs': 'Abd. Inferior',
   obliques: 'Oblicuos',
   traps: 'Trapecios',
 };

@@ -45,7 +45,12 @@ export default function SettingsScreen() {
   const { restTimerInput, setRestTimerInput, restTimerSeconds, applyRestTimerSeconds, handleRestTimerInputChange } = useRestTimer();
 
   return (
-    <Screen scroll safeAreaEdges={['top', 'left', 'right']}>
+    <Screen
+      scroll
+      keyboardAvoiding
+      keyboardVerticalOffset={0}
+      safeAreaEdges={['top','bottom','left','right']}
+    >
       <XStack paddingHorizontal="$xl" paddingTop="$lg" paddingBottom="$md">
         <AppText variant="titleLg">Ajustes</AppText>
       </XStack>

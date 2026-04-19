@@ -1,300 +1,244 @@
-import { XStack, YStack, View } from 'tamagui';
-import React, { useMemo } from 'react';
-import { Pressable, ScrollView } from 'react-native';
-import Animated, { FadeInRight, FadeInLeft, FadeOutLeft, FadeOutRight, FadeInDown, FadeOutUp } from 'react-native-reanimated';
-import { ArrowRightLeft } from 'lucide-react-native';
+import React from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomBarProvider, useBottomBarHeightContext } from '@/context/BottomBarHeightContext';
+import { YStack, XStack, Button as TamaguiButton } from 'tamagui';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 
+import { BottomBarProvider, useBottomBarHeightContext } from '@/context/BottomBarHeightContext';
 import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useRestTimer } from '@/store/useRestTimer';
-import { useSettings } from '@/store/useSettings';
+
 import { Screen } from '@/components/ui/Screen';
-import { useSupersetCarousel } from '@/hooks/ui/useSupersetCarousel';
-import { useSupersetFlow } from '@/hooks/domain/useSupersetFlow';
+import { AppText } from '@/components/ui/AppText';
+import { AppButton } from '@/components/ui/AppButton';
+
+import { WorkoutHeader } from '@/components/workout/activeWorkout/WorkoutHeader';
+import { ActiveWorkoutExerciseDetail } from '@/components/workout/activeWorkout/ActiveWorkoutExerciseDetail';
+import { ActiveWorkoutBottomBar } from '@/components/workout/activeWorkout/ActiveWorkoutBottomBar';
+import { ActiveWorkoutRestTimerChip } from '@/components/workout/activeWorkout/ActiveWorkoutRestTimerChip';
+import { PRCelebrationOverlay } from '@/components/workout/activeWorkout/PRCelebrationOverlay';
+import { PlateCalculatorSheet } from '@/components/workout/plateSelector/PlateCalculatorModal';
+import { createWeightEngine, WeightEngine } from '@/domain/weight/weightEngine';
+
 import { useWorkoutTimer } from '@/hooks/application/useWorkoutTimer';
 import { useRestTimerAnimation } from '@/hooks/ui/useRestTimerAnimation';
-import { usePreviousSets } from '@/hooks/domain/usePreviousSets';
-import { AppText } from '@/components/ui/AppText';
-import { AppIcon } from '@/components/ui/AppIcon';
-import { AppButton } from '@/components/ui/AppButton';
-import { getExerciseName } from '@/utils/exercise';
-import { WorkoutHeader } from '@/components/workout/WorkoutHeader';
-import { ActiveWorkoutExerciseDetail } from '@/components/workout/ActiveWorkoutExerciseDetail';
-import { PlateCalculatorSheet } from '@/components/workout/PlateCalculatorModal';
-import { ActiveWorkoutRestTimerChip } from '@/components/workout/ActiveWorkoutRestTimerChip';
-import { ActiveWorkoutBottomBar } from '@/components/workout/ActiveWorkoutBottomBar';
-import { ActiveWorkoutExercisePickerSheet } from '@/components/workout/ActiveWorkoutExercisePickerSheet';
-import { ActiveWorkoutOptionsSheet } from '@/components/workout/ActiveWorkoutOptionsSheet';
-import { WorkoutSessionNoteSheet } from '@/components/workout/WorkoutSessionNoteSheet';
-import { motion } from '@/constants/motion';
-import { useMotion } from '@/hooks/ui/useMotion';
 import { useActiveWorkoutController } from '@/hooks/domain/useActiveWorkoutController';
-import { UndoToast } from '@/components/ui/UndoToast';
-import { PRCelebrationOverlay } from '@/components/workout/PRCelebrationOverlay';
+import { Plus } from 'lucide-react-native';
 
-const SUPERSET_TAB_HEIGHT = 52;
-const SUPERSET_TAB_BORDER_RADIUS = 20;
 
-export default function ActiveWorkoutScreen() {
-  const insets = useSafeAreaInsets();
-
+function EmptyStateView({ onAdd }: { onAdd: () => void }) {
   return (
-    <BottomBarProvider initialSafeAreaBottom={insets.bottom}>
-      <RenderContents />
-    </BottomBarProvider>
+    <YStack flex={1} alignItems="center" justifyContent="center" padding="$2xl" gap="$lg">
+      <AppText variant="bodyLg" color="textSecondary" textAlign="center">
+        Comienza agregando tu primer ejercicio
+      </AppText>
+      <AppButton label="Agregar ejercicio" onPress={onAdd} />
+    </YStack>
   );
 }
 
-function RenderContents() {
-  const m = useMotion();
-  const routineId = useActiveWorkout(s => s.routineId);
-  const routineName = useActiveWorkout(s => s.routineName);
-  const exercises = useActiveWorkout(s => s.exercises);
+function Content() {
+  const insets = useSafeAreaInsets();
+  const { bottomBarHeight } = useBottomBarHeightContext();
   const currentExerciseIndex = useActiveWorkout(s => s.currentExerciseIndex);
   const updateSetValues = useActiveWorkout(s => s.updateSetValues);
   const sessionNote = useActiveWorkout(s => s.sessionNote);
-  const setSessionNote = useActiveWorkout(s => s.setSessionNote);
-  const pendingDeletions = useActiveWorkout(s => s.pendingDeletionsByExercise);
+  const cancelWorkout = useActiveWorkout(s => s.cancelWorkout);
+  const finishWorkout = useActiveWorkout(s => s.finishWorkout);
+  const exercises = useActiveWorkout(s => s.exercises);
 
-  const globalRestSeconds = useSettings(s => s.restTimerSeconds);
-  const insets = useSafeAreaInsets();
+  const restTimerIsActive = useRestTimer(s => s.isActive);
 
   const { formattedTime } = useWorkoutTimer();
-  const restTimerIsActive = useRestTimer(s => s.isActive);
-  const { restDisplaySeconds, hourglassAnimatedStyle, restProgressStyle } = useRestTimerAnimation();
+  const { restDisplaySeconds, restProgressStyle, hourglassAnimatedStyle } =
+    useRestTimerAnimation();
+
+  const { state, actions } = useActiveWorkoutController();
+  const plateCalcSheetRef = state.plateCalcSheetRef;
+
+  // Estado para mostrar modales/bottomsheets
+  const [showAddExercise, setShowAddExercise] = React.useState(false);
+  const [showOptions, setShowOptions] = React.useState(false);
+  const [optionsExerciseId, setOptionsExerciseId] = React.useState<string | null>(null);
 
   const currentExercise = exercises[currentExerciseIndex];
+  const router = useRouter();
 
-  const {
-    isInSuperset,
-    supersetOrder,
-    supersetCarouselIndex,
-    supersetTransitionName,
-    setSupersetCarouselIndex,
-    supersetGroupExercises,
-  } = useSupersetCarousel(exercises, currentExerciseIndex);
+  // Cancelar sesión vacía automáticamente al montar
+  React.useEffect(() => {
+    if (exercises.length === 0) {
+      cancelWorkout();
+      router.replace('/');
+    }
+  }, [exercises.length, cancelWorkout, router]);
 
-  const { scrollRef, registerLayout, scrollToExercise } = useSupersetFlow();
-  const { bottomBarHeight } = useBottomBarHeightContext();
+  // Handler para cancelar sesión
+  const handleCancel = React.useCallback(() => {
+    cancelWorkout();
+    router.replace('/');
+  }, [cancelWorkout, router]);
 
-  const handleSupersetSetComplete = () => {
-    if (!isInSuperset) return;
-    const nextIdx = (supersetCarouselIndex + 1) % supersetOrder.length;
-    setSupersetCarouselIndex(nextIdx);
-    const nextId = supersetOrder[nextIdx];
-    if (nextId) setTimeout(() => scrollToExercise(nextId, bottomBarHeight), 100);
-  };
+  // Handler para finalizar sesión
+  const handleFinish = React.useCallback(() => {
+    finishWorkout();
+    router.replace('/');
+  }, [finishWorkout, router]);
 
-  const activeExercise = isInSuperset ? exercises.find(ex => ex.id === supersetOrder[supersetCarouselIndex]) : currentExercise;
+  // Handler para abrir bottomSheet de nota
+  const handleOpenNote = React.useCallback(() => {
+    if (state.noteSheetRef.current) {
+      state.noteSheetRef.current.expand();
+    }
+  }, [state.noteSheetRef]);
 
-  const { state, actions } = useActiveWorkoutController({
-    activeExerciseId: activeExercise?.exerciseId,
-    isInSuperset,
-    onSupersetSetComplete: handleSupersetSetComplete,
-    supersetOrder,
-    supersetCarouselIndex,
-    supersetGroupExercises
-  });
+  // Handler para abrir bottomSheet de plateCalculator
+  const handleOpenPlateCalculator = React.useCallback(() => {
+    if (plateCalcSheetRef.current) {
+      plateCalcSheetRef.current.present();
+    }
+  }, [plateCalcSheetRef]);
 
-  const { resolvePreviousWeight } = usePreviousSets(activeExercise?.exerciseId);
-  
-  const showUndoToast = !!activeExercise && pendingDeletions[activeExercise.id]?.length > 0;
-
-  const nextExercise = exercises[currentExerciseIndex + 1];
-  const nextExerciseName = nextExercise ? getExerciseName(nextExercise) : null;
-
-  const allSetsCompleted = exercises.length > 0 &&
-    exercises.every(ex => ex.status === 'skipped' || ex.sets.every(s => s.isCompleted));
-
-  const suggestedWeight = state.weightSuggestion?.suggestedWeight != null
-    ? `${state.weightSuggestion.suggestedWeight} kg`
-    : null;
-  const suggestionMessage = state.weightSuggestion?.message ?? null;
-
-  const enterAnim = useMemo(
-    () => m.entering(state.navDirection === 'forward' ? FadeInRight.duration(motion.duration.normal) : FadeInLeft.duration(motion.duration.normal)),
-    [state.navDirection, m.isReduced, m.entering],
-  );
-  const exitAnim = useMemo(
-    () => m.exiting(state.navDirection === 'forward' ? FadeOutLeft.duration(motion.duration.fast) : FadeOutRight.duration(motion.duration.fast)),
-    [state.navDirection, m.isReduced, m.exiting],
-  );
+  // Handler para abrir opciones del ejercicio
+  const handleOpenOptions = React.useCallback((exerciseId: string) => {
+    setOptionsExerciseId(exerciseId);
+    setShowOptions(true);
+    if (state.optionsSheetRef.current) {
+      state.optionsSheetRef.current.expand();
+    }
+  }, [state.optionsSheetRef]);
 
   return (
-    <Screen scroll={false} safeAreaEdges={['top', 'left', 'right']}>
-      <WorkoutHeader
-        formattedTime={formattedTime}
-        routineName={routineName ?? 'Entrenamiento Libre'}
-        currentExerciseIndex={currentExerciseIndex}
-        totalExercises={exercises.length}
-        isFocusMode={state.isFocusMode}
-        onToggleFocus={actions.setIsFocusMode}
-        onCancel={actions.handleCancel}
-        onFinish={actions.handleFinish}
-        allSetsCompleted={allSetsCompleted}
-        sessionNote={sessionNote}
-        onNotePress={() => state.noteSheetRef.current?.expand()}
-      />
+    <Screen safeAreaEdges={['top','bottom','left','right']}>
+      <YStack flex={1}>
+        {/* HEADER */}
+        <WorkoutHeader
+          formattedTime={formattedTime}
+          routineName="Entrenamiento"
+          currentExerciseIndex={currentExerciseIndex}
+          totalExercises={exercises.length}
+          isFocusMode={false}
+          onToggleFocus={() => {}}
+          onCancel={handleCancel}
+          onFinish={handleFinish}
+          sessionNote={sessionNote}
+          onNotePress={handleOpenNote}
+        />
 
-      <ActiveWorkoutRestTimerChip
-        isVisible={restTimerIsActive}
-        restDisplaySeconds={restDisplaySeconds}
-        restProgressStyle={restProgressStyle}
-        onDecrease={actions.handleDecreaseTimer}
-        onIncrease={actions.handleIncreaseTimer}
-      />
-
-      {exercises.length === 0 ? (
-         <YStack flex={1} alignItems="center" justifyContent="center" padding="$xl" gap="$md">
-           <AppText variant="bodyLg" color="textSecondary" textAlign="center">
-             Comienza agregando tu primer ejercicio a esta sesión libre
-           </AppText>
-           <AppButton label="Agregar ejercicio" onPress={actions.handleOpenExercisePickerFromOptions} />
-         </YStack>
-      ) : isInSuperset && supersetOrder.length > 0 ? (
-        <YStack flex={1}>
-          <Animated.ScrollView
-            ref={scrollRef}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            style={{ flex: 1, paddingBottom: bottomBarHeight }}
-          >
-            {/* Mechanical Connector Line */}
-            <View 
-              position="absolute"
-              left={20}
-              top={80}
-              bottom={120}
-              width={2}
-              backgroundColor="$primary"
-              opacity={0.3}
-              borderRadius={1}
-            />
-
-            {supersetOrder.map((exId, idx) => {
-              const carouselExercise = exercises.find(ex => ex.id === exId);
-              if (!carouselExercise) return null;
-              const isActive = idx === supersetCarouselIndex;
-
-              return (
-                <YStack 
-                  key={exId} 
-                  onLayout={(e) => registerLayout(exId, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}
-                  opacity={isActive ? 1 : 0.4}
-                  scale={isActive ? 1 : 0.98}
-                >
-                  <ActiveWorkoutExerciseDetail
-                    exercise={carouselExercise}
-                    focusedSetId={state.focusedSetId}
-                    suggestedWeight={suggestedWeight}
-                    suggestionMessage={suggestionMessage}
-                    onSkipExercise={actions.handleSkipExercise}
-                    onOpenOptions={actions.openOptionsForExercise}
-                    onUpdateSetValues={updateSetValues}
-                    onToggleSet={actions.onSetToggle}
-                    onRemoveSet={actions.handleRemoveSet}
-                    onAddSet={actions.addSet}
-                    resolvePreviousWeight={resolvePreviousWeight}
-                    scrollEnabled={false}
-                    isSupersetMember={true}
-                  />
-                </YStack>
-              );
-            })}
-          </Animated.ScrollView>
-        </YStack>
-      ) : (
-        <Animated.View
-          key={currentExercise.id}
-          entering={enterAnim}
-          exiting={exitAnim}
-          style={{ flex: 1 }}
-        >
-          <ActiveWorkoutExerciseDetail
-            exercise={currentExercise}
-            focusedSetId={state.focusedSetId}
-            suggestedWeight={suggestedWeight}
-            suggestionMessage={suggestionMessage}
-            onSkipExercise={actions.handleSkipExercise}
-            onOpenOptions={actions.openOptionsForExercise}
-            onUpdateSetValues={updateSetValues}
-            onToggleSet={actions.onSetToggle}
-            onRemoveSet={actions.handleRemoveSet}
-            onAddSet={actions.addSet}
-            resolvePreviousWeight={resolvePreviousWeight}
+        {/* CONTENT */}
+        {exercises.length === 0 ? (
+          <EmptyStateView
+            onAdd={() => {
+              setShowAddExercise(true);
+            }}
           />
-        </Animated.View>
-      )}
+        ) : currentExercise ? (
+          <Animated.View entering={FadeInDown} style={{ flex: 1 }}>
+            <ActiveWorkoutExerciseDetail
+              exercise={currentExercise}
+              focusedSetId={state.focusedSetId}
+              suggestedWeight={
+                typeof state.weightSuggestion?.suggestedWeight === 'number'
+                  ? String(state.weightSuggestion.suggestedWeight)
+                  : ''
+              }
+              suggestionMessage={state.weightSuggestion?.message ?? ''}
+              resolvePreviousWeight={() => 0}
+              onUpdateSetValues={updateSetValues}
+              onToggleSet={actions.onSetToggle}
+              onRemoveSet={() => {}}
+              onAddSet={actions.addSet}
+              onSkipExercise={() => {}}
+              onOpenOptions={handleOpenOptions}
+            />
+          </Animated.View>
+        ) : null}
 
-      <ActiveWorkoutBottomBar
-        isFirst={state.isFirst}
-        isLast={state.isLast}
-        isFinishing={state.isFinishing}
-        sessionNote={sessionNote}
-        restTimerIsActive={restTimerIsActive}
-        restDisplaySeconds={restDisplaySeconds}
-        insetsBottom={insets.bottom}
-        hourglassAnimatedStyle={hourglassAnimatedStyle}
-        onPrev={actions.goToPrev}
-        onOpenNote={() => state.noteSheetRef.current?.expand()}
-        onOpenRestTimer={actions.handleOpenRestTimer}
-        onNext={actions.goToNext}
-        onOpenPlateCalculator={() => actions.openPlateCalculator(activeExercise?.sets ?? [])}
-        nextExerciseName={nextExerciseName}
-      />
+        {/* REST TIMER */}
+        <ActiveWorkoutRestTimerChip
+          isVisible={restTimerIsActive}
+          restDisplaySeconds={restDisplaySeconds}
+          restProgressStyle={restProgressStyle}
+          onDecrease={actions.handleDecreaseTimer}
+          onIncrease={actions.handleIncreaseTimer}
+        />
 
-      <UndoToast
-        visible={showUndoToast}
-        message="Set eliminado"
-        onUndo={() => actions.handleUndoSetDeletion(activeExercise?.id || '')}
-        bottomOffset={insets.bottom + 100}
-      />
-      
-      <PRCelebrationOverlay 
-        visible={state.showPRCelebration} 
-        onFinished={() => {}}
-      />
+        {/* BOTTOM BAR */}
+        <ActiveWorkoutBottomBar
+          isFirst={state.isFirst}
+          isLast={state.isLast}
+          isFinishing={state.isFinishing}
+          sessionNote={sessionNote}
+          restTimerIsActive={restTimerIsActive}
+          restDisplaySeconds={restDisplaySeconds}
+          insetsBottom={insets.bottom}
+          hourglassAnimatedStyle={hourglassAnimatedStyle}
+          onPrev={actions.goToPrev}
+          onNext={state.isLast ? handleFinish : actions.goToNext}
+          onOpenNote={handleOpenNote}
+          onOpenRestTimer={actions.handleOpenRestTimer}
+          onOpenPlateCalculator={handleOpenPlateCalculator}
+        />
 
-      <PlateCalculatorSheet
-        ref={state.plateCalcSheetRef}
-        onClose={() => actions.setShowPlateCalculator(false)}
-        sets={activeExercise?.sets ?? []}
-        selectedSetIndex={state.plateCalcSetIndex}
-        onSelectSet={actions.setPlateCalcSetIndex}
-      />
+        {/* Plate Calculator BottomSheetModal */}
+        <React.Suspense fallback={null}>
+          {plateCalcSheetRef && (() => {
+            const engine = createWeightEngine('barbell', { barWeight: 20, availablePlates: [25,20,15,10,5,2.5,1.25] });
+            const result = engine.compute({ targetWeight: currentExercise?.sets?.[0]?.weight ?? 0 });
+            return (
+              <PlateCalculatorSheet
+                ref={plateCalcSheetRef}
+                value={currentExercise?.sets?.[0]?.weight ?? 0}
+                onChange={() => {}}
+                sets={currentExercise?.sets || []}
+                selectedSetIndex={0}
+                onSelectSet={() => {}}
+                barWeight={20}
+                availablePlates={[25,20,15,10,5,2.5,1.25]}
+                onClose={() => plateCalcSheetRef.current?.dismiss()}
+                bottomInset={bottomBarHeight}
+              />
+            );
+          })()}
+        </React.Suspense>
 
-      <ActiveWorkoutExercisePickerSheet
-        sheetRef={state.bottomSheetRef}
-        search={state.search}
-        filteredExercises={state.filteredExercises}
-        onChangeSearch={actions.setSearch}
-        onClose={() => state.bottomSheetRef.current?.close()}
-        onSelectExercise={actions.handleAddExerciseSelection}
-      />
+        {/* OVERLAY */}
+        <PRCelebrationOverlay
+          visible={state.showPRCelebration}
+          onFinished={() => {}}
+        />
 
-      <ActiveWorkoutOptionsSheet
-        sheetRef={state.optionsSheetRef}
-        routineId={routineId}
-        selectedExerciseId={state.selectedExerciseId}
-        exercises={exercises}
-        allExercises={state.allExercises}
-        globalRestSeconds={globalRestSeconds}
-        onClose={() => state.optionsSheetRef.current?.close()}
-        onOpenExercisePicker={actions.handleOpenExercisePickerFromOptions}
-        onReplaceExercise={actions.handleReplaceExercise}
-        onEditRoutine={actions.handleEditRoutine}
-        onMoveExerciseToEnd={actions.handleMoveExerciseToEnd}
-        onRemoveExercise={actions.handleRemoveExercise}
-        onSetRestTimerSeconds={actions.handleSetRestTimerSeconds}
-      />
-
-      <WorkoutSessionNoteSheet
-        sheetRef={state.noteSheetRef}
-        value={sessionNote ?? ''}
-        onChangeText={setSessionNote}
-        onClose={() => state.noteSheetRef.current?.close()}
+        {/* TODO: Implementar los modales/bottomSheets reales para agregar ejercicio y opciones */}
+        {/* Ejemplo: showAddExercise && <AddExerciseModal onClose={() => setShowAddExercise(false)} onAdd={actions.handleAddExerciseSelection} /> */}
+        {/* showOptions && <OptionsBottomSheet exerciseId={optionsExerciseId} onClose={() => setShowOptions(false)} /> */}
+      </YStack>
+      {/* Botón flotante para agregar ejercicio SIEMPRE visible, grande y sobre el bottomBar */}
+      <TamaguiButton
+        position="absolute"
+        right={32}
+        bottom={96}
+        size="$7"
+        circular
+        icon={<Plus size={36} />}
+        backgroundColor="$primary"
+        onPress={() => setShowAddExercise(true)}
+        zIndex={200}
+        elevation={4}
+        accessibilityLabel="Agregar ejercicio"
+        shadowColor="#000"
+        shadowOffset={{ width: 0, height: 4 }}
+        shadowOpacity={0.18}
+        shadowRadius={8}
       />
     </Screen>
+  );
+}
+
+// Exportar el componente principal como default
+export default function ActiveWorkoutScreen() {
+  return (
+    <BottomBarProvider>
+      <Content />
+    </BottomBarProvider>
   );
 }

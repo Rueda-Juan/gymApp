@@ -3,7 +3,7 @@ import { View, ScrollView } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { AppText } from '@/components/ui/AppText';
 import { FONT_SCALE } from '@/tamagui.config';
-import { CHART_FALLBACK_COLORS } from './chartUtils';
+import { CHART_FALLBACK_COLORS } from './ChartUtils';
 
 const DAY_LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 

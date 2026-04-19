@@ -15,7 +15,7 @@ export function useAchievementEvaluator() {
         return brokenRecords;
       } catch (error) {
         // En caso de error de lectura, retornar array vacío para no bloquear la app
-        // eslint-disable-next-line no-console
+         
         console.warn('Error al evaluar PR:', error);
         return [];
       }

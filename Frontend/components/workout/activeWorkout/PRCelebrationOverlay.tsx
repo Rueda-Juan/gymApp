@@ -104,7 +104,10 @@ export function PRCelebrationOverlay({ visible, onFinished }: PRCelebrationOverl
     }
   }, [visible]);
 
-  if (!active) return null;
+  // Precompute particles and animated styles with hooks so order is stable
+  const particles = useMemo(() => Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
+    <Particle key={i} index={i} />
+  )), []);
 
   const containerStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -116,6 +119,8 @@ export function PRCelebrationOverlay({ visible, onFinished }: PRCelebrationOverl
       { translateY: trophyY.value }
     ],
   }));
+
+  if (!active) return null;
 
   return (
     <Animated.View style={[styles.overlay, containerStyle]}>
@@ -143,9 +148,7 @@ export function PRCelebrationOverlay({ visible, onFinished }: PRCelebrationOverl
         </YStack>
 
         <XStack position="absolute" pointerEvents="none">
-          {useMemo(() => Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
-            <Particle key={i} index={i} />
-          )), [])}
+          {particles}
         </XStack>
       </YStack>
     </Animated.View>

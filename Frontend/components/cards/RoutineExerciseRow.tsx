@@ -90,15 +90,17 @@ export const RoutineExerciseRow: React.FC<RoutineExerciseRowProps> = React.memo(
 
   const collapsedHeader = (
     <XStack height={COLLAPSED_HEADER_HEIGHT} paddingHorizontal="$md" gap="$md" alignItems="center">
-      <Pressable
+      <YStack
         onPressIn={drag}
         onLongPress={drag}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         accessibilityRole="button"
         accessibilityLabel="Arrastra para reordenar"
+        cursor="grab"
+        pressStyle={{ opacity: 0.7 }}
       >
         <AppIcon icon={GripVertical} color="textTertiary" size={20} />
-      </Pressable>
+      </YStack>
 
       <AppText variant="bodyMd" numberOfLines={1} fontWeight="600" flex={1}>
         {exerciseName}
@@ -143,13 +145,15 @@ export const RoutineExerciseRow: React.FC<RoutineExerciseRowProps> = React.memo(
         overflow="hidden"
         elevation={Platform.OS === 'android' && isActive ? 8 : 0}
       >
-        <Pressable
+        <YStack
           onPress={() => setIsExpanded(prev => !prev)}
           accessibilityRole="button"
           accessibilityLabel={isExpanded ? "Colapsar detalles del ejercicio" : "Expandir detalles del ejercicio"}
+          cursor="pointer"
+          pressStyle={{ opacity: 0.7 }}
         >
           {collapsedHeader}
-        </Pressable>
+        </YStack>
 
         {isExpanded && (
           <YStack padding="$md" gap="$md" borderTopWidth={1} borderTopColor="$borderColor">

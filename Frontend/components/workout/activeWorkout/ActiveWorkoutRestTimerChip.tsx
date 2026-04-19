@@ -10,7 +10,7 @@ const PROGRESS_BAR_HEIGHT = 28;
 interface ActiveWorkoutRestTimerChipProps {
   isVisible: boolean;
   restDisplaySeconds: number;
-  restProgressStyle: AnimatedStyle<object>;
+  restProgressStyle: AnimatedStyle<any>;
   onDecrease: () => void;
   onIncrease: () => void;
 }

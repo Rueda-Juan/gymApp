@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
-import { XStack } from 'tamagui';
+import { type StyleProp, type ViewStyle } from 'react-native';
+import { XStack, YStack } from 'tamagui';
 import { FONT_SCALE } from '@/tamagui.config';
 import Animated from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
@@ -36,11 +36,13 @@ export function SetRowRirSelector({
       pointerEvents={pointerEvents}
     >
       {RIR_OPTIONS.map((rirValue) => (
-        <Pressable
+        <YStack
           key={rirValue}
           onPress={() => onSelect(rirValue)}
           accessibilityRole="button"
-          accessibilityLabel={`RIR ${rirValue}${rirValue === 4 ? ' o más' : ''}, repeticiones en reserva`}
+          accessibilityLabel={`RIR ${rirValue}${rirValue === 4 ? ' o m\u00e1s' : ''}, repeticiones en reserva`}
+          cursor="pointer"
+          pressStyle={{ opacity: 0.7 }}
         >
           <XStack
             width={RIR_CHIP_SIZE}
@@ -54,16 +56,18 @@ export function SetRowRirSelector({
               {rirValue}{rirValue === 4 ? '+' : ''}
             </AppText>
           </XStack>
-        </Pressable>
+        </YStack>
       ))}
-      <Pressable
+      <YStack
         onPress={onClose}
         style={{ padding: CLOSE_BUTTON_PADDING }}
         accessibilityRole="button"
         accessibilityLabel="Cerrar selector RIR"
+        cursor="pointer"
+        pressStyle={{ opacity: 0.7 }}
       >
         <AppIcon icon={X} size={14} color="textTertiary" />
-      </Pressable>
+      </YStack>
     </AnimatedXStack>
   );
 }

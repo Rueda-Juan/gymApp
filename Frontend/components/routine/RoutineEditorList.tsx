@@ -70,7 +70,7 @@ export function RoutineEditorList({
         Aún no has agregado ejercicios a esta rutina.
       </AppText>
       <AppText variant="bodySm" color="textTertiary" textAlign="center">
-        Tocá "Agregar ejercicio" para empezar.
+        Tocá &quot;Agregar ejercicio&quot; para empezar.
       </AppText>
     </YStack>
   ), []);

@@ -4,8 +4,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from 'tamagui';
 import config from '@/tamagui.config';
 
+import ExerciseBrowserScreen from '@/app/(workouts)/exercise-browser';
+
 // Mutable holders to allow tests to change implementations at runtime
-let mockFocusCallbacks: Array<() => any> = [];
+let mockFocusCallbacks: (() => any)[] = [];
 let mockGetAll: jest.Mock<any, any> = jest.fn();
 const mockCreateCustomExercise = jest.fn();
 
@@ -53,8 +55,6 @@ jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn() },
 }));
 
-import ExerciseBrowserScreen from '@/app/(workouts)/exercise-browser';
-
 function TamagiProviderWrapper({ children }: { children: React.ReactNode }) {
   return (
     <TamaguiProvider config={config} defaultTheme="light">
@@ -94,14 +94,14 @@ describe('ExerciseBrowser integration (focus reload)', () => {
     const { getByText } = renderWithProviders(<ExerciseBrowserScreen />);
 
     // debug: ensure focus callback registered
-    // eslint-disable-next-line no-console
+     
     console.log('DEBUG: mockFocusCallbacks.length=', mockFocusCallbacks.length);
 
     // simulate initial focus callbacks (component mounts)
     for (const cb of mockFocusCallbacks) {
       try {
         const { act } = require('react-test-renderer');
-        // eslint-disable-next-line no-await-in-loop
+         
         await act(async () => { cb(); await new Promise((r) => setImmediate(r)); });
       } catch (e) { /* ignore */ }
     }
@@ -111,7 +111,7 @@ describe('ExerciseBrowser integration (focus reload)', () => {
     // initial load should render the initial exercise
     await waitFor(() => expect(getByText('Init Exercise')).toBeTruthy());
     // debug: was the service called?
-    // eslint-disable-next-line no-console
+     
     console.log('DEBUG: mockGetAll.calls=', mockGetAll.mock ? mockGetAll.mock.calls.length : 'no-mock');
 
     // initial load should render the initial exercise
@@ -124,7 +124,7 @@ describe('ExerciseBrowser integration (focus reload)', () => {
       try {
         const { act } = require('react-test-renderer');
         // ensure we await async state updates started by the focus callback
-        // eslint-disable-next-line no-await-in-loop
+         
         await act(async () => { cb(); await new Promise((r) => setImmediate(r)); });
       } catch (e) { /* ignore */ }
     }

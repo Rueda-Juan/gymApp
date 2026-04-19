@@ -135,72 +135,74 @@ export default function RoutinesScreen() {
   ), [routines.length]);
 
   return (
-    <Screen safeAreaEdges={['top', 'left', 'right']}>
-      {/* Header */}
-      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$md">
-        <AppText variant="titleLg">Rutinas</AppText>
-        <IconButton
-          icon={<AppIcon icon={Plus} color="background" size={24} />}
-          size={44}
-          backgroundColor="$primary"
-          onPress={() => router.push(ROUTES.ROUTINE_CREATE)}
-          accessibilityLabel="Crear rutina"
-        />
-      </XStack>
-
-      {/* Barra de búsqueda */}
-      <YStack paddingHorizontal="$lg" paddingBottom="$sm">
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Buscar rutinas..."
-        />
-      </YStack>
-
-      {/* Chips de filtro */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ height: CHIP_BAR_HEIGHT, flexGrow: 0, flexShrink: 0 }}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        {filterChips.map((chip) => (
-          <ToggleChip
-            key={chip}
-            label={chip}
-            isActive={activeFilter === chip}
-            onPress={() => setActiveFilter(chip)}
-            accessibilityLabel={`Filtro ${chip}`}
+    <Screen safeAreaEdges={['top','bottom','left','right']}>
+      <YStack flex={1}>
+        {/* Header */}
+        <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$md">
+          <AppText variant="titleLg">Rutinas</AppText>
+          <IconButton
+            icon={<AppIcon icon={Plus} color="color" size={24} />}
+            size={44}
+            backgroundColor="$primary"
+            onPress={() => router.push(ROUTES.ROUTINE_CREATE)}
+            accessibilityLabel="Crear rutina"
           />
-        ))}
-      </ScrollView>
+        </XStack>
 
-      {/* Lista de rutinas */}
-      <ContentReveal
-        loading={loading}
-        skeleton={
-          <YStack gap="$md" paddingHorizontal="$lg" paddingTop="$sm">
-            <RoutineCardSkeleton />
-            <RoutineCardSkeleton />
-            <RoutineCardSkeleton />
-          </YStack>
-        }
-      >
-        <FlashList
-          data={filteredRoutines}
-          keyExtractor={extractRoutineKey}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: LIST_BOTTOM_PADDING }}
-          ItemSeparatorComponent={ItemSeparator}
-          showsVerticalScrollIndicator={false}
-          renderItem={renderRoutineCard}
-          ListEmptyComponent={renderEmptyList}
-        />
-      </ContentReveal>
+        {/* Barra de búsqueda */}
+        <YStack paddingHorizontal="$lg" paddingBottom="$sm">
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Buscar rutinas..."
+          />
+        </YStack>
+
+        {/* Chips de filtro */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ height: CHIP_BAR_HEIGHT, flexGrow: 0, flexShrink: 0 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          {filterChips.map((chip) => (
+            <ToggleChip
+              key={chip}
+              label={chip}
+              isActive={activeFilter === chip}
+              onPress={() => setActiveFilter(chip)}
+              accessibilityLabel={`Filtro ${chip}`}
+            />
+          ))}
+        </ScrollView>
+
+        {/* Lista de rutinas */}
+        <ContentReveal
+          loading={loading}
+          skeleton={
+            <YStack gap="$md" paddingHorizontal="$lg" paddingTop="$sm">
+              <RoutineCardSkeleton />
+              <RoutineCardSkeleton />
+              <RoutineCardSkeleton />
+            </YStack>
+          }
+        >
+          <FlashList
+            data={filteredRoutines}
+            keyExtractor={extractRoutineKey}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: LIST_BOTTOM_PADDING }}
+            ItemSeparatorComponent={ItemSeparator}
+            showsVerticalScrollIndicator={false}
+            renderItem={renderRoutineCard}
+            ListEmptyComponent={renderEmptyList}
+          />
+        </ContentReveal>
+      </YStack>
     </Screen>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Pressable } from 'react-native';
+// import { Pressable } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import Animated, { FadeInDown, useAnimatedStyle, interpolateColor, type SharedValue } from 'react-native-reanimated';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -93,16 +93,18 @@ function DeleteSwipeAction({ dragX, onPress }: DeleteSwipeActionProps) {
   });
 
   return (
-    <Pressable
-      style={DELETE_ACTION_PRESSABLE_STYLE}
+    <YStack
       onPress={onPress}
-      accessibilityLabel="Eliminar entrenamiento"
       accessibilityRole="button"
+      accessibilityLabel="Eliminar entrenamiento"
+      cursor="pointer"
+      pressStyle={{ opacity: 0.85 }}
+      style={DELETE_ACTION_PRESSABLE_STYLE}
     >
       <Animated.View style={[animatedStyle, DELETE_ACTION_CONTAINER_STYLE]}>
         <AppIcon icon={Trash2} color="background" size={24} />
       </Animated.View>
-    </Pressable>
+    </YStack>
   );
 }
 
@@ -137,10 +139,12 @@ export const HistoryWorkoutCard = React.memo(function HistoryWorkoutCard({ item,
       style={CARD_SHADOW_STYLE}
     >
       <ReanimatedSwipeable renderRightActions={renderRightActions} overshootRight={false}>
-        <Pressable
+        <YStack
           onPress={() => router.push({ pathname: ROUTES.WORKOUT_SUMMARY, params: { id: item.id } })}
-          accessibilityLabel={`Ver detalle de ${item.name || title}`}
           accessibilityRole="button"
+          accessibilityLabel={`Ver detalle de ${item.name || title}`}
+          cursor="pointer"
+          pressStyle={{ opacity: 0.85 }}
         >
           <CardBase padding="$md" gap="$sm" shadowOpacity={0} elevation={0}>
             <XStack justifyContent="space-between" alignItems="center">
@@ -183,7 +187,7 @@ export const HistoryWorkoutCard = React.memo(function HistoryWorkoutCard({ item,
               </AppText>
             )}
           </CardBase>
-        </Pressable>
+        </YStack>
       </ReanimatedSwipeable>
     </Animated.View>
   );

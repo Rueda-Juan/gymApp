@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { AnimatedStyle } from 'react-native-reanimated';
 import {
   useSharedValue,
   useAnimatedStyle,
@@ -27,12 +28,12 @@ export function useRestTimerAnimation() {
 
   const hourglassAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${hourglassRotation.value}deg` }],
-  }));
+  })) as AnimatedStyle<any>;
 
   const restProgressStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: restProgress.value }],
     transformOrigin: ['0%', '50%', 0],
-  }));
+  })) as AnimatedStyle<any>;
 
   useEffect(() => {
     if (restTimerIsActive) {

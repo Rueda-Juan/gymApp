@@ -1,4 +1,4 @@
-﻿import { XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import React, { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
@@ -46,41 +46,48 @@ export default function LogWeightScreen() {
   }, [weight, weightService]);
 
   return (
-    <Screen>
-      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingVertical="$md">
-        <IconButton icon={<AppIcon icon={X} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Cerrar" />
-        <AppText variant="titleSm">Registrar Peso</AppText>
-        <XStack width={HEADER_ICON_WIDTH} />
-      </XStack>
-
-      <YStack flex={1} alignItems="center" justifyContent="center" paddingHorizontal="$xl">
-        <AppText variant="label" color="textTertiary" marginBottom="$md">PESO ACTUAL (KG)</AppText>
-        <XStack alignItems="center" gap="$sm">
-          <AppInput
-            value={weight}
-            onChangeText={setWeight}
-            placeholder="0.0"
-            keyboardType="numeric"
-            autoFocus
-            textAlign="center"
-            fontSize={WEIGHT_INPUT_FONT_SIZE}
-            accessibilityLabel="Peso corporal en kilogramos"
-            height={56}
-            fontWeight="800"
-            minWidth={160}
-          />
-          <AppText variant="titleLg" color="textSecondary" marginTop="$xl">kg</AppText>
+    <Screen
+      scroll
+      keyboardAvoiding
+      keyboardVerticalOffset={0}
+      safeAreaEdges={['top','bottom','left','right']}
+    >
+      <YStack flex={1}>
+        <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingVertical="$md">
+          <IconButton icon={<AppIcon icon={X} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Cerrar" />
+          <AppText variant="titleSm">Registrar Peso</AppText>
+          <XStack width={HEADER_ICON_WIDTH} />
         </XStack>
-      </YStack>
 
-      <YStack paddingHorizontal="$xl" paddingBottom="$3xl">
-        <AppButton
-          label={loading ? 'Guardando...' : 'Guardar'}
-          icon={<AppIcon icon={Check} size={20} color="background" />}
-          onPress={handleSave}
-          disabled={loading}
-          loading={loading}
-        />
+        <YStack flex={1} alignItems="center" justifyContent="center" paddingHorizontal="$xl">
+          <AppText variant="label" color="textTertiary" marginBottom="$md">PESO ACTUAL (KG)</AppText>
+          <XStack alignItems="center" gap="$sm">
+            <AppInput
+              value={weight}
+              onChangeText={setWeight}
+              placeholder="0.0"
+              keyboardType="numeric"
+              autoFocus
+              textAlign="center"
+              fontSize={WEIGHT_INPUT_FONT_SIZE}
+              accessibilityLabel="Peso corporal en kilogramos"
+              height={56}
+              fontWeight="800"
+              minWidth={160}
+            />
+            <AppText variant="titleLg" color="textSecondary" marginTop="$xl">kg</AppText>
+          </XStack>
+        </YStack>
+
+        <YStack paddingHorizontal="$xl" paddingBottom="$3xl">
+          <AppButton
+            label={loading ? 'Guardando...' : 'Guardar'}
+            icon={<AppIcon icon={Check} size={20} color="background" />}
+            onPress={handleSave}
+            disabled={loading}
+            loading={loading}
+          />
+        </YStack>
       </YStack>
     </Screen>
   );

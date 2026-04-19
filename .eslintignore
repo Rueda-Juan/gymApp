@@ -1,0 +1,2 @@
+# Ignore Expo types directory which triggers react plugin on d.ts files
+Frontend/.expo/

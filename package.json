@@ -10,7 +10,9 @@
     "test": "cd Backend && npx jest && cd ../Frontend && npx jest",
     "test:back": "cd Backend && npx jest",
     "test:front": "cd Frontend && npx jest",
-    "testing": "npx tsc -b --watch"
+    "testing": "npx tsc -b --watch",
+    "install": "cd Backend && npm install && cd ../Frontend && npm install",
+    "tree": "node tree.js"
   },
   "devDependencies": {
     "@testing-library/react-hooks": "^8.0.1",

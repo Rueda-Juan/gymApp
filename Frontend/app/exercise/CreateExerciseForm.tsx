@@ -1,15 +1,25 @@
-import React, { useMemo } from 'react';
-import { ScrollView, YStack, XStack } from 'tamagui';
+import React, { useCallback, useRef, useMemo } from 'react';
+import config from '../../tamagui.config';
+import { useTheme, ScrollView, YStack, XStack } from 'tamagui';
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import type { BottomSheetDefaultBackdropProps } from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetBackdrop/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { useMuscleSelection } from './useMuscleSelection';
+import { MuscleSelectorSheet } from './MuscleSelectorSheet';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppText } from '@/components/ui/AppText';
 import { ValueToggleChip } from '@/components/ui/ValueToggleChip';
 import {
   EQUIPMENT_OPTIONS,
   EQUIPMENT_LABELS,
+  HIERARCHICAL_MUSCLES,
+  MUSCLE_LABELS,
 } from '@/constants/exercise';
-import { MuscleSelector } from '@/components/workout/MuscleSelector';
+// import { MuscleSelector } from '@/components/workout/MuscleSelector';
 import { BodyAnatomySvg } from '@/components/ui/BodyAnatomySvg';
 import type { MuscleGroup, Equipment, ExerciseType, LoadType } from 'backend/shared/types';
+const BOTTOM_SHEET_SNAP_POINTS = ['75%'];
 
 const SCROLL_BOTTOM_INSET = 92;
 
@@ -17,8 +27,10 @@ interface Props {
   name: string;
   setName: (v: string) => void;
   primaryMuscles: MuscleGroup[];
+  setPrimaryMuscles: (v: MuscleGroup[]) => void;
   togglePrimaryMuscle: (m: MuscleGroup) => void;
   secondaryMuscles: MuscleGroup[];
+  setSecondaryMuscles: (v: MuscleGroup[]) => void;
   toggleSecondaryMuscle: (m: MuscleGroup) => void;
   equipment: Equipment | null;
   handleSetEquipment: (e: string) => void;
@@ -34,6 +46,45 @@ interface Props {
 }
 
 export function CreateExerciseForm(props: Props) {
+  const tokens = config.tokens;
+  const theme = useTheme();
+  const { bottom: bottomInset } = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const {
+    muscleRole,
+    setMuscleRole,
+    pendingPrimary,
+    setPendingPrimary,
+    pendingSecondary,
+    setPendingSecondary,
+    expandedGroup,
+    setExpandedGroup,
+    muscleError,
+    setMuscleError,
+    handleToggleMuscle,
+  } = useMuscleSelection(props.primaryMuscles, props.secondaryMuscles);
+
+  const openSheet = useCallback(() => {
+    bottomSheetRef.current?.present();
+  }, []);
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetDefaultBackdropProps) => (
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />
+    ),
+    []
+  );
+
+  const confirmMuscles = useCallback(() => {
+    if (pendingPrimary.length === 0) {
+      setMuscleError('Seleccioná al menos un músculo primario');
+      return;
+    }
+    setMuscleError(null);
+    if (props.setPrimaryMuscles) props.setPrimaryMuscles(pendingPrimary);
+    if (props.setSecondaryMuscles) props.setSecondaryMuscles(pendingSecondary);
+    bottomSheetRef.current?.close();
+  }, [pendingPrimary, pendingSecondary, props, setMuscleError]);
   const {
     name,
     setName,
@@ -70,102 +121,155 @@ export function CreateExerciseForm(props: Props) {
     return [...primaryMuscles, ...secondaryMuscles];
   }, [primaryMuscles, secondaryMuscles]);
 
+  const showSvg = activeMuscles.length > 0;
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: SCROLL_BOTTOM_INSET }}>
-      <YStack gap="$md">
-        <YStack>
-          <AppText variant="label">Nombre</AppText>
-          <AppInput value={name} onChangeText={setName} placeholder="Nombre del ejercicio" />
-        </YStack>
+    <YStack flex={1}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          padding: tokens.space.lg.val,
+          paddingBottom: SCROLL_BOTTOM_INSET + tokens.space['2xl'].val,
+        }}
+      >
+        <YStack gap={tokens.space.md.val}>
 
-        <YStack alignItems="center" justifyContent="center" height={300} width="100%" marginVertical="$sm">
-          <BodyAnatomySvg
-            activeMuscles={activeMuscles}
-            interactive={svgInteractive}
-            onSelectMuscle={onSvgSelectMuscle}
-          />
-        </YStack>
+          <YStack marginBottom={tokens.space.lg.val}>
+            <AppText variant="label">Nombre</AppText>
+            <AppInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Nombre del ejercicio"
+              backgroundColor={theme.surfaceSecondary?.val || theme.background?.val}
+              borderColor={theme.borderColor?.val || theme.surfaceSecondary?.val || theme.background?.val}
+              borderWidth={1}
+              accessibilityLabel="Nombre del ejercicio"
+              autoCapitalize="words"
+              returnKeyType="done"
+            />
+          </YStack>
 
-        <YStack>
-          <AppText variant="label">Músculos primarios</AppText>
-          <MuscleSelector
-            selectedMuscles={primaryMuscles}
-            onToggle={togglePrimaryMuscle}
-            type="primary"
-          />
-        </YStack>
+          <YStack
+            alignItems="center"
+            justifyContent="center"
+            height={300}
+            width="100%"
+            marginTop={tokens.space.lg.val}
+            marginBottom={tokens.space['2xl'].val}
+            backgroundColor={theme.surface?.val || theme.background?.val}
+            borderColor={theme.borderColor?.val || theme.surfaceSecondary?.val || theme.background?.val}
+            borderWidth={1}
+            borderRadius={tokens.radius.xl.val}
+          >
+            <BodyAnatomySvg
+              primaryMuscles={primaryMuscles}
+              secondaryMuscles={secondaryMuscles}
+            />
+          </YStack>
 
-        <YStack>
-          <AppText variant="label">Músculos secundarios</AppText>
-          <MuscleSelector
-            selectedMuscles={secondaryMuscles}
-            onToggle={toggleSecondaryMuscle}
-            type="secondary"
-          />
-        </YStack>
 
-        <YStack>
-          <AppText variant="label">Equipo</AppText>
-          <XStack flexWrap="wrap" gap="$2">
-            {EQUIPMENT_OPTIONS.map((eq) => (
+
+          {/* Botón para abrir BottomSheet de selección de músculos */}
+          <YStack>
+            <AppText variant="label">Músculos</AppText>
+            <XStack>
               <ValueToggleChip
-                key={eq}
-                value={eq}
-                label={EQUIPMENT_LABELS[eq]}
-                isActive={equipment === eq}
-                onToggle={handleSetEquipment}
+                value="add-muscles"
+                label="Músculo +"
+                isActive={false}
+                onToggle={openSheet}
                 variant="solid"
-                accessibilityLabel={`Equipamiento: ${EQUIPMENT_LABELS[eq]}${equipment === eq ? ' (Seleccionado)' : ''}`}
               />
-            ))}
-          </XStack>
-        </YStack>
+            </XStack>
+          </YStack>
 
-        <YStack>
-          <AppText variant="label">Tipo</AppText>
-          <XStack flexWrap="wrap" gap="$2">
-            {EXERCISE_TYPES.map((t) => (
-              <ValueToggleChip
-                key={t.value}
-                value={t.value}
-                label={t.label}
-                isActive={exerciseType === t.value}
-                onToggle={handleSetExerciseType}
-                accessibilityLabel={`${t.label}${exerciseType === t.value ? ' (Seleccionado)' : ''}`}
-              />
-            ))}
-          </XStack>
-        </YStack>
+          <YStack>
+            <AppText variant="label">Equipo</AppText>
+            <XStack flexWrap="wrap" gap="$2">
+              {EQUIPMENT_OPTIONS.map((eq) => (
+                <ValueToggleChip
+                  key={eq}
+                  value={eq}
+                  label={EQUIPMENT_LABELS[eq]}
+                  isActive={equipment === eq}
+                  onToggle={handleSetEquipment}
+                  variant="solid"
+                  accessibilityLabel={`Equipamiento: ${EQUIPMENT_LABELS[eq]}${equipment === eq ? ' (Seleccionado)' : ''}`}
+                />
+              ))}
+            </XStack>
+          </YStack>
 
-        <YStack>
-          <AppText variant="label">Carga</AppText>
-          <XStack flexWrap="wrap" gap="$2">
-            {LOAD_TYPES.map((l) => (
-              <ValueToggleChip
-                key={l.value}
-                value={l.value}
-                label={l.label}
-                isActive={loadType === l.value}
-                onToggle={handleSetLoadType}
-                accessibilityLabel={`${l.label}${loadType === l.value ? ' (Seleccionado)' : ''}`}
-              />
-            ))}
-          </XStack>
-        </YStack>
+          <YStack>
+            <AppText variant="label">Tipo</AppText>
+            <XStack flexWrap="wrap" gap="$2">
+              {EXERCISE_TYPES.map((t) => (
+                <ValueToggleChip
+                  key={t.value}
+                  value={t.value}
+                  label={t.label}
+                  isActive={exerciseType === t.value}
+                  onToggle={handleSetExerciseType}
+                  accessibilityLabel={`${t.label}${exerciseType === t.value ? ' (Seleccionado)' : ''}`}
+                />
+              ))}
+            </XStack>
+          </YStack>
 
-        <YStack>
-          <AppText variant="label">Descripción</AppText>
-          <AppInput
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Notas, instrucciones o variantes"
-            multiline
-            numberOfLines={4}
-            style={{ minHeight: 100 }}
+          <YStack>
+            <AppText variant="label">Carga</AppText>
+            <XStack flexWrap="wrap" gap="$2">
+              {LOAD_TYPES.map((l) => (
+                <ValueToggleChip
+                  key={l.value}
+                  value={l.value}
+                  label={l.label}
+                  isActive={loadType === l.value}
+                  onToggle={handleSetLoadType}
+                  accessibilityLabel={`${l.label}${loadType === l.value ? ' (Seleccionado)' : ''}`}
+                />
+              ))}
+            </XStack>
+          </YStack>
+
+          <YStack>
+            <AppText variant="label">Descripción</AppText>
+            <AppInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Notas, instrucciones o variantes"
+              multiline
+              numberOfLines={4}
+              style={{ minHeight: 100 }}
+            />
+          </YStack>
+        </YStack>
+      </ScrollView>
+
+      <BottomSheetModal
+        ref={bottomSheetRef}
+        snapPoints={BOTTOM_SHEET_SNAP_POINTS}
+        enablePanDownToClose
+        backdropComponent={renderBackdrop}
+        bottomInset={bottomInset}
+        backgroundStyle={{ backgroundColor: theme.surface?.val || '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, borderColor: theme.borderColor?.val || '#EAE6DF', borderWidth: 1 }}
+      >
+        <BottomSheetView style={{ flex: 1, overflow: 'hidden' }}>
+          <MuscleSelectorSheet
+            muscleRole={muscleRole}
+            setMuscleRole={setMuscleRole}
+            pendingPrimary={pendingPrimary}
+            pendingSecondary={pendingSecondary}
+            expandedGroup={expandedGroup}
+            setExpandedGroup={setExpandedGroup}
+            muscleError={muscleError}
+            handleToggleMuscle={handleToggleMuscle}
+            confirmMuscles={confirmMuscles}
+            closeSheet={() => bottomSheetRef.current?.close()}
           />
-        </YStack>
-      </YStack>
-    </ScrollView>
+        </BottomSheetView>
+      </BottomSheetModal>
+    </YStack>
   );
 }
 

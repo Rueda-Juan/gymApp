@@ -1,4 +1,4 @@
-﻿import { YStack } from 'tamagui';
+import { YStack } from 'tamagui';
 import { Link } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
 

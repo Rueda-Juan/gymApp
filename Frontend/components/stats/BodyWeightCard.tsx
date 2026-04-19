@@ -8,8 +8,8 @@ import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { IconButton } from '@/components/ui/AppButton';
-import { StatsLineChart } from '@/components/charts';
-import { formatDateTick } from '@/components/charts/chartUtils';
+import { StatsLineChart } from '@/components/charts/Index';
+import { formatDateTick } from '@/components/charts/ChartUtils';
 import type { BodyWeightEntry } from 'backend/shared/types';
 import { FONT_SCALE } from '@/tamagui.config';
 

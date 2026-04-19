@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+// import { Pressable } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -18,28 +18,31 @@ export default function HomeCTA({ isActive, routineName, onContinue, onNewSessio
   return (
     <YStack paddingHorizontal="$xl" paddingBottom="$xl">
       {isActive ? (
-        <Pressable onPress={onContinue} accessibilityLabel="Continuar entrenamiento en curso">
-          <YStack
-            backgroundColor="$primarySubtle"
-            borderWidth={1.5}
-            borderColor="$primary"
-            height={80}
-            borderRadius="$lg"
-            borderCurve="continuous"
-            paddingHorizontal="$lg"
-            justifyContent="center"
-          >
-            <XStack alignItems="center" gap="$sm">
-              <AppIcon icon={Activity} color="primary" size={20} />
-              <AppText variant="bodySm" color="primary" fontWeight="700">
-                ENTRENAMIENTO EN CURSO
-              </AppText>
-            </XStack>
-            <AppText variant="titleSm" color="primary" marginTop="$xs">
-              Continuar {routineName}
+        <YStack
+          onPress={onContinue}
+          accessibilityRole="button"
+          accessibilityLabel="Continuar entrenamiento en curso"
+          backgroundColor="$primarySubtle"
+          borderWidth={1.5}
+          borderColor="$primary"
+          height={80}
+          borderRadius="$lg"
+          borderCurve="continuous"
+          paddingHorizontal="$lg"
+          justifyContent="center"
+          cursor="pointer"
+          pressStyle={{ opacity: 0.85 }}
+        >
+          <XStack alignItems="center" gap="$sm">
+            <AppIcon icon={Activity} color="primary" size={20} />
+            <AppText variant="bodySm" color="primary" fontWeight="700">
+              ENTRENAMIENTO EN CURSO
             </AppText>
-          </YStack>
-        </Pressable>
+          </XStack>
+          <AppText variant="titleSm" color="primary" marginTop="$xs">
+            Continuar {routineName}
+          </AppText>
+        </YStack>
       ) : (
         <YStack gap="$md">
           <AppButton

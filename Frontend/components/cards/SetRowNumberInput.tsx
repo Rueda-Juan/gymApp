@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextInput, Pressable } from 'react-native';
+import { Pressable, TextInput } from 'react-native';
 import { FONT_SCALE } from '@/tamagui.config';
 import { XStack, View } from 'tamagui';
 import { ChevronDown, ChevronUp, type LucideIcon } from 'lucide-react-native';
@@ -21,15 +21,17 @@ interface ChevronAreaProps {
 function ChevronArea({ icon, onPress, opacity, disabled, accessibilityLabel }: ChevronAreaProps) {
   return (
     <View style={{ width: CHEVRON_AREA_WIDTH, height: CHEVRON_AREA_HEIGHT, justifyContent: 'center', alignItems: 'center', opacity }}>
-      <Pressable
+      <XStack
         onPress={onPress}
         disabled={disabled}
         hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
+        cursor={disabled ? 'not-allowed' : 'pointer'}
+        pressStyle={{ opacity: 0.7 }}
       >
         <AppIcon icon={icon} size={14} color="textTertiary" />
-      </Pressable>
+      </XStack>
     </View>
   );
 }

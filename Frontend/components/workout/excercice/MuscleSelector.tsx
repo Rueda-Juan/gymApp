@@ -10,7 +10,6 @@ interface MuscleSelectorProps {
   onToggle: (muscle: MuscleGroup) => void;
   type: 'primary' | 'secondary';
 }
-
 export const MuscleSelector = React.memo(({ selectedMuscles, onToggle, type }: MuscleSelectorProps) => {
   const toggleVariant = type === 'primary' ? 'solid' : 'secondary';
 
@@ -25,6 +24,7 @@ export const MuscleSelector = React.memo(({ selectedMuscles, onToggle, type }: M
     <YStack gap="$3" width="100%">
       {withSubs.map((hm) => {
         const isCategoryActive = selectedMuscles.includes(hm.category as MuscleGroup);
+        const anySubActive = hm.subdivisions!.some(sub => selectedMuscles.includes(sub as MuscleGroup));
         const isActiveCount = hm.subdivisions!.reduce(
           (acc, sub) => acc + (selectedMuscles.includes(sub as MuscleGroup) ? 1 : 0),
           isCategoryActive ? 1 : 0
@@ -41,9 +41,13 @@ export const MuscleSelector = React.memo(({ selectedMuscles, onToggle, type }: M
                 isActive={isCategoryActive}
                 onToggle={onToggle}
                 variant={toggleVariant}
+                // Si algún submúsculo está activo, deshabilitar el grupo principal
+                disabled={anySubActive}
+                accessibilityLabel={`Todo ${MUSCLE_LABELS[hm.category]}${isCategoryActive ? ' (Seleccionado)' : ''}${anySubActive ? ' (Deshabilitado)' : ''}`}
               />
               {hm.subdivisions!.map((sub) => {
                 const isSubActive = selectedMuscles.includes(sub as MuscleGroup);
+                // Si el grupo principal está activo, deshabilitar los submúsculos
                 return (
                   <ValueToggleChip
                     key={sub}
@@ -52,6 +56,8 @@ export const MuscleSelector = React.memo(({ selectedMuscles, onToggle, type }: M
                     isActive={isSubActive}
                     onToggle={onToggle}
                     variant={toggleVariant}
+                    disabled={isCategoryActive}
+                    accessibilityLabel={`${MUSCLE_LABELS[sub]}${isSubActive ? ' (Seleccionado)' : ''}${isCategoryActive ? ' (Deshabilitado)' : ''}`}
                   />
                 );
               })}

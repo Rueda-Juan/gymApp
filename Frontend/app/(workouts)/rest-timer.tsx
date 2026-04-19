@@ -1,4 +1,4 @@
-﻿import { XStack, YStack, useTheme } from 'tamagui';
+import { XStack, YStack, useTheme } from 'tamagui';
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Pressable, View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
@@ -71,7 +71,21 @@ export default function RestTimerScreen() {
     progress.value = 1;
   }, [restTimerSeconds, startTimer, progress]);
 
+  // Toast fallback
+  const showToast = (msg: string) => {
+    if (typeof window !== 'undefined' && window.alert) window.alert(msg);
+    // Si tienes un Toast global, reemplaza esto
+  };
+
+  const MIN_SECONDS = 15;
+
   const handleAdjust = useCallback((delta: number) => {
+    const current = getRemainingSeconds();
+    const next = current + delta;
+    if (next < MIN_SECONDS) {
+      showToast(`El tiempo mínimo es ${MIN_SECONDS} segundos.`);
+      return;
+    }
     adjustTimer(delta);
     const currentRemaining = getRemainingSeconds();
     const safeMax = Math.max(progressMaxRef.current, 1);

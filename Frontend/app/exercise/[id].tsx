@@ -83,7 +83,7 @@ export default function ExerciseDetailScreen() {
 
   if (loading) {
     return (
-      <Screen>
+      <Screen safeAreaEdges={['top', 'bottom', 'left', 'right']}>
         <YStack flex={1} alignItems="center" justifyContent="center">
           <ActivityIndicator size="large" color={theme.primary?.val} />
         </YStack>
@@ -93,108 +93,112 @@ export default function ExerciseDetailScreen() {
 
   if (!exercise) {
     return (
-      <Screen safeAreaEdges={['top', 'left', 'right']}>
-        <XStack alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$sm" gap="$sm">
-          <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Volver" />
-        </XStack>
-        <YStack flex={1} alignItems="center" justifyContent="center" padding="$xl">
-          <AppText variant="titleSm" color="textSecondary">
-            {loadError ? 'Error al cargar el ejercicio' : 'Ejercicio no encontrado'}
-          </AppText>
+      <Screen safeAreaEdges={['top', 'bottom', 'left', 'right']}>
+        <YStack flex={1}>
+          <XStack alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$sm" gap="$sm">
+            <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="primary" />} onPress={() => router.back()} accessibilityLabel="Volver" />
+          </XStack>
+          <YStack flex={1} alignItems="center" justifyContent="center" padding="$xl">
+            <AppText variant="titleSm" color="textSecondary">
+              {loadError ? 'Error al cargar el ejercicio' : 'Ejercicio no encontrado'}
+            </AppText>
+          </YStack>
         </YStack>
       </Screen>
     );
   }
 
   return (
-    <Screen safeAreaEdges={['top', 'left', 'right']}>
-      <XStack alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$sm" gap="$sm">
-        <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Volver" />
-        <AppText variant="titleSm" marginLeft="$xs">Detalle de Ejercicio</AppText>
-      </XStack>
+    <Screen safeAreaEdges={['top', 'bottom', 'left', 'right']}>
+      <YStack flex={1}>
+        <XStack alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$sm" gap="$sm">
+          <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="primary" />} onPress={() => router.back()} accessibilityLabel="Volver" />
+          <AppText variant="titleSm" marginLeft="$xs">Detalle de Ejercicio</AppText>
+        </XStack>
 
-      <FlatList
-        data={history ?? []}
-        renderItem={renderHistoryItem}
-        keyExtractor={keyExtractor}
-        removeClippedSubviews
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        initialNumToRender={8}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: SCROLL_BOTTOM_INSET }}
-        ListHeaderComponent={
-          <YStack>
-            {exercise.animationPath != null && (
-              <YStack
-                height={200}
-                width="100%"
-                backgroundColor="$surfaceSecondary"
-                borderRadius="$lg"
-                justifyContent="center"
-                alignItems="center"
-                marginBottom="$lg"
-                marginTop="$md"
-                overflow="hidden"
-              >
-                <YStack opacity={0.5} alignItems="center">
-                  <AppIcon icon={PlayCircle} size={48} color="textTertiary" />
-                </YStack>
-                <AppText variant="label" color="textTertiary" marginTop="$sm">
-                  VIDEO / DEMO DEL EJERCICIO (PRÓXIMAMENTE)
-                </AppText>
-              </YStack>
-            )}
-
-            <CardBase padding="$md" marginBottom="$xl">
-              <AppText variant="titleMd">{getExerciseName(exercise)}</AppText>
-              <XStack alignItems="center" marginTop="$sm" gap="$xs">
-                <AppIcon icon={Dumbbell} size={16} color="primary" />
-                <AppText variant="bodyMd" color="textSecondary" style={{ textTransform: 'capitalize' }}>
-                  {exercise.primaryMuscles?.[0] ?? 'N/A'} • {exercise.equipment ?? 'N/A'}
-                </AppText>
-              </XStack>
-            </CardBase>
-
-            {exercise.anatomicalRepresentationSvg != null && (
-              <>
-                <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
-                  <AppText variant="titleSm">Músculos Involucrados</AppText>
-                  <AppIcon icon={Activity} size={20} color="primary" />
-                </XStack>
-                <CardBase alignItems="center" paddingVertical="$4xl" marginBottom="$xl">
-                  <AppText variant="bodySm" color="textTertiary" textAlign="center">
-                    MAPA ANATÓMICO INTELIGENTE Y{'…'}{'…'}HEATMAP DE ACTIVACIÓN{'…'}{'…'}(EN DESARROLLO)
+        <FlatList
+          data={history ?? []}
+          renderItem={renderHistoryItem}
+          keyExtractor={keyExtractor}
+          removeClippedSubviews
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          initialNumToRender={8}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: SCROLL_BOTTOM_INSET }}
+          ListHeaderComponent={
+            <YStack>
+              {exercise.animationPath != null && (
+                <YStack
+                  height={200}
+                  width="100%"
+                  backgroundColor="$surfaceSecondary"
+                  borderRadius="$lg"
+                  justifyContent="center"
+                  alignItems="center"
+                  marginBottom="$lg"
+                  marginTop="$md"
+                  overflow="hidden"
+                >
+                  <YStack opacity={0.5} alignItems="center">
+                    <AppIcon icon={PlayCircle} size={48} color="textTertiary" />
+                  </YStack>
+                  <AppText variant="label" color="textTertiary" marginTop="$sm">
+                    VIDEO / DEMO DEL EJERCICIO (PRÓXIMAMENTE)
                   </AppText>
-                </CardBase>
-              </>
-            )}
+                </YStack>
+              )}
 
-            <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
-              <AppText variant="titleSm">Récord Personal (1RM)</AppText>
-              <AppIcon icon={Trophy} size={20} color="primary" />
-            </XStack>
-            <CardBase alignItems="center" paddingVertical="$2xl" marginBottom="$xl">
-              <AppText variant="titleLg" color="primary" fontSize={FONT_SCALE.sizes.displayLg}>
-                {history.length > 0 ? `${maxWeight} kg` : '--'}
-              </AppText>
-              <AppText variant="label" color="textSecondary" marginTop="$xs">
-                ESTIMADO BASADO EN ÚLTIMA SESIÓN
-              </AppText>
-            </CardBase>
+              <CardBase padding="$md" marginBottom="$xl">
+                <AppText variant="titleMd">{getExerciseName(exercise)}</AppText>
+                <XStack alignItems="center" marginTop="$sm" gap="$xs">
+                  <AppIcon icon={Dumbbell} size={16} color="primary" />
+                  <AppText variant="bodyMd" color="textSecondary" style={{ textTransform: 'capitalize' }}>
+                    {exercise.primaryMuscles?.[0] ?? 'N/A'} • {exercise.equipment ?? 'N/A'}
+                  </AppText>
+                </XStack>
+              </CardBase>
 
-            <AppText variant="titleSm" marginBottom="$md">Historial Reciente</AppText>
-          </YStack>
-        }
-        ListEmptyComponent={
-          <YStack padding="$3xl" alignItems="center">
-            <AppText variant="bodyMd" color="textSecondary" textAlign="center">
-              No hay historial registrado para este ejercicio.
-            </AppText>
-          </YStack>
-        }
-        ItemSeparatorComponent={() => <YStack height="$md" />}
-      />
+              {exercise.anatomicalRepresentationSvg != null && (
+                <>
+                  <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
+                    <AppText variant="titleSm">Músculos Involucrados</AppText>
+                    <AppIcon icon={Activity} size={20} color="primary" />
+                  </XStack>
+                  <CardBase alignItems="center" paddingVertical="$4xl" marginBottom="$xl">
+                    <AppText variant="bodySm" color="textTertiary" textAlign="center">
+                      MAPA ANATÓMICO INTELIGENTE Y{'…'}{'…'}HEATMAP DE ACTIVACIÓN{'…'}{'…'}(EN DESARROLLO)
+                    </AppText>
+                  </CardBase>
+                </>
+              )}
+
+              <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
+                <AppText variant="titleSm">Récord Personal (1RM)</AppText>
+                <AppIcon icon={Trophy} size={20} color="primary" />
+              </XStack>
+              <CardBase alignItems="center" paddingVertical="$2xl" marginBottom="$xl">
+                <AppText variant="titleLg" color="primary" fontSize={FONT_SCALE.sizes.displayLg}>
+                  {history.length > 0 ? `${maxWeight} kg` : '--'}
+                </AppText>
+                <AppText variant="label" color="textSecondary" marginTop="$xs">
+                  ESTIMADO BASADO EN ÚLTIMA SESIÓN
+                </AppText>
+              </CardBase>
+
+              <AppText variant="titleSm" marginBottom="$md">Historial Reciente</AppText>
+            </YStack>
+          }
+          ListEmptyComponent={
+            <YStack padding="$3xl" alignItems="center">
+              <AppText variant="bodyMd" color="textSecondary" textAlign="center">
+                No hay historial registrado para este ejercicio.
+              </AppText>
+            </YStack>
+          }
+          ItemSeparatorComponent={() => <YStack height="$md" />}
+        />
+      </YStack>
     </Screen>
   );
 }

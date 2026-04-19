@@ -1,51 +1,119 @@
 import React from 'react';
+import {
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { ScrollView, YStack, YStackProps } from 'tamagui';
 import { useSafeAreaInsets, Edge } from 'react-native-safe-area-context';
 
 interface ScreenProps extends YStackProps {
   children: React.ReactNode;
   scroll?: boolean;
+
   safeAreaEdges?: Edge[];
+  disableSafeArea?: boolean;
+  extraBottomSpace?: number;
+
+  /**
+   * NUEVO
+   */
+  keyboardAvoiding?: boolean;
+
+  /**
+   * Offset manual (headers, navbars, etc)
+   */
+  keyboardVerticalOffset?: number;
 }
 
 export function Screen({
   children,
   scroll = false,
-  safeAreaEdges = ['left', 'right'],
+  safeAreaEdges = ['top', 'left', 'right', 'bottom'],
+  disableSafeArea = false,
+  extraBottomSpace = 0,
+  keyboardAvoiding = true,
+  keyboardVerticalOffset = 0,
   ...props
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
 
-  const paddingTop    = safeAreaEdges.includes('top')    ? insets.top    : 0;
-  const paddingBottom = safeAreaEdges.includes('bottom') ? insets.bottom : 0;
-  const paddingLeft   = safeAreaEdges.includes('left')   ? insets.left   : 0;
-  const paddingRight  = safeAreaEdges.includes('right')  ? insets.right  : 0;
+  // ───────────────────────────
+  // SAFE AREA
+  // ───────────────────────────
+  const paddingTop =
+    !disableSafeArea && safeAreaEdges.includes('top')
+      ? insets.top
+      : 0;
 
+  const paddingBottom =
+    !disableSafeArea && safeAreaEdges.includes('bottom')
+      ? insets.bottom + extraBottomSpace
+      : extraBottomSpace;
+
+  const paddingLeft =
+    !disableSafeArea && safeAreaEdges.includes('left')
+      ? insets.left
+      : 0;
+
+  const paddingRight =
+    !disableSafeArea && safeAreaEdges.includes('right')
+      ? insets.right
+      : 0;
+
+  // ───────────────────────────
+  // CONTENT
+  // ───────────────────────────
   const content = scroll ? (
     <ScrollView
       flex={1}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ flexGrow: 1 }}
-      contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{
+        flexGrow: 1,
+        paddingBottom,
+      }}
     >
-      {children}
+      <YStack
+        flex={1}
+        paddingTop={paddingTop}
+        paddingLeft={paddingLeft}
+        paddingRight={paddingRight}
+      >
+        {children}
+      </YStack>
     </ScrollView>
   ) : (
-    children
-  );
-
-  return (
     <YStack
       flex={1}
-      backgroundColor="$background"
       paddingTop={paddingTop}
       paddingBottom={paddingBottom}
       paddingLeft={paddingLeft}
       paddingRight={paddingRight}
-      {...props}
+    >
+      {children}
+    </YStack>
+  );
+
+  // ───────────────────────────
+  // KEYBOARD WRAPPER
+  // ───────────────────────────
+  const wrappedContent = keyboardAvoiding ? (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={keyboardVerticalOffset + insets.top}
     >
       {content}
+    </KeyboardAvoidingView>
+  ) : (
+    content
+  );
+
+  return (
+    <YStack flex={1} backgroundColor="$background" {...props}>
+      {wrappedContent}
     </YStack>
   );
 }

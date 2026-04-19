@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 
 export default function PrivacyScreen() {
   return (
-    <Screen safeAreaEdges={['top', 'left', 'right']}>
+    <Screen safeAreaEdges={['top','bottom','left','right']}>
       <YStack paddingHorizontal="$lg" paddingTop="$lg" gap="$md">
         <XStack alignItems="center" gap="$sm" flexWrap="wrap">
           <AppText variant="titleLg">Privacidad</AppText>

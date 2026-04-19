@@ -4,6 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from 'tamagui';
 import config from '@/tamagui.config';
 
+import CreateExerciseScreen from '@/app/exercise/create';
+
 const mockCreateCustomExercise = jest.fn().mockResolvedValue(undefined);
 const mockRouterBack = jest.fn();
 
@@ -47,8 +49,6 @@ jest.mock('@/app/exercise/CreateExerciseFooter', () => ({ __esModule: true, defa
 }}));
 
 jest.mock('@/components/ui/Screen', () => ({ __esModule: true, Screen: ({ children }: any) => children }));
-
-import CreateExerciseScreen from '@/app/exercise/create';
 
 const renderWithProviders = (component: React.ReactElement) => render(
   <SafeAreaProvider

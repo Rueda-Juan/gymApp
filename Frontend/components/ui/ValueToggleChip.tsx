@@ -10,10 +10,13 @@ export type ValueToggleChipProps<T extends string = string> = {
   onToggle: (value: T) => void;
   accessibilityLabel?: string;
   variant?: Variant;
+  disabled?: boolean;
 }
 
-function ValueToggleChipImpl<T extends string = string>({ value, label, isActive, onToggle, accessibilityLabel, variant = 'subtle' }: ValueToggleChipProps<T>) {
-  const handlePress = useCallback(() => onToggle(value), [onToggle, value]);
+function ValueToggleChipImpl<T extends string = string>({ value, label, isActive, onToggle, accessibilityLabel, variant = 'subtle', disabled }: ValueToggleChipProps<T>) {
+  const handlePress = useCallback(() => {
+    if (!disabled) onToggle(value);
+  }, [onToggle, value, disabled]);
 
   return (
     <ToggleChip
@@ -22,6 +25,7 @@ function ValueToggleChipImpl<T extends string = string>({ value, label, isActive
       onPress={handlePress}
       accessibilityLabel={accessibilityLabel ?? label}
       variant={variant}
+      disabled={disabled}
     />
   );
 }

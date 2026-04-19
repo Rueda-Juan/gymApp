@@ -18,13 +18,13 @@ import { useWorkoutSummary } from '../../store/useWorkoutSummary';
 import { calculateExercisesVolume } from '@/utils/workout';
 import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
 import { getExerciseName } from '@/utils/exercise';
-import { WorkoutExerciseSummaryList } from '@/components/workout/WorkoutExerciseSummaryList';
+import { WorkoutExerciseSummaryList } from '@/components/workout/activeWorkout/WorkoutExerciseSummaryList';
 import { motion } from '@/constants/motion';
 import { useMotion } from '@/hooks/ui/useMotion';
 import { useWorkoutSummaryData } from '@/hooks/application/useWorkoutSummaryData';
 import type { SummaryWorkout, SummaryPersonalRecord, MuscleGroup } from '@/hooks/application/useWorkoutSummaryData';
 import { ROUTES } from '@/constants/routes';
-import { PRCelebrationOverlay } from '@/components/workout/PRCelebrationOverlay';
+import { PRCelebrationOverlay } from '@/components/workout/activeWorkout/PRCelebrationOverlay';
 import { BodyAnatomySvg } from '@/components/ui/BodyAnatomySvg';
 
 const SUMMARY_VOLUME_OPTIONS = { completedOnly: true, defaultCompleted: true } as const;
@@ -125,15 +125,17 @@ export default function WorkoutSummaryScreen() {
 
   if (loading) {
     return (
-      <Screen>
-        <ActivityIndicator size="large" color={theme.primary?.val ?? '#007AFF'} />
+      <Screen safeAreaEdges={['top','bottom','left','right']}>
+        <YStack flex={1} alignItems="center" justifyContent="center">
+          <ActivityIndicator size="large" color={theme.primary?.val ?? '#007AFF'} />
+        </YStack>
       </Screen>
     );
   }
 
   if (!workout) {
     return (
-      <Screen>
+      <Screen safeAreaEdges={['top','bottom','left','right']}>
         <YStack flex={1} alignItems="center" justifyContent="center" padding="$xl">
           <AppText variant="titleSm" color="textSecondary">No se encontró el entrenamiento</AppText>
           <AppButton label="Volver" onPress={() => router.replace(ROUTES.TABS_HOME)} style={{ marginTop: 16 }} />
@@ -143,15 +145,15 @@ export default function WorkoutSummaryScreen() {
   }
 
   return (
-    <Screen safeAreaEdges={['top', 'left', 'right']}>
-      <XStack justifyContent="flex-end" paddingHorizontal="$lg" height={52} alignItems="center">
-        <IconButton
-          icon={<AppIcon icon={Share2} size={20} color="color" />}
-          onPress={handleShare}
-          accessibilityLabel="Compartir resumen"
-        />
-      </XStack>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+    <Screen scroll safeAreaEdges={['top','bottom','left','right']}>
+      <YStack flex={1} paddingHorizontal={20}>
+        <XStack justifyContent="flex-end" paddingHorizontal="$lg" height={52} alignItems="center">
+          <IconButton
+            icon={<AppIcon icon={Share2} size={20} color="color" />}
+            onPress={handleShare}
+            accessibilityLabel="Compartir resumen"
+          />
+        </XStack>
 
         <Animated.View entering={m.entering(FadeInDown.delay(200).duration(motion.duration.hero))}>
           <YStack alignItems="center" marginVertical="$3xl">
@@ -180,13 +182,11 @@ export default function WorkoutSummaryScreen() {
               </YStack>
             </Animated.View>
             <AppText variant="titleLg" marginTop="$lg">¡Entrenamiento Completo!</AppText>
-            
             {activeMuscles.length > 0 && (
               <YStack height={220} width="100%" marginTop="$lg" alignItems="center">
                 <BodyAnatomySvg activeMuscles={activeMuscles} />
               </YStack>
             )}
-
             <AppText variant="bodyMd" color="textSecondary" marginTop="$sm">
               Has hecho un excelente trabajo hoy
             </AppText>
@@ -195,50 +195,50 @@ export default function WorkoutSummaryScreen() {
 
         <XStack gap="$md" marginBottom="$lg">
           <Animated.View entering={FadeInUp.delay(400)} style={[{ flex: 1 }, animatedCardShadow]}>
-            <CardBase alignItems="center" justifyContent="center" padding="$md" {...elevation.flat}>
-              <AppIcon icon={Clock} size={20} color="primary" />
-              <AppText variant="titleMd" marginTop="$sm">
-                {Math.floor(workout.durationSeconds / 60)}:{(workout.durationSeconds % 60).toString().padStart(2, '0')}
-              </AppText>
-              <AppText variant="label" color="textTertiary">DURACIÓN</AppText>
-            </CardBase>
-          </Animated.View>
+              <CardBase alignItems="center" justifyContent="center" padding="$md" {...elevation.flat}>
+                <AppIcon icon={Clock} size={20} color="primary" />
+                <AppText variant="titleMd" marginTop="$sm">
+                  {Math.floor(workout.durationSeconds / 60)}:{(workout.durationSeconds % 60).toString().padStart(2, '0')}
+                </AppText>
+                <AppText variant="label" color="textTertiary">DURACIÓN</AppText>
+              </CardBase>
+            </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(600)} style={[{ flex: 1 }, animatedCardShadow]}>
-            <CardBase alignItems="center" justifyContent="center" padding="$md" {...elevation.flat}>
-              <AppIcon icon={Dumbbell} size={20} color="primary" />
-              <AppText variant="titleMd" marginTop="$sm">{calculateTotalVolume()} kg</AppText>
-              <AppText variant="label" color="textTertiary">VOLUMEN TOTAL</AppText>
-            </CardBase>
-          </Animated.View>
-        </XStack>
+            <Animated.View entering={FadeInUp.delay(600)} style={[{ flex: 1 }, animatedCardShadow]}>
+              <CardBase alignItems="center" justifyContent="center" padding="$md" {...elevation.flat}>
+                <AppIcon icon={Dumbbell} size={20} color="primary" />
+                <AppText variant="titleMd" marginTop="$sm">{calculateTotalVolume()} kg</AppText>
+                <AppText variant="label" color="textTertiary">VOLUMEN TOTAL</AppText>
+              </CardBase>
+            </Animated.View>
+          </XStack>
 
-        {previousWorkout && (
-          <PreviousWorkoutComparison current={workout} previous={previousWorkout} />
-        )}
-
-        <WorkoutExerciseSummaryList exercises={workout.exercises} newRecords={newRecords} />
-
-        <YStack flex={1} />
-
-        <YStack gap="$md" marginVertical="$3xl">
-          <AppButton
-            label="Listo"
-            onPress={() => router.replace(ROUTES.TABS)}
-          />
-          {workout?.routineId && (
-            <AppButton
-              appVariant="ghost"
-              label="Repetir este entrenamiento →"
-              onPress={handleRepeat}
-            />
+          {previousWorkout && (
+            <PreviousWorkoutComparison current={workout} previous={previousWorkout} />
           )}
-        </YStack>
-      </ScrollView>
-      <PRCelebrationOverlay 
-        visible={showCelebration} 
-        onFinished={() => setShowCelebration(false)} 
-      />
+
+          <WorkoutExerciseSummaryList exercises={workout.exercises} newRecords={newRecords} />
+
+          <YStack flex={1} />
+
+          <YStack gap="$md" marginVertical="$3xl">
+            <AppButton
+              label="Listo"
+              onPress={() => router.replace(ROUTES.TABS)}
+            />
+            {workout?.routineId && (
+              <AppButton
+                appVariant="ghost"
+                label="Repetir este entrenamiento →"
+                onPress={handleRepeat}
+              />
+            )}
+          </YStack>
+        <PRCelebrationOverlay 
+          visible={showCelebration} 
+          onFinished={() => setShowCelebration(false)} 
+        />
+      </YStack>
     </Screen>
   );
 }

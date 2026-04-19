@@ -1,16 +1,19 @@
 
 
+
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Text } from 'react-native';
+import { Screen } from '../../components/ui/Screen';
+import { AppText } from '../../components/ui/AppText';
 import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
 import ErrorState from '../../components/shared/ErrorState';
 import EmptyState from '../../components/shared/EmptyState';
 import { useRouter } from 'expo-router';
 import { ROUTES } from '../../constants/routes';
 
+
 const RoutinesScreen = () => {
   const [state, setState] = useState<'empty' | 'loading' | 'error' | 'success'>('loading');
-  React.useEffect(() => {
+  useEffect(() => {
     setTimeout(() => {
       setState('success');
     }, 1000);
@@ -24,13 +27,18 @@ const RoutinesScreen = () => {
 
   // success
   return (
-    <ScrollView>
-      <Text>Listado de rutinas</Text>
-      {/* Ejemplo de navegación a ExerciseDetailScreen */}
-      <Text style={{ color: 'blue' }} onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: 'exerciseId' } })}>
+    <Screen scroll safeAreaEdges={['top','bottom','left','right']}>
+      <AppText variant="titleMd" marginBottom="$lg">Listado de rutinas</AppText>
+      <AppText
+        color="primary"
+        marginTop="$2xl"
+        onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: 'exerciseId' } })}
+        textAlign="center"
+        accessibilityRole="button"
+      >
         Ir a detalle de ejercicio
-      </Text>
-    </ScrollView>
+      </AppText>
+    </Screen>
   );
 };
 

@@ -134,3 +134,6 @@ export const MuscleFilterSheet = forwardRef<BottomSheetModal, MuscleFilterSheetP
     );
   }
 );
+
+// Name the forwardRef component for developer tools and lint rules
+MuscleFilterSheet.displayName = 'MuscleFilterSheet';

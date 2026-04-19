@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Pressable } from 'react-native';
+// import { Pressable } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { CardBase } from '@/components/ui/Card';
 import { AppText } from '@/components/ui/AppText';
@@ -23,21 +23,23 @@ interface RoutineCardProps {
 }
 
 function RoutineCard({ routine, index, onOpen, onStart }: RoutineCardProps) {
-  const pressStyle = useCallback(({ pressed }: { pressed: boolean }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 }), []);
+  // pressStyle eliminado, usaremos pressStyle Tamagui
 
   return (
     <Animated.View entering={FadeInDown.delay(Math.min(index * 100, 500)).springify()} style={animatedCardShadow}>
       <CardBase gap="$md" padding="$md" {...elevation.flat}>
         <XStack justifyContent="space-between" alignItems="stretch" flex={1}>
-          <Pressable
-            style={pressStyle}
+          <YStack
             onPress={() => onOpen(routine)}
             accessibilityRole="button"
             accessibilityLabel={`Abrir rutina ${routine.name}`}
+            cursor="pointer"
+            pressStyle={{ opacity: 0.7 }}
+            flex={1}
           >
             <YStack padding="$md" gap="$xs" flex={1}>
               <AppText variant="label" color="textTertiary">
-                {routine.lastPerformed ? `Última vez: ${routine.lastPerformed}` : 'Aún sin datos'}
+                {routine.lastPerformed ? `Ultima vez: ${routine.lastPerformed}` : 'An sin datos'}
               </AppText>
               <AppText variant="titleMd" numberOfLines={1}>{routine.name}</AppText>
               <AppText variant="bodyMd" color="textSecondary" numberOfLines={2}>
@@ -51,7 +53,7 @@ function RoutineCard({ routine, index, onOpen, onStart }: RoutineCardProps) {
                 </XStack>
               )}
             </YStack>
-          </Pressable>
+          </YStack>
 
           <YStack
             width={64}
@@ -61,15 +63,19 @@ function RoutineCard({ routine, index, onOpen, onStart }: RoutineCardProps) {
             borderLeftWidth={1}
             borderLeftColor="$borderColor"
           >
-            <Pressable
+            <YStack
               onPress={() => onStart(routine)}
-              accessibilityLabel={`Iniciar ${routine.name}`}
               accessibilityRole="button"
+              accessibilityLabel={`Iniciar ${routine.name}`}
+              cursor="pointer"
+              pressStyle={{ opacity: 0.7 }}
+              width={48}
+              height={48}
+              alignItems="center"
+              justifyContent="center"
             >
-              <YStack width={48} height={48} alignItems="center" justifyContent="center">
-                <AppIcon icon={Play} color="primary" size={24} />
-              </YStack>
-            </Pressable>
+              <AppIcon icon={Play} color="primary" size={24} />
+            </YStack>
           </YStack>
         </XStack>
       </CardBase>

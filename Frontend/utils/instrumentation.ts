@@ -5,7 +5,7 @@ export function logEvent(name: string, payload?: Record<string, any>) {
     // Keep messages concise to avoid flooding logs
     // Example: logEvent('bottomsheet_swipe', { thresholdExceeded: true })
     // In production, hook this to analytics SDK if available
-    // eslint-disable-next-line no-console
+     
     console.debug(`[instr] ${name}`, payload ?? {});
 
     // If an analytics SDK is available globally, call it
@@ -14,7 +14,7 @@ export function logEvent(name: string, payload?: Record<string, any>) {
       analytics.logEvent(name, payload ?? {});
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.warn('[instr] logEvent failed', err);
   }
 }

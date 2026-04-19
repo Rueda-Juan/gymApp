@@ -1,16 +1,17 @@
 
+
 import React, { useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { Screen } from '../../components/ui/Screen';
+import { AppText } from '../../components/ui/AppText';
 import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
 import ErrorState from '../../components/shared/ErrorState';
 import EmptyState from '../../components/shared/EmptyState';
-
 import { useRouter } from 'expo-router';
 import { ROUTES } from '../../constants/routes';
 
+
 const HistoryScreen = () => {
   const [state, setState] = useState<'empty' | 'loading' | 'error' | 'success'>('loading');
-  // Simulación de lógica de estado (reemplazar por lógica real)
   React.useEffect(() => {
     setTimeout(() => {
       setState('success');
@@ -25,12 +26,18 @@ const HistoryScreen = () => {
 
   // success
   return (
-    <ScrollView>
-      <Text>Historial agrupado por semana</Text>
-      <Text style={{ color: 'blue' }} onPress={() => router.push(ROUTES.WORKOUT_SUMMARY)}>
+    <Screen scroll safeAreaEdges={['top','bottom','left','right']}>
+      <AppText variant="titleMd" marginBottom="$lg">Historial agrupado por semana</AppText>
+      <AppText
+        color="primary"
+        marginTop="$2xl"
+        onPress={() => router.push(ROUTES.WORKOUT_SUMMARY)}
+        textAlign="center"
+        accessibilityRole="button"
+      >
         Ir a resumen de sesión
-      </Text>
-    </ScrollView>
+      </AppText>
+    </Screen>
   );
 };
 

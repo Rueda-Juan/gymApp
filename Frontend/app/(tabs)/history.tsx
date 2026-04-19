@@ -154,91 +154,93 @@ export default function HistoryScreen() {
   );
 
   return (
-    <Screen safeAreaEdges={['top', 'left', 'right']}>
-      {/* Header */}
-      <XStack
-        justifyContent="space-between"
-        alignItems="center"
-        paddingHorizontal="$lg"
-        paddingTop="$lg"
-        paddingBottom="$sm"
-      >
-        <AppText variant="titleLg">Historial</AppText>
-        <IconButton
-          icon={searchVisible
-            ? <AppIcon icon={X} color="textSecondary" size={22} />
-            : <AppIcon icon={Search} color="textSecondary" size={22} />
-          }
-          backgroundColor="$surfaceSecondary"
-          size={40}
-          onPress={searchVisible ? closeSearch : openSearch}
-          accessibilityLabel={searchVisible ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
-        />
-      </XStack>
-
-      {/* Barra de búsqueda animada */}
-      <Animated.View
-        style={[
-          searchBarAnimatedStyle,
-          {
-            overflow: 'hidden',
-            paddingHorizontal: 16,
-            paddingBottom: 8,
-          },
-        ]}
-      >
-        <SearchBar
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar por fecha o ejercicio..."
-            inputRef={searchInputRef}
-            returnKeyType="search"
+    <Screen safeAreaEdges={['top','bottom','left','right']}>
+      <YStack flex={1}>
+        {/* Header */}
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          paddingHorizontal="$lg"
+          paddingTop="$lg"
+          paddingBottom="$sm"
+        >
+          <AppText variant="titleLg">Historial</AppText>
+          <IconButton
+            icon={searchVisible
+              ? <AppIcon icon={X} color="color" size={22} />
+              : <AppIcon icon={Search} color="color" size={22} />
+            }
+            backgroundColor="$surfaceSecondary"
+            size={40}
+            onPress={searchVisible ? closeSearch : openSearch}
+            accessibilityLabel={searchVisible ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
           />
-      </Animated.View>
+        </XStack>
 
-      {/* Contenido */}
-      <ContentReveal
-        loading={loading}
-        skeleton={
-          <YStack paddingHorizontal="$lg" gap="$md">
-            <HistoryCardSkeleton />
-            <HistoryCardSkeleton />
-            <HistoryCardSkeleton />
-            <HistoryCardSkeleton />
-          </YStack>
-        }
-      >
-        <SectionList<WorkoutNormalized>
-          sections={sections}
-          keyExtractor={item => item.id}
-          stickySectionHeadersEnabled={false}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={false}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: LIST_BOTTOM_PADDING }}
-          ItemSeparatorComponent={ItemSeparator}
-          renderSectionHeader={({ section }) => (
-            <AppText
-              variant="label"
-              color="textTertiary"
-              paddingTop="$md"
-              paddingBottom="$xs"
-            >
-              {section.title.toUpperCase()}
-            </AppText>
-          )}
-          renderItem={renderWorkout}
-          ListEmptyComponent={() => (
-            <YStack alignItems="center" justifyContent="center" marginTop="$5xl">
-              <EmptyStateIcon icon={History} size={48} color="textTertiary" />
-              <AppText variant="bodyMd" color="textTertiary" marginTop="$md">
-                No hay entrenamientos guardados aún
-              </AppText>
+        {/* Barra de búsqueda animada */}
+        <Animated.View
+          style={[
+            searchBarAnimatedStyle,
+            {
+              overflow: 'hidden',
+              paddingHorizontal: 16,
+              paddingBottom: 8,
+            },
+          ]}
+        >
+          <SearchBar
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar por fecha o ejercicio..."
+              inputRef={searchInputRef}
+              returnKeyType="search"
+            />
+        </Animated.View>
+
+        {/* Contenido */}
+        <ContentReveal
+          loading={loading}
+          skeleton={
+            <YStack paddingHorizontal="$lg" gap="$md">
+              <HistoryCardSkeleton />
+              <HistoryCardSkeleton />
+              <HistoryCardSkeleton />
+              <HistoryCardSkeleton />
             </YStack>
-          )}
-        />
-      </ContentReveal>
+          }
+        >
+          <SectionList<WorkoutNormalized>
+            sections={sections}
+            keyExtractor={item => item.id}
+            stickySectionHeadersEnabled={false}
+            showsVerticalScrollIndicator={false}
+            removeClippedSubviews={false}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: LIST_BOTTOM_PADDING }}
+            ItemSeparatorComponent={ItemSeparator}
+            renderSectionHeader={({ section }) => (
+              <AppText
+                variant="label"
+                color="textTertiary"
+                paddingTop="$md"
+                paddingBottom="$xs"
+              >
+                {section.title.toUpperCase()}
+              </AppText>
+            )}
+            renderItem={renderWorkout}
+            ListEmptyComponent={() => (
+              <YStack alignItems="center" justifyContent="center" marginTop="$5xl">
+                <EmptyStateIcon icon={History} size={48} color="textTertiary" />
+                <AppText variant="bodyMd" color="textTertiary" marginTop="$md">
+                  No hay entrenamientos guardados aún
+                </AppText>
+              </YStack>
+            )}
+          />
+        </ContentReveal>
+      </YStack>
     </Screen>
   );
 }

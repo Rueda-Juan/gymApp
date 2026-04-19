@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable } from 'react-native';
-import { XStack, YStack, useTheme } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { useBottomBarHeightContext } from '@/context/BottomBarHeightContext';
 import Animated, { type AnimatedStyle, FadeInDown } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -10,19 +10,11 @@ import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { FONT_SCALE } from '@/tamagui.config';
 import { motion } from '@/constants/motion';
-import { useMotion } from '@/hooks/ui/useMotion';
 import { useBottomBarGestureAndAnimation } from '@/hooks/ui/useBottomBarGestureAndAnimation';
 import { triggerLightHaptic, triggerSelectionHaptic } from '@/utils/haptics';
-import { logEvent } from '@/utils/instrumentation';
 import { elevation } from '@/constants/elevation';
 
 const ACTION_BUTTON_SIZE = 52;
-const BOUNCE_INTERVAL_MS = 8000;
-const BOUNCE_OFFSET = -3;
-const BOUNCE_DURATION_MS = 300;
-const SWIPE_UP_THRESHOLD = -60;
-const GESTURE_ACTIVE_OFFSET_Y: [number, number] = [-10, 10];
-const GESTURE_FAIL_OFFSET_X: [number, number] = [-30, 30];
 const HANDLE_WIDTH = 32;
 const HANDLE_HEIGHT = 4;
 const REST_BADGE_SIZE = 18;
@@ -38,7 +30,7 @@ interface ActiveWorkoutBottomBarProps {
   restTimerIsActive: boolean;
   restDisplaySeconds: number;
   insetsBottom: number;
-  hourglassAnimatedStyle: AnimatedStyle<object>;
+  hourglassAnimatedStyle: AnimatedStyle<any>;
   onPrev: () => void;
   onOpenNote: () => void;
   onOpenRestTimer: () => void;
@@ -63,15 +55,17 @@ export function ActiveWorkoutBottomBar({
   onOpenPlateCalculator,
   nextExerciseName,
 }: ActiveWorkoutBottomBarProps) {
-  const theme = useTheme();
-  const { setBottomBarHeight } = useBottomBarHeightContext();
+  const { setBottomBarHeight, safeAreaBottom } = useBottomBarHeightContext();
+  const effectiveInsetsBottom = safeAreaBottom ?? insetsBottom;
+
   const { handleAnimStyle, swipeUpGesture, handleColor } = useBottomBarGestureAndAnimation({
-    insetsBottom,
+    insetsBottom: effectiveInsetsBottom,
     onOpenPlateCalculator
   });
 
   return (
     <YStack
+      testID="ActiveWorkoutBottomBar"
       position="absolute"
       bottom={0}
       left={0}
@@ -79,13 +73,14 @@ export function ActiveWorkoutBottomBar({
       backgroundColor="$surface"
       borderTopWidth={1}
       borderTopColor="$borderColor"
-      paddingBottom={Math.max(insetsBottom + SAFE_AREA_PADDING_BUFFER, MIN_BOTTOM_PADDING)}
+      paddingBottom={Math.max(effectiveInsetsBottom + SAFE_AREA_PADDING_BUFFER, MIN_BOTTOM_PADDING)}
       paddingTop={0}
       paddingHorizontal="$xl"
       onLayout={(e) => {
         const measured = e.nativeEvent.layout.height;
-        // include safe area inset supplied by parent
-        setBottomBarHeight(Math.round(measured + insetsBottom));
+        // measured already includes the bottom safe-area padding (we add it to the component's padding),
+        // so store the measured total height directly to avoid double-counting the inset.
+        setBottomBarHeight(Math.round(measured));
       }}
     >
       {/* Forge Handle — tap or swipe up to open plate calculator */}
@@ -112,13 +107,14 @@ export function ActiveWorkoutBottomBar({
       </GestureDetector>
 
       <XStack alignItems="center" gap="$sm">
-        <Pressable 
+        <Pressable
           onPress={() => {
             triggerLightHaptic();
             onPrev();
-          }} 
-          disabled={isFirst} 
+          }}
+          disabled={isFirst}
           accessibilityLabel="Ejercicio anterior"
+          accessibilityState={{ disabled: isFirst }}
         >
           <YStack
             width={ACTION_BUTTON_SIZE}
@@ -174,8 +170,7 @@ export function ActiveWorkoutBottomBar({
             borderWidth={1}
             borderColor={restTimerIsActive ? '$success' : '$borderColor'}
           >
-            {/* Reanimated AnimatedStyle type workaround — style types don't match View */}
-            <Animated.View style={hourglassAnimatedStyle as any}>
+            <Animated.View style={hourglassAnimatedStyle}>
               <AppIcon icon={Hourglass} color={restTimerIsActive ? 'success' : 'color'} size={22} />
             </Animated.View>
             {restTimerIsActive && restDisplaySeconds > 0 && (
@@ -205,7 +200,34 @@ export function ActiveWorkoutBottomBar({
           maxWidth={320}
           appVariant={isFinishing ? 'ghost' : 'primary'}
           borderRadius="$lg"
-          onPress={onNext}
+          onPress={async () => {
+            if (isLast && !isFinishing) {
+              // Guardar y cerrar sesión, navegar a summary
+              try {
+                if (typeof onNext === 'function') await onNext();
+                // Navegar a summary con el id de la sesión
+                // Se asume que el id está en la URL o en el store global
+                // window.location o router.push
+                // Usar router de expo-router
+                const { useActiveWorkout } = await import('@/store/useActiveWorkout');
+                const workoutId = useActiveWorkout.getState().workoutId;
+                if (workoutId) {
+                  const { router } = await import('expo-router');
+                  router.replace({ pathname: '/(workouts)/summary', params: { id: workoutId } });
+                } else {
+                  // fallback: ir al home
+                  const { router } = await import('expo-router');
+                  router.replace('/');
+                }
+              } catch (e) {
+                // fallback: ir al home
+                const { router } = await import('expo-router');
+                router.replace('/');
+              }
+            } else {
+              onNext();
+            }
+          }}
           disabled={isFinishing}
           accessibilityLabel={isLast ? 'Finalizar entrenamiento' : 'Siguiente ejercicio'}
           label={isFinishing ? 'Guardando...' : isLast ? 'Finalizar' : 'Sig. Ejercicio'}

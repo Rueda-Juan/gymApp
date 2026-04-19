@@ -1,15 +1,17 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { Alert } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Alert } from 'react-native';
+
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 import { router } from 'expo-router';
 
 import { Screen } from '@/components/ui/Screen';
+// Importar useTheme de Tamagui para acceder a los colores del theme
+import { useTheme, YStack } from 'tamagui';
 import { useExercises } from '@/hooks/domain/useExercises';
 import { getErrorMessage } from '@/utils/errorHelpers';
 import CreateExerciseHeader from './CreateExerciseHeader';
 import CreateExerciseForm from './CreateExerciseForm';
-import CreateExerciseFooter from './CreateExerciseFooter';
 
 import type { MuscleGroup } from 'backend/domain/valueObjects/MuscleGroup';
 import type { Equipment } from 'backend/domain/valueObjects/Equipment';
@@ -103,31 +105,56 @@ export default function CreateExerciseScreen() {
   //   );
   // }, []);
 
+  const theme = useTheme();
+
+
+  // Overlay y ejemplo de uso de tokens para layout
+  const styles = StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.25)', // Usar tokens si se requiere más adelante
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 100,
+    },
+  });
+
   return (
-    <Screen safeAreaEdges={[ 'top', 'left', 'right' ]}>
-      <CreateExerciseHeader isSaving={isSaving} onSave={handleSave} onClose={() => router.back()} />
+    <Screen safeAreaEdges={['top', 'bottom', 'left', 'right']}>
+      <YStack flex={1}>
+        <CreateExerciseHeader isSaving={isSaving} onSave={handleSave} onClose={() => router.back()} />
 
-      <CreateExerciseForm
-        name={name}
-        setName={setName}
-        primaryMuscles={primaryMuscles}
-        togglePrimaryMuscle={togglePrimaryMuscle}
-        secondaryMuscles={secondaryMuscles}
-        toggleSecondaryMuscle={toggleSecondaryMuscle}
-        equipment={equipment}
-        handleSetEquipment={handleSetEquipment}
-        exerciseType={exerciseType}
-        handleSetExerciseType={handleSetExerciseType}
-        loadType={loadType}
-        handleSetLoadType={handleSetLoadType}
-        description={description}
-        setDescription={setDescription}
-        isSaving={isSaving}
-        svgInteractive={false}
-        onSvgSelectMuscle={undefined}
-      />
+        {/* Overlay global de loading durante guardado */}
+        {isSaving && (
+          <View style={styles.overlay} accessibilityLabel="Guardando ejercicio" accessible>
+            <ActivityIndicator size="large" color={theme.primary?.val ?? '#B5530A'} />
+          </View>
+        )}
 
-      <CreateExerciseFooter isSaving={isSaving} onSave={handleSave} />
+        <CreateExerciseForm
+          name={name}
+          setName={setName}
+          primaryMuscles={primaryMuscles}
+          setPrimaryMuscles={setPrimaryMuscles}
+          togglePrimaryMuscle={togglePrimaryMuscle}
+          secondaryMuscles={secondaryMuscles}
+          setSecondaryMuscles={setSecondaryMuscles}
+          toggleSecondaryMuscle={toggleSecondaryMuscle}
+          equipment={equipment}
+          handleSetEquipment={handleSetEquipment}
+          exerciseType={exerciseType}
+          handleSetExerciseType={handleSetExerciseType}
+          loadType={loadType}
+          handleSetLoadType={handleSetLoadType}
+          description={description}
+          setDescription={setDescription}
+          isSaving={isSaving}
+          svgInteractive={false}
+          onSvgSelectMuscle={undefined}
+        // TODO: Refactorizar CreateExerciseForm para usar tokens en padding, borderRadius, etc.
+        />
+      </YStack>
     </Screen>
   );
+  // Overlay y ejemplo de uso de tokens para layout
 }

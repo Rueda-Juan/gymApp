@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { ActiveWorkoutBottomBar } from '../ActiveWorkoutBottomBar';
+import { ActiveWorkoutBottomBar } from '../activeWorkout/ActiveWorkoutBottomBar';
 
 describe('ActiveWorkoutBottomBar', () => {
   const baseProps = {

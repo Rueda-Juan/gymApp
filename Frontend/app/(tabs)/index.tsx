@@ -1,10 +1,11 @@
 import React, { useMemo, useCallback } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { YStack , XStack, useTheme } from 'tamagui';
 import { router } from 'expo-router';
 import { FONT_SCALE } from '@/tamagui.config';
 import { Play, Flame, Dumbbell, Clock, Activity } from 'lucide-react-native';
-import { XStack, YStack, useTheme } from 'tamagui';
+
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -25,12 +26,16 @@ import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useUser } from '@/store/useUser';
 import { getWeeklyTrainingDays } from '@/utils/trainingWeek';
 import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
-import { useHomeData, formatRoutineExercises } from '@/hooks/application/useHomeData';
+import { useHomeData } from '@/hooks/application/useHomeData';
+import { useRoutineExercisesLabel } from '@/hooks/application/useRoutineExercisesLabel';
+import { useLastPerformedLabel } from '@/hooks/application/useLastPerformedLabel';
+import * as Haptics from 'expo-haptics';
 import { ProfileSetupForm } from '@/components/onboarding/ProfileSetupForm';
 import { elevation } from '@/constants/elevation';
 import { ROUTES } from '@/constants/routes';
 
-const WEEK_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+// Usar etiquetas únicas para los días de la semana en español
+const WEEK_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const STAGGER_DELAY_MS = 80;
 const MAX_STAGGER_MS = 320;
 const BOTTOM_SPACER_HEIGHT = 100;
@@ -47,19 +52,36 @@ export default function HomeScreen() {
   const handleStartWorkout = useStartWorkout();
 
   const weeklyDays = useMemo(() => getWeeklyTrainingDays(data?.history ?? []), [data?.history]);
+  const formatRoutineExercises = useRoutineExercisesLabel();
+  const lastPerformedLabel = useLastPerformedLabel();
 
-  const navigateToStats = useCallback(() => router.push(ROUTES.STATS), []);
+  const navigateToStats = useCallback(() => {
+    Haptics.selectionAsync();
+    router.push(ROUTES.STATS);
+  }, []);
 
-  // `AnimatedViewShared` is a typed alias for Animated.View that accepts
-  // the runtime-only `sharedTransitionTag` prop.
+  // Log visual fijo para depuración
+  // Fallback visual mientras se inicializa el usuario
+  if (user === undefined) {
+    return (
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+        <AppText variant="titleMd">Cargando usuario...</AppText>
+      </YStack>
+    );
+  }
 
   if (!user?.name) {
-    return <ProfileSetupForm onComplete={setUser} />;
+    return (
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+        <ProfileSetupForm onComplete={setUser} />
+      </YStack>
+    );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background?.val }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <YStack flex={1} backgroundColor="$background">
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Header */}
         <HomeHeader userName={user?.name} onEditProfile={() => router.push(ROUTES.SETTINGS_PROFILE)} />
@@ -113,15 +135,28 @@ export default function HomeScreen() {
             <YStack paddingHorizontal="$xl" marginTop="$lg" marginBottom="$lg">
               <XStack justifyContent="center" gap="$sm">
                 {weeklyDays.map((trained, i) => (
-                  <YStack key={i} alignItems="center" gap={4} accessibilityLabel={`${WEEK_LABELS[i]}: ${trained ? 'entrenado' : 'sin actividad'}`}>
-                    <YStack
-                      width={28}
-                      height={28}
-                      borderRadius={14}
-                      backgroundColor={trained ? '$primary' : '$surfaceSecondary'}
-                      borderWidth={trained ? 0 : 1}
-                      borderColor="$borderColor"
-                    />
+                  <YStack
+                    key={i}
+                    alignItems="center"
+                    gap="$xs"
+                    accessibilityLabel={`${WEEK_LABELS[i]}: ${trained ? 'entrenado' : 'sin actividad'}`}
+                  >
+                    <Pressable
+                      style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Día ${WEEK_LABELS[i]}: ${trained ? 'entrenado' : 'sin actividad'}`}
+                      hitSlop={8}
+                      disabled
+                    >
+                      <YStack
+                        width="$lg"
+                        height="$lg"
+                        borderRadius="$lg"
+                        backgroundColor={trained ? '$primary' : '$surfaceSecondary'}
+                        borderWidth={trained ? 0 : 1}
+                        borderColor="$borderColor"
+                      />
+                    </Pressable>
                     <AppText variant="label" color="textTertiary" fontSize={FONT_SCALE.sizes[1]}>
                       {WEEK_LABELS[i]}
                     </AppText>
@@ -147,9 +182,17 @@ export default function HomeScreen() {
             <YStack marginTop="$xl">
               <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" marginBottom="$md">
                 <AppText variant="titleSm">Mis Rutinas</AppText>
-                <Pressable onPress={() => router.push(ROUTES.ROUTINES)} accessibilityLabel="Ver todas las rutinas" accessibilityRole="button">
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    router.push(ROUTES.ROUTINES);
+                  }}
+                  accessibilityLabel="Ver todas las rutinas"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
                   <AppText variant="bodyMd" color="primary" fontWeight="600">Ver todas</AppText>
-            </Pressable>
+                </Pressable>
           </XStack>
 
           {(data?.routines?.length ?? 0) === 0 ? (
@@ -173,21 +216,21 @@ export default function HomeScreen() {
                     onPress={() => handleStartWorkout(routine)}
                     accessibilityLabel={`Iniciar rutina ${routine.name}`}
                   >
-                    <Card padding="$md" minHeight={88} borderWidth={1} borderColor="$borderColor" {...elevation.flat}>
+                    <Card padding="$md" minHeight="$2xl" borderWidth={1} borderColor="$borderColor" {...elevation.flat}>
                       <XStack alignItems="center" gap="$md">
                         <YStack flex={1}>
                           <AnimatedViewShared sharedTransitionTag={`routine-title-${routine.id}`}>
                             <AppText variant="titleSm" numberOfLines={1}>{routine.name}</AppText>
                           </AnimatedViewShared>
                           <AppText variant="label" color="textTertiary" marginTop="$xs">
-                            {routine.lastPerformed ? `Hace ${routine.lastPerformed}` : 'Nunca'}
+                            {lastPerformedLabel(routine)}
                           </AppText>
-                          <AppText variant="bodySm" color="textSecondary" marginTop="$xs" numberOfLines={1}>
-                            {formatRoutineExercises(routine)}
-                          </AppText>
+                              <AppText variant="bodySm" color="textSecondary" marginTop="$xs" numberOfLines={1}>
+                                {formatRoutineExercises(routine)}
+                              </AppText>
                         </YStack>
                         <YStack
-                          width={64}
+                          width="$2xl"
                           alignSelf="stretch"
                           alignItems="center"
                           justifyContent="center"
@@ -211,5 +254,6 @@ export default function HomeScreen() {
         <View style={{ height: BOTTOM_SPACER_HEIGHT }} />
       </ScrollView>
     </SafeAreaView>
+  </YStack>
   );
 }

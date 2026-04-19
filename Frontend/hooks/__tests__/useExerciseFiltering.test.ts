@@ -2,11 +2,11 @@ import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { useExerciseFiltering } from '@/hooks/application/useExerciseFiltering';
 
+import type { Exercise } from 'backend/shared/types';
+
 jest.mock('@/utils/exercise', () => ({
   getExerciseName: (ex: { name: string; nameEs?: string }) => ex.nameEs ?? ex.name,
 }));
-
-import type { Exercise } from 'backend/shared/types';
 
 // Cast so we don't have to define all 30 properties
 const EXERCISES = [

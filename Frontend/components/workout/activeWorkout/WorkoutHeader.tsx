@@ -76,14 +76,14 @@ export function WorkoutHeader({
 
   return (
     <YStack backgroundColor="$background" zIndex={10}>
-      <XStack 
-        justifyContent="space-between" 
-        alignItems="center" 
-        paddingHorizontal="$xl" 
+      <XStack
+        alignItems="center"
+        paddingHorizontal="$xl"
         paddingVertical="$sm"
       >
-        <IconButton 
-          icon={<AppIcon icon={X} color="color" size={24} />} 
+        {/* Botón cancelar a la izquierda */}
+        <IconButton
+          icon={<AppIcon icon={X} color="color" size={24} />}
           onPress={() => {
             triggerLightHaptic();
             onCancel();
@@ -91,19 +91,8 @@ export function WorkoutHeader({
           accessibilityLabel="Cancelar entrenamiento"
         />
 
-        {onNotePress && !isFocusMode && (
-          <IconButton
-            icon={<AppIcon icon={PenLine} color={sessionNote ? 'primary' : 'textTertiary'} size={20} />}
-            backgroundColor="transparent"
-            onPress={() => {
-              triggerSelectionHaptic();
-              onNotePress();
-            }}
-            accessibilityLabel="Nota de sesión"
-          />
-        )}
-
-        <YStack alignItems="center">
+        {/* Centro: nombre, tiempo y cantidad de ejercicios */}
+        <YStack flex={1} alignItems="center" justifyContent="center">
           <AppText variant="bodySm" color="textTertiary" tabularNums fontWeight="600">
             {formattedTime}
           </AppText>
@@ -115,24 +104,18 @@ export function WorkoutHeader({
           </AppText>
         </YStack>
 
-        <XStack alignItems="center" gap="$sm">
-          <Pressable onPress={onFinish} accessibilityRole="button" accessibilityLabel={allSetsCompleted ? 'Finalizar entrenamiento' : 'Cerrar entrenamiento'}>
-            <YStack
-              paddingHorizontal="$md"
-              paddingVertical="$sm"
-              borderRadius="$lg"
-              backgroundColor={allSetsCompleted ? '$primarySubtle' : '$surfaceSecondary'}
-            >
-              <AppText
-                variant="bodySm"
-                color={allSetsCompleted ? 'primary' : 'textSecondary'}
-                fontWeight="700"
-              >
-                {allSetsCompleted ? 'Finalizar' : 'Cerrar'}
-              </AppText>
-            </YStack>
-          </Pressable>
-        </XStack>
+        {/* Botón editar/nota a la derecha */}
+        {onNotePress && !isFocusMode && (
+          <IconButton
+            icon={<AppIcon icon={PenLine} color={sessionNote ? 'primary' : 'textTertiary'} size={20} />}
+            backgroundColor="transparent"
+            onPress={() => {
+              triggerSelectionHaptic();
+              onNotePress();
+            }}
+            accessibilityLabel="Nota de sesión"
+          />
+        )}
       </XStack>
 
       <YStack height={PROGRESS_BAR_HEIGHT} backgroundColor="$borderColor" width="100%" accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: totalExercises, now: currentExerciseIndex + 1 }}>

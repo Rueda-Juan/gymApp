@@ -114,8 +114,9 @@ export default function TabLayout() {
 
   const screenOptions = useMemo(() => ({
     // Usar string vacío como fallback para evitar hardcode y dejar que el theme controle el color
-    tabBarActiveTintColor: String(theme.primary?.val ?? ''),
-    tabBarInactiveTintColor: String(theme.textTertiary?.val ?? ''),
+    // Si la API permite, pasar "primary" y "textTertiary" en vez de valores directos
+    tabBarActiveTintColor: theme.primary?.val ?? undefined,
+    tabBarInactiveTintColor: theme.textTertiary?.val ?? undefined,
     headerShown: false,
     tabBarButton: HapticTab,
     tabBarBackground: () => (
@@ -128,9 +129,9 @@ export default function TabLayout() {
         elevation: 0,
       },
       default: {
-        borderTopColor: String(theme.borderColor?.val ?? ''),
-        backgroundColor: String(theme.background?.val ?? ''),
-        borderTopWidth: 1, // Añadido para separación clara en Android
+        borderTopColor: theme.borderColor?.val ?? undefined,
+        backgroundColor: theme.background?.val ?? undefined,
+        borderTopWidth: 1, // Usar token si se requiere más adelante
         elevation: 0,
       },
     }),
@@ -153,6 +154,9 @@ export default function TabLayout() {
             options={{
               title,
               tabBarIcon: ({ color, focused }) => <Icon color={color} focused={focused} theme={theme} />,
+              tabBarAccessibilityLabel: title,
+              // `tabBarAccessibilityRole` is not accepted by the Tabs options type
+              // so we set accessibilityRole directly on the rendered icon when needed.
             }}
           />
         ))}

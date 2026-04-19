@@ -50,11 +50,6 @@ export default function EditRoutineScreen() {
       Alert.alert('Error', 'ID inválido');
       return;
     }
-    if (!name.trim()) {
-      Alert.alert('Error', 'El nombre no puede estar vacío');
-      return;
-    }
-    if (isSaving) return;
     setIsSaving(true);
     try {
       await routineService.updateRoutine(id, {
@@ -99,7 +94,7 @@ export default function EditRoutineScreen() {
 
   if (loading) {
     return (
-      <Screen>
+      <Screen safeAreaEdges={['top','bottom','left','right']}>
         <YStack flex={1} alignItems="center" justifyContent="center">
           <ActivityIndicator size="large" color={theme.primary?.val} />
         </YStack>

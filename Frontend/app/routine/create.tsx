@@ -2,12 +2,14 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import Toast from 'react-native-toast-message';
 
 import { RoutineFormTemplate } from '@/components/routine/RoutineFormTemplate';
 import { useRoutineEditor } from '@/hooks/domain/useRoutineEditor';
 import { useRoutines } from '@/hooks/domain/useRoutines';
 import { createClientId } from '@/utils/clientId';
 import { mapStoreExercisesToPayload } from '@/utils/routine';
+import { Screen } from '@/components/ui/Screen';
 
 export default function CreateRoutineScreen() {
   const { name, notes, exercises, reset } = useRoutineEditor();
@@ -38,21 +40,28 @@ export default function CreateRoutineScreen() {
         exercises: mapStoreExercisesToPayload(exercises, createClientId),
       });
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Toast.show({ type: 'success', text1: 'Rutina guardada', position: 'top' });
       router.back();
     } catch (err) {
       console.error('createRoutine error:', err);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'No se pudo guardar la rutina');
+      Toast.show({ type: 'error', text1: 'No se pudo guardar la rutina', position: 'top' });
     } finally {
       setIsSaving(false);
     }
   }, [name, exercises, notes, routineService, isSaving]);
 
   return (
-    <RoutineFormTemplate
-      title="Nueva Rutina"
-      isSaving={isSaving}
-      onSave={handleSave}
-    />
+    <Screen
+      keyboardAvoiding
+      keyboardVerticalOffset={0}
+      safeAreaEdges={['top','bottom','left','right']}
+    >
+      <RoutineFormTemplate
+        title="Nueva Rutina"
+        isSaving={isSaving}
+        onSave={handleSave}
+      />
+    </Screen>
   );
 }

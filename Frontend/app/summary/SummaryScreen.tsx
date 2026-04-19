@@ -1,7 +1,10 @@
 
 
+
 import React from 'react';
-import { Text, ScrollView, Pressable } from 'react-native';
+import { Screen } from '@/components/ui/Screen';
+import { AppText } from '@/components/ui/AppText';
+import { AppButton } from '@/components/ui/AppButton';
 import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
 import ErrorState from '../../components/shared/ErrorState';
 import { useRouter } from 'expo-router';
@@ -34,23 +37,21 @@ const SummaryScreen = ({ loadingMessage, errorMessage, children }: SummaryScreen
   const state = useSummaryScreenState();
   const router = useRouter();
 
-  // LoadingSkeleton does not accept children; loadingMessage is ignored for now
   if (state === SummaryScreenState.LOADING) return <LoadingSkeleton />;
   if (state === SummaryScreenState.ERROR) return <ErrorState message={errorMessage || "Error al cargar resumen"} />;
 
   // success
   return (
-    <ScrollView>
-      <Text>Resumen de sesión</Text>
+    <Screen scroll safeAreaEdges={['top','bottom','left','right']}>
+      <AppText variant="titleMd" marginBottom="$lg">Resumen de sesión</AppText>
       {children}
-      <Pressable
+      <AppButton
+        label="Volver al dashboard"
+        appVariant="ghost"
         onPress={() => router.push('/(tabs)')}
-        accessibilityRole="button"
-        accessibilityLabel="Volver al dashboard"
-      >
-        <Text style={{ color: 'blue' }}>Volver al dashboard</Text>
-      </Pressable>
-    </ScrollView>
+        marginTop="$2xl"
+      />
+    </Screen>
   );
 };
 

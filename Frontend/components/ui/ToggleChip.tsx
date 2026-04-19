@@ -5,12 +5,13 @@ import { AppText } from '@/components/ui/AppText';
 
 type ChipVariant = 'subtle' | 'solid' | 'secondary';
 
-interface ToggleChipProps {
+export interface ToggleChipProps {
   label: string;
   isActive: boolean;
   onPress: () => void;
   accessibilityLabel?: string;
   variant?: ChipVariant;
+  disabled?: boolean;
 }
 
 const CHIP_STYLES = {
@@ -34,7 +35,7 @@ const CHIP_STYLES = {
   },
 } as const;
 
-export function ToggleChip({ label, isActive, onPress, accessibilityLabel, variant = 'subtle' }: ToggleChipProps) {
+export function ToggleChip({ label, isActive, onPress, accessibilityLabel, variant = 'subtle', disabled }: ToggleChipProps) {
   const styles = CHIP_STYLES[variant];
   const activeTextColor = variant === 'subtle' ? 'primary' : 'background';
   const inactiveTextColor = variant === 'solid' ? 'color' : 'textSecondary';
@@ -45,7 +46,9 @@ export function ToggleChip({ label, isActive, onPress, accessibilityLabel, varia
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ selected: isActive }}
+      accessibilityState={{ selected: isActive, disabled: !!disabled }}
+      disabled={disabled}
+      style={({ pressed }) => [{ opacity: disabled ? 0.5 : 1 }]}
     >
       <YStack
         alignItems="center"

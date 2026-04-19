@@ -8,8 +8,8 @@ import { CardBase } from '@/components/ui/Card';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { StatsLineChart } from '@/components/charts';
-import { formatDateTick } from '@/components/charts/chartUtils';
+import { StatsLineChart } from '@/components/charts/Index';
+import { formatDateTick } from '@/components/charts/ChartUtils';
 import { getExerciseName } from '@/utils/exercise';
 import { FONT_SCALE } from '@/tamagui.config';
 
@@ -37,28 +37,30 @@ export function StrengthProgressCard({
   return (
     <Animated.View entering={FadeInDown.delay(300).springify()} style={animatedCardShadow}>
       <CardBase padding="$md" {...elevation.flat}>
-      <XStack alignItems="center" gap="$sm" marginBottom="$md">
-        <AppIcon icon={TrendingUp} size={20} color="primary" />
-        <AppText variant="titleSm" flex={1}>Fuerza</AppText>
-      </XStack>
-
-      <Pressable onPress={onOpenExercisePicker} accessibilityLabel="Seleccionar ejercicio">
-        <XStack
-          alignItems="center"
-          justifyContent="space-between"
-          padding="$sm"
-          borderRadius="$md"
-          borderWidth={1}
-          borderColor="$borderColor"
-          backgroundColor="$surfaceSecondary"
-          marginBottom="$md"
-        >
-          <AppText variant="bodyMd" color={strengthExercise ? 'color' : 'textTertiary'}>
-            {strengthExercise ? getExerciseName(strengthExercise) : 'Seleccionar ejercicio...'}
-          </AppText>
-          <AppIcon icon={ChevronRight} size={18} color="textTertiary" />
-        </XStack>
-      </Pressable>
+        <YStack gap="$sm">
+          <XStack alignItems="center" gap="$sm" style={{ minHeight: 32 }}>
+            <AppIcon icon={TrendingUp} size={20} color="primary" />
+            <AppText variant="titleSm" flex={1}>Fuerza</AppText>
+          </XStack>
+          <Pressable onPress={onOpenExercisePicker} accessibilityLabel="Seleccionar ejercicio">
+            <XStack
+              alignItems="center"
+              justifyContent="space-between"
+              padding="$sm"
+              borderRadius="$md"
+              borderWidth={1}
+              borderColor="$borderColor"
+              backgroundColor="$surfaceSecondary"
+              marginBottom="$md"
+              style={{ minHeight: 44 }}
+            >
+              <AppText variant="bodyMd" color={strengthExercise ? 'color' : 'textTertiary'} numberOfLines={1} style={{ flex: 1 }}>
+                {strengthExercise ? getExerciseName(strengthExercise) : 'Seleccionar ejercicio...'}
+              </AppText>
+              <AppIcon icon={ChevronRight} size={18} color="textTertiary" />
+            </XStack>
+          </Pressable>
+        </YStack>
 
       {strengthExercise && strengthHistory.length > 0 ? (
         <YStack gap="$sm">

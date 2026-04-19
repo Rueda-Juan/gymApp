@@ -128,7 +128,7 @@ export default function HistoryDetailScreen() {
 
   if (loading) {
     return (
-      <Screen>
+      <Screen safeAreaEdges={['top','bottom','left','right']}>
         <YStack flex={1} alignItems="center" justifyContent="center">
           <ActivityIndicator size="large" color={theme.primary?.val} />
         </YStack>
@@ -138,7 +138,7 @@ export default function HistoryDetailScreen() {
 
   if (!workout) {
     return (
-      <Screen safeAreaEdges={['top', 'left', 'right']}>
+      <Screen safeAreaEdges={['top','bottom','left','right']}>
         <XStack alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$sm" gap="$sm">
           <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Volver" />
         </XStack>
@@ -157,47 +157,49 @@ export default function HistoryDetailScreen() {
   }
 
   return (
-    <Screen safeAreaEdges={['top', 'left', 'right']}>
-      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$md">
-        <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Volver" />
-        <AppText variant="titleSm">Entrenamiento</AppText>
-        <IconButton icon={<AppIcon icon={Trash2} size={20} color="danger" />} onPress={handleDelete} accessibilityLabel="Eliminar entrenamiento" />
-      </XStack>
+    <Screen safeAreaEdges={['top','bottom','left','right']}>
+      <YStack flex={1}>
+        <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$md">
+          <IconButton icon={<AppIcon icon={ChevronLeft} size={24} color="color" />} onPress={() => router.back()} accessibilityLabel="Volver" />
+          <AppText variant="titleSm">Entrenamiento</AppText>
+          <IconButton icon={<AppIcon icon={Trash2} size={20} color="danger" />} onPress={handleDelete} accessibilityLabel="Eliminar entrenamiento" />
+        </XStack>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: SCROLL_BOTTOM_INSET }}
-        showsVerticalScrollIndicator={false}
-      >
-        <CardBase padding="$md" marginBottom="$xl">
-          <XStack justifyContent="space-between" marginBottom="$lg">
-            <XStack alignItems="center" gap="$xs">
-              <AppIcon icon={Calendar} size={16} color="textTertiary" />
-              <AppText variant="bodySm" color="textSecondary">{formattedDate}</AppText>
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: SCROLL_BOTTOM_INSET }}
+          showsVerticalScrollIndicator={false}
+        >
+          <CardBase padding="$md" marginBottom="$xl">
+            <XStack justifyContent="space-between" marginBottom="$lg">
+              <XStack alignItems="center" gap="$xs">
+                <AppIcon icon={Calendar} size={16} color="textTertiary" />
+                <AppText variant="bodySm" color="textSecondary">{formattedDate}</AppText>
+              </XStack>
+              <AppText variant="bodySm" color="textTertiary">{formattedDuration}</AppText>
             </XStack>
-            <AppText variant="bodySm" color="textTertiary">{formattedDuration}</AppText>
-          </XStack>
 
-          <XStack>
-            <YStack flex={1}>
-              <AppText variant="label" color="textTertiary">VOLUMEN</AppText>
-              <AppText variant="titleSm" marginTop="$xs">{`${totalVolume} kg`}</AppText>
-            </YStack>
-            <YStack flex={1}>
-              <AppText variant="label" color="textTertiary">SETS</AppText>
-              <AppText variant="titleSm" marginTop="$xs">{totalSets}</AppText>
-            </YStack>
-          </XStack>
-        </CardBase>
+            <XStack>
+              <YStack flex={1}>
+                <AppText variant="label" color="textTertiary">VOLUMEN</AppText>
+                <AppText variant="titleSm" marginTop="$xs">{`${totalVolume} kg`}</AppText>
+              </YStack>
+              <YStack flex={1}>
+                <AppText variant="label" color="textTertiary">SETS</AppText>
+                <AppText variant="titleSm" marginTop="$xs">{totalSets}</AppText>
+              </YStack>
+            </XStack>
+          </CardBase>
 
-        {workout.exercises.map((ex, exIdx) => (
-          <ExerciseBlock
-            key={ex.id}
-            exercise={ex}
-            index={exIdx}
-            allExercises={workout.exercises}
-          />
-        ))}
-      </ScrollView>
+          {workout.exercises.map((ex, exIdx) => (
+            <ExerciseBlock
+              key={ex.id}
+              exercise={ex}
+              index={exIdx}
+              allExercises={workout.exercises}
+            />
+          ))}
+        </ScrollView>
+      </YStack>
     </Screen>
   );
 }

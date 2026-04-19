@@ -29,19 +29,37 @@ interface ProfileSetupFormProps {
 }
 
 export function ProfileSetupForm({ onComplete }: ProfileSetupFormProps) {
+
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
   const [age, setAge] = useState('');
 
+  // Solo letras, espacios y acentos
+  const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/;
+
   const handleSubmit = () => {
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       Alert.alert('Datos incompletos', 'Por favor, ingresa tu nombre.');
       return;
     }
+    if (!nameRegex.test(trimmedName)) {
+      Alert.alert('Nombre inválido', 'El nombre solo puede contener letras, espacios y acentos.');
+      return;
+    }
+    const parsedAge = parseInt(age, 10);
+    if (!age.trim() || isNaN(parsedAge)) {
+      Alert.alert('Edad inválida', 'Por favor, ingresa tu edad.');
+      return;
+    }
+    if (parsedAge < 1 || parsedAge > 120) {
+      Alert.alert('Edad inválida', 'La edad debe estar entre 1 y 120 años.');
+      return;
+    }
     onComplete({
-      name: name.trim(),
+      name: trimmedName,
       gender: gender || 'other',
-      age: parseInt(age, 10) || null,
+      age: parsedAge,
       createdAt: Date.now(),
     });
   };
