@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import Toast from 'react-native-toast-message';
 import { useWorkout } from '@/hooks/domain/useWorkout';
-import type { Workout } from 'backend/domain/entities/Workout';
+import type { WorkoutDTO } from '@shared';
 
 // Re-export for backward compatibility with existing consumers
 export { useWorkoutStats } from './useWorkoutStats';
 
 interface WorkoutDetailState {
-  workout: Workout | null;
+  workout: WorkoutDTO | null;
   loading: boolean;
   loadError: boolean;
 }
@@ -15,7 +15,7 @@ interface WorkoutDetailState {
 export function useWorkoutDetail(id: string | undefined): WorkoutDetailState {
   const workoutService = useWorkout();
 
-  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [workout, setWorkout] = useState<WorkoutDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 

@@ -7,7 +7,7 @@ import { useBodyWeight } from '@/hooks/domain/useBodyWeight';
 import { useWorkout } from '@/hooks/domain/useWorkout';
 import { usePersonalRecords } from '@/hooks/domain/usePersonalRecords';
 import { calculateExercisesVolume } from '@/utils/workout';
-import type { BodyWeightEntry, DailyStats, TrainingFrequencyResult, Workout } from 'backend/shared/types';
+import type { BodyWeightDTO, WorkoutDTO } from '@shared';
 
 const RECENT_DAYS_WINDOW = 30;
 const FULL_HISTORY_LIMIT = 365;
@@ -20,10 +20,10 @@ interface StatsSummaries {
   prs: number;
 }
 
-interface StatsOverview {
-  weeklyStats: DailyStats[];
-  frequency: TrainingFrequencyResult;
-}
+// interface StatsOverview {
+//   weeklyStats: DailyStats[];
+//   frequency: TrainingFrequencyResult;
+// }
 
 export function useStatsData() {
   const statsService = useStats();
@@ -32,13 +32,13 @@ export function useStatsData() {
   const prService = usePersonalRecords();
 
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<StatsOverview | null>(null);
-  const [weightHistory, setWeightHistory] = useState<BodyWeightEntry[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [weightHistory, setWeightHistory] = useState<BodyWeightDTO[]>([]);
   const [summaries, setSummaries] = useState<StatsSummaries>({ workouts: 0, volume: 0, time: 0, prs: 0 });
-  const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<WorkoutDTO[]>([]);
 
   const trainedDates = useMemo(() => new Set(
-    workoutHistory.map((w: Workout) => {
+    workoutHistory.map((w: WorkoutDTO) => {
       const d = new Date(w.date);
       return [
         d.getFullYear(),
@@ -62,14 +62,14 @@ export function useStatsData() {
         prService.countSince(recentCutoff.toISOString()),
       ]);
 
-      const recentHistory = fullHistory.filter((w: Workout) => new Date(w.date) >= recentCutoff);
+      const recentHistory = fullHistory.filter((w: WorkoutDTO) => new Date(w.date) >= recentCutoff);
       setWorkoutHistory(fullHistory);
 
       const totalVolume = recentHistory.reduce(
-        (acc: number, w: Workout) => acc + calculateExercisesVolume(w.exercises ?? [], { completedOnly: true, defaultCompleted: false }),
+        (acc: number, w: WorkoutDTO) => acc + calculateExercisesVolume(w.exercises ?? [], { completedOnly: true, defaultCompleted: false }),
         0,
       );
-      const totalTime = recentHistory.reduce((acc: number, w: Workout) => acc + (w.durationSeconds || 0), 0);
+      const totalTime = recentHistory.reduce((acc: number, w: WorkoutDTO) => acc + (w.durationSeconds || 0), 0);
 
       setSummaries({
         workouts: recentHistory.length,

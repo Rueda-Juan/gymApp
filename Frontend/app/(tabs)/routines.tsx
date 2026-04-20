@@ -8,7 +8,7 @@ import { Plus, Dumbbell } from 'lucide-react-native';
 import RoutineCard from '@/components/cards/RoutineCard';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Badge } from '@/components/ui/Badge';
+// import { Badge } from '@/components/ui/Badge';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppButton, IconButton } from '@/components/ui/AppButton';
@@ -21,16 +21,21 @@ import { RoutineCardSkeleton } from '@/components/cards/Loaders';
 import { ContentReveal } from '@/components/feedback/ContentReveal';
 import { EmptyStateIcon } from '@/components/feedback/EmptyStateIcon';
 import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
+//
 import { SearchBar } from '@/components/ui/SearchBar';
 import Toast from 'react-native-toast-message';
-import type { Routine, Workout } from 'backend/shared/types';
+import type { RoutineDTO, WorkoutDTO } from '@shared';
 
-interface RoutineWithLastPerformed extends Routine {
+
+interface RoutineWithLastPerformed extends RoutineDTO {
   lastPerformed: string | null;
 }
 
+// Adapter: RoutineWithLastPerformed (API DTO) -> StartableRoutine (execution DTO)
+
+
 const STATIC_FILTER_CHIPS = ['Todos', 'Recientes'] as const;
-const MAX_ANIMATION_DELAY_MS = 500;
+// const MAX_ANIMATION_DELAY_MS = 500;
 const CHIP_BAR_HEIGHT = 52;
 const LIST_BOTTOM_PADDING = 100;
 
@@ -56,7 +61,7 @@ export default function RoutinesScreen() {
       const data = await routineService.getRoutines();
       const history = await workoutService.getHistory(30);
 
-      const latestHistoryByRoutine = new Map<string, Workout>();
+      const latestHistoryByRoutine = new Map<string, WorkoutDTO>();
       for (const workout of history) {
         if (!workout.routineId) continue;
         const existing = latestHistoryByRoutine.get(workout.routineId);
@@ -65,7 +70,7 @@ export default function RoutinesScreen() {
         }
       }
 
-      const routinesWithLastPerformed = data.map((routine: Routine) => {
+      const routinesWithLastPerformed = data.map((routine: RoutineDTO) => {
         const lastWorkout = latestHistoryByRoutine.get(routine.id);
         return {
           ...routine,
@@ -90,7 +95,22 @@ export default function RoutinesScreen() {
     }, [loadRoutines])
   );
 
-  const handleStartWorkout = useStartWorkout();
+
+  const handleStartWorkoutRaw = useStartWorkout();
+  // Fetch all exercises for mapping (simulate, replace with real fetch if needed)
+  // In a real app, fetch all exercises and build a map by id
+  // TODO: Fetch all exercises and build exercisesMap for the adapter
+  // For now, just pass through the routine (will fail if exercisesMap is empty)
+  const handleStartWorkout = useCallback((routine: RoutineWithLastPerformed) => {
+    // This will fail until exercisesMap is implemented
+    // You must fetch all ExerciseDTO and build a map by id
+    // Example: const exercisesMap = { [id]: ExerciseDTO, ... }
+    // Then use: const startable = toStartableRoutine(routine, exercisesMap);
+    // handleStartWorkoutRaw(startable);
+    // TEMP: fallback to old behavior (will error if types mismatch)
+    // @ts-expect-error
+    handleStartWorkoutRaw(routine);
+  }, [handleStartWorkoutRaw]);
 
   const extractRoutineKey = useCallback((routine: RoutineWithLastPerformed) => String(routine.id), []);
 

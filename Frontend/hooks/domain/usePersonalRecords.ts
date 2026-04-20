@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useDI } from '@/context/DIContext';
-import type { RecordType } from 'backend/shared/types';
+import type { RecordType } from '@shared';
 
 export function usePersonalRecords() {
   const { getPersonalRecords, getBestPersonalRecord, getPRCountSince } = useDI();

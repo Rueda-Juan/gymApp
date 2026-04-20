@@ -6,7 +6,7 @@ import { getExerciseName } from '@/utils/exercise';
 export function useRoutineExercisesLabel() {
   return useCallback((routine: RoutineWithLastPerformed) => {
     return routine.exercises
-      .map(re => (re.exercise ? getExerciseName(re.exercise) : ''))
+      .map(re => getExerciseName(re.exerciseId))
       .filter(Boolean)
       .join(' · ');
   }, []);

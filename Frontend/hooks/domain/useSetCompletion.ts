@@ -80,7 +80,7 @@ export function useSetCompletion() {
               'max_volume': '¡Nuevo Récord de Volumen!',
               'estimated_1rm': '¡Nuevo 1RM Estimado!'
             };
-            const bestRecord = brokenRecords.find(r => r.recordType === 'max_weight') || brokenRecords[0];
+            const bestRecord = brokenRecords.find((r: any) => r.recordType === 'max_weight') || brokenRecords[0];
             Toast.show({
               type: 'success',
               text1: typesMap[bestRecord.recordType],

@@ -2,13 +2,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Screen } from '../../components/ui/Screen';
-import { AppText } from '../../components/ui/AppText';
-import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
-import ErrorState from '../../components/shared/ErrorState';
-import EmptyState from '../../components/shared/EmptyState';
-import { useRouter } from 'expo-router';
-import { ROUTES } from '../../constants/routes';
+import { Screen } from '../../features/routines/screens/RoutinesScreen';
 
 
 const RoutinesScreen = () => {

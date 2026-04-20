@@ -8,8 +8,8 @@ import { CardBase } from '@/components/ui/Card';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { StatsLineChart } from '@/components/charts/Index';
-import { formatDateTick } from '@/components/charts/ChartUtils';
+import { StatsLineChart } from '@/components/charts/index';
+import { formatDateTick } from '@/components/charts/chartUtils';
 import { getExerciseName } from '@/utils/exercise';
 import { FONT_SCALE } from '@/tamagui.config';
 

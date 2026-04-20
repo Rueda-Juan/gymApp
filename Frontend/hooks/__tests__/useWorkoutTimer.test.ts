@@ -35,29 +35,7 @@ function renderHook() {
 }
 
 describe('useWorkoutTimer', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-    jest.clearAllMocks();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  // ═══════════════════════════════════════════════════════════════
-  // Happy Path
-  // ═══════════════════════════════════════════════════════════════
-
-  describe('happy path', () => {
-    it('empieza en 0 segundos sin startTime', () => {
-      mockStartTime(null);
-      const { getResult } = renderHook();
-
-      expect(getResult().elapsedSeconds).toBe(0);
-      expect(getResult().formattedTime).toBe('00:00');
-    });
-
-    it('calcula tiempo transcurrido al tick del intervalo', () => {
+// MOVED: Este test fue migrado a features/workout/__tests__/useWorkoutTimer.test.ts
       const now = Date.now();
       jest.spyOn(Date, 'now').mockReturnValue(now);
       mockStartTime(now - 5000);

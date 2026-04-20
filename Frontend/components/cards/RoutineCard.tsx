@@ -9,9 +9,9 @@ import { Badge } from '@/components/ui/Badge';
 import { Play } from 'lucide-react-native';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { formatRoutineExerciseNames } from '@/utils/routine';
-import type { Routine } from 'backend/shared/types';
+import type { RoutineDTO } from '@shared';
 
-export interface RoutineWithLastPerformed extends Routine {
+export interface RoutineWithLastPerformed extends RoutineDTO {
   lastPerformed: string | null;
 }
 
@@ -84,3 +84,4 @@ function RoutineCard({ routine, index, onOpen, onStart }: RoutineCardProps) {
 }
 
 export default React.memo(RoutineCard);
+

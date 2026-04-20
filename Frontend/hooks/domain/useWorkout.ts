@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useDI } from '@/context/DIContext';
-import type { WorkoutSet, SessionContext, WarmupStyle } from 'backend/shared/types';
+import type { WorkoutSetDTO } from '@shared';
 import type { WorkoutExerciseState } from '@/store/useActiveWorkout';
 
 const VALID_SET_TYPES = ['warmup', 'normal', 'failure', 'dropset'] as const;
@@ -76,12 +76,12 @@ export function useWorkout() {
   );
 
   const recordSet = useCallback(
-    (workoutId: string, set: WorkoutSet) => recSetUC.execute(workoutId, set),
+    (workoutId: string, set: WorkoutSetDTO) => recSetUC.execute(workoutId, set),
     [recSetUC]
   );
 
   const updateSet = useCallback(
-    (workoutId: string, dateStr: string, set: WorkoutSet) => upSetUC.execute(workoutId, dateStr, set),
+    (workoutId: string, dateStr: string, set: WorkoutSetDTO) => upSetUC.execute(workoutId, dateStr, set),
     [upSetUC]
   );
 
@@ -130,10 +130,10 @@ export function useWorkout() {
     [getByIdUC]
   );
 
-  const suggestWarmup = useCallback(
-    (exerciseId: string, sessionContext: SessionContext, warmupStyle?: WarmupStyle, targetWeight?: number) => sugWarmUC.execute(exerciseId, sessionContext, warmupStyle, targetWeight),
-    [sugWarmUC]
-  );
+  // const suggestWarmup = useCallback(
+  //   (exerciseId: string, sessionContext: any, warmupStyle?: any, targetWeight?: number) => sugWarmUC.execute(exerciseId, sessionContext, warmupStyle, targetWeight),
+  //   [sugWarmUC]
+  // );
 
   const recordAllSets = useCallback(
     (workoutId: string, exercises: WorkoutExerciseState[]) =>
@@ -161,14 +161,14 @@ export function useWorkout() {
     deleteWorkoutExercise,
     updateWorkoutExercise,
     suggestWeight,
-    suggestWarmup,
+    // suggestWarmup,
     getHistory,
     getWorkoutById,
   }), [
     startWorkout, finishWorkout, deleteWorkout, recordSet, recordAllSets,
     getPreviousSets, updateSet,
     deleteSet, skipExercise, addExerciseToWorkout, reorderWorkoutExercises,
-    deleteWorkoutExercise, updateWorkoutExercise, suggestWeight, suggestWarmup,
+    deleteWorkoutExercise, updateWorkoutExercise, suggestWeight,
     getHistory, getWorkoutById
   ]);
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import ActiveWorkoutScreen from '../app/activeWorkout/ActiveWorkoutScreen';
+import ActiveWorkoutScreen from '../features/workout/screens/ActiveWorkoutScreen';
 
 jest.mock('../hooks/application/useWorkoutStore', () => ({
   useWorkoutStore: () => ({

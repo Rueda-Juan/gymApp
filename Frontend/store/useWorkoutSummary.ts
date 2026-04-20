@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { RecordType } from 'backend/shared/types';
+import type { RecordType } from '@shared';
 
 interface WorkoutSummaryRecord {
   exerciseId: string;

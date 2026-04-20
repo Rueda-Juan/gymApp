@@ -101,21 +101,7 @@ describe('useStartWorkout', () => {
       expect(router.push).not.toHaveBeenCalled();
     });
 
-    it('pasa initialExercises con sets generados al store', async () => {
-      const { getStart } = renderHook();
-
-      await act(async () => { await getStart()(ROUTINE); });
-
-      const call = mockStartActiveWorkout.mock.calls[0];
-      const [workoutId, routineId, routineName, exercises] = call;
-
-      expect(workoutId).toBe('w-1');
-      expect(routineId).toBe('r-1');
-      expect(routineName).toBe('Push Day');
-      expect(exercises).toHaveLength(2);
-      expect(exercises[0].sets).toHaveLength(3);
-      expect(exercises[1].sets).toHaveLength(2);
-    });
+  // MOVED: Este test fue migrado a features/workout/__tests__/useStartWorkout.test.ts
 
     it('parsea maxReps string a número', async () => {
       const { getStart } = renderHook();

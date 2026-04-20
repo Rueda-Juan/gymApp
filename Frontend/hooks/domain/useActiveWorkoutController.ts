@@ -10,7 +10,7 @@ import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useRestTimer } from '@/store/useRestTimer';
 import { useSettings } from '@/store/useSettings';
 import { useWorkout } from '@/hooks/domain/useWorkout';
-import { useExercises } from '@/hooks/domain/useExercises';
+import { useExercises } from '@/features/exercise/hooks/useExercises';
 import { useSetCompletion } from '@/hooks/domain/useSetCompletion';
 import { useSupersetNavigation } from '@/hooks/ui/useSupersetNavigation';
 import { createClientId } from '@/utils/clientId';
@@ -18,8 +18,7 @@ import { useWorkoutSummary } from '@/store/useWorkoutSummary';
 import { getExerciseName } from '@/utils/exercise';
 import { ROUTES } from '@/constants/routes';
 
-import type { WeightSuggestion } from 'backend/shared/types';
-import type { Exercise } from 'backend/domain/entities/Exercise';
+import type { ExerciseDTO } from '@shared';
 
 const AUTO_ADVANCE_DELAY_MS = 1000;
 const SHEET_OPEN_DELAY_MS = 300;
@@ -66,11 +65,11 @@ export function useActiveWorkoutController(
   const adjustTimer = useRestTimer(s => s.adjustTimer);
 
   const [search, setSearch] = useState('');
-  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
+  const [allExercises, setAllExercises] = useState<any[]>([]);
   const [focusedSetId, setFocusedSetId] = useState<string | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [navDirection, setNavDirection] = useState<'forward' | 'back'>('forward');
-  const [weightSuggestion, setWeightSuggestion] = useState<WeightSuggestion | null>(null);
+  const [weightSuggestion, setWeightSuggestion] = useState<any>(null);
   const [isFinishing, setIsFinishing] = useState(false);
   const [showPRCelebration, setShowPRCelebration] = useState(false);
   const [plateCalcSetIndex, setPlateCalcSetIndex] = useState(0);
@@ -94,7 +93,7 @@ export function useActiveWorkoutController(
   // ---------------------------
   useEffect(() => {
     exerciseService.getAll()
-      .then(res => setAllExercises(res ?? []))
+      .then((res: any) => setAllExercises(res ?? []))
       .catch(() =>
         Toast.show({ type: 'error', text1: 'Error al cargar ejercicios' })
       );
@@ -109,7 +108,7 @@ export function useActiveWorkoutController(
     let cancelled = false;
 
     workoutService.suggestWeight(activeExerciseId)
-      .then(s => !cancelled && setWeightSuggestion(s))
+      .then((s: any) => !cancelled && setWeightSuggestion(s))
       .catch(() => !cancelled && setWeightSuggestion(null));
 
     return () => { cancelled = true; };
@@ -180,7 +179,7 @@ export function useActiveWorkoutController(
     setFocusedSetId(id);
   }, [addSetStore]);
 
-  const handleAddExerciseSelection = useCallback((item: Exercise) => {
+  const handleAddExerciseSelection = useCallback((item: any) => {
     addExercise({
       id: createClientId(),
       exerciseId: item.id,

@@ -4,11 +4,11 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 
-import { RoutineFormTemplate } from '@/components/routine/RoutineFormTemplate';
-import { useRoutineEditor } from '@/hooks/domain/useRoutineEditor';
-import { useRoutines } from '@/hooks/domain/useRoutines';
-import { createClientId } from '@/utils/clientId';
-import { mapStoreExercisesToPayload } from '@/utils/routine';
+import { RoutineFormTemplate } from '../../features/routines/components/RoutineFormTemplate';
+import { useRoutineEditor } from '../../features/routines/hooks/useRoutineEditor';
+import { useRoutines } from '../../features/routines/hooks/useRoutines';
+import { createClientId } from '../../utils/clientId';
+import { mapStoreExercisesToPayload } from '../../features/routines/utils/routine';
 import { Screen } from '@/components/ui/Screen';
 
 export default function CreateRoutineScreen() {

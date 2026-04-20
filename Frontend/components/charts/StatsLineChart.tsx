@@ -11,7 +11,7 @@ import {
 import { useTheme, YStack } from 'tamagui';
 import { LineChart as LineChartIcon } from 'lucide-react-native';
 import { EmptyState } from '../ui/EmptyState';
-import { buildChartColors, CHART_TABULAR_NUMS, CHART_FONT_SIZE } from './ChartUtils';
+import { buildChartColors, CHART_TABULAR_NUMS, CHART_FONT_SIZE } from './chartUtils';
 
 const MAX_X_TICKS = 5;
 const HIGH_DENSITY_THRESHOLD = 25;

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useDI } from '@/context/DIContext';
-import type { BodyWeightEntry, UpdateBodyWeightInput } from 'backend/shared/types';
+import type { BodyWeightDTO } from '@shared';
 
 export function useBodyWeight() {
   const {
@@ -11,7 +11,7 @@ export function useBodyWeight() {
   } = useDI();
 
   const logBodyWeight = useCallback(
-    (params: Omit<BodyWeightEntry, 'id' | 'createdAt'>) =>
+    (params: Omit<BodyWeightDTO, 'id' | 'createdAt'>) =>
       logBWUC.execute(params),
     [logBWUC, getHistoryUC, updateBWUC, deleteBWUC]
   );
@@ -23,7 +23,7 @@ export function useBodyWeight() {
   );
 
   const updateBodyWeight = useCallback(
-    (params: UpdateBodyWeightInput) =>
+    (params: any) =>
       updateBWUC.execute(params),
     [logBWUC, getHistoryUC, updateBWUC, deleteBWUC]
   );

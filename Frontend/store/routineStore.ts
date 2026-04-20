@@ -130,3 +130,4 @@ export const useRoutineStore = create<RoutineState>((set) => ({
   }),
   reset: () => set({ name: '', notes: '', exercises: [] }),
 }));
+

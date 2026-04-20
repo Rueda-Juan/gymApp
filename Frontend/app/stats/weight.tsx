@@ -9,7 +9,7 @@ import { AppButton, IconButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppInput } from '@/components/ui/AppInput';
 import { useBodyWeight } from '@/hooks/domain/useBodyWeight';
-import type { BodyWeightEntry } from 'backend/shared/types';
+import type { BodyWeightDTO } from '@shared';
 import { FONT_SCALE } from '@/tamagui.config';
 
 const MAX_BODY_WEIGHT_KG = 500;
@@ -31,10 +31,9 @@ export default function LogWeightScreen() {
 
     try {
       setLoading(true);
-      const entry: Omit<BodyWeightEntry, 'id' | 'createdAt'> = {
+      const entry: Omit<BodyWeightDTO, 'id' | 'createdAt'> = {
         weight: parsedWeight,
         date: new Date().toISOString().split('T')[0] ?? '',
-        notes: null,
       };
       await weightService.logBodyWeight(entry);
       router.back();

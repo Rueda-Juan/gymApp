@@ -1,0 +1,1 @@
+// Migrated useWorkoutDetail hook

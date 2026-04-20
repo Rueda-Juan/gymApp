@@ -6,24 +6,24 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CardBase } from '@/components/ui/Card';
 import { animatedCardShadow, elevation } from '@/constants/elevation';
 import { AppText } from '@/components/ui/AppText';
+import { FONT_SCALE } from '@/tamagui.config';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { IconButton } from '@/components/ui/AppButton';
-import { StatsLineChart } from '@/components/charts/Index';
-import { formatDateTick } from '@/components/charts/ChartUtils';
-import type { BodyWeightEntry } from 'backend/shared/types';
-import { FONT_SCALE } from '@/tamagui.config';
+import { StatsLineChart } from '@/components/charts/index';
+import { formatDateTick } from '@/components/charts/chartUtils';
+import type { BodyWeightDTO } from '@shared';
 
 const EMPTY_CHART_HEIGHT = 120;
 
 interface BodyWeightCardProps {
-  weightHistory: BodyWeightEntry[];
+  weightHistory: BodyWeightDTO[];
   onAddWeight: () => void;
 }
 
 export function BodyWeightCard({ weightHistory, onAddWeight }: BodyWeightCardProps) {
   const chartData = useMemo(
     () => weightHistory
-      .map((w: BodyWeightEntry) => ({ x: w.date, y: Number(w.weight) }))
+      .map((w: BodyWeightDTO) => ({ x: w.date, y: Number(w.weight) }))
       .filter((p) => !isNaN(p.y) && p.y > 0)
       .reverse(),
     [weightHistory]

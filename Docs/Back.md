@@ -179,11 +179,7 @@ type Equipment =
   | "band"
   | "other";
 
-type SetType =
-  | "normal"
-  | "warmup"
-  | "dropset"
-  | "failure";
+type SetType = "normal" | "warmup" | "dropset" | "failure";
 ```
 
 ---
@@ -355,7 +351,7 @@ Prioridad:
 
 ---
 
-## Backup
+## Backups
 
 MVP:
 
@@ -374,9 +370,9 @@ Google Drive OAuth
 ## Logging
 
 ```ts
-log.info()
-log.warn()
-log.error()
+log.info();
+log.warn();
+log.error();
 ```
 
 Persistencia local:
@@ -406,131 +402,130 @@ Ordenadas e idempotentes.
 ´´´text
 Backend/
 └── src/
-    ├── features/
-    │
-    │   ├── backup/
-    │   │   ├── backup.service.ts
-    │   │   ├── backup.repository.ts
-    │   │   ├── sqlite-backup.repository.ts
-    │   │   ├── drive-backup.service.ts
-    │   │   ├── export-csv.strategy.ts
-    │   │   ├── export-txt.strategy.ts
-    │   │   ├── backup.schemas.ts
-    │   │
-    │   ├── exercises/
-    │   │   ├── exercise.entity.ts
-    │   │   ├── exercise.repository.ts
-    │   │   ├── sqlite-exercise.repository.ts
-    │   │   ├── exercise-load-cache.repository.ts
-    │   │   ├── sqlite-exercise-load-cache.repository.ts
-    │   │   ├── exercise.service.ts
-    │   │   ├── suggest-weight.ts
-    │   │   ├── suggest-warmup.ts
-    │   │   ├── exercise.schemas.ts
-    │   │
-    │   ├── routines/
-    │   │   ├── routine.entity.ts
-    │   │   ├── routine.repository.ts
-    │   │   ├── sqlite-routine.repository.ts
-    │   │   ├── routine.service.ts
-    │   │
-    │   ├── workouts/
-    │   │   ├── workout.entity.ts
-    │   │   ├── workout-set.entity.ts
-    │   │   ├── workout.repository.ts
-    │   │   ├── sqlite-workout.repository.ts
-    │   │   ├── workout.service.ts
-    │   │
-    │   ├── stats/
-    │   │   ├── stats.service.ts
-    │   │   ├── stats.repository.ts
-    │   │   ├── sqlite-stats.repository.ts
-    │   │   ├── stats-calculator.ts
-    │   │   ├── daily-stats.entity.ts
-    │   │   ├── exercise-stats.entity.ts
-    │   │   ├── personal-record.entity.ts
-    │   │   ├── stats.schemas.ts
-    │   │
-    │   ├── bodyWeight/
-    │   │   ├── body-weight.entity.ts
-    │   │   ├── body-weight.repository.ts
-    │   │   ├── sqlite-body-weight.repository.ts
-    │   │   ├── body-weight.service.ts
-    │   │   ├── body-weight.schemas.ts
-    │   │
-    │   ├── settings/
-    │   │   ├── user-preferences.entity.ts
-    │   │   ├── user-preferences.repository.ts
-    │   │   ├── sqlite-user-preferences.repository.ts
-    │   │   ├── settings.service.ts
-    │   │   ├── preferences.schemas.ts
-    │   │
-    │
-    ├── core/
-    │   ├── database/
-    │   │   ├── connection.ts
-    │   │   └── migrations/
-    │   │       ├── 001_schema_migrations.ts
-    │   │       ├── 002_exercises.ts
-    │   │       ├── 003_routines.ts
-    │   │       ├── 004_routine_exercises.ts
-    │   │       ├── 005_workouts.ts
-    │   │       ├── 006_workout_exercises.ts
-    │   │       ├── 007_sets.ts
-    │   │       ├── 008_exercise_stats.ts
-    │   │       ├── 009_personal_records.ts
-    │   │       ├── 010_daily_stats.ts
-    │   │       ├── 011_add_rir_and_rep_range.ts
-    │   │       ├── 012_add_anatomical_svg_to_exercises.ts
-    │   │       ├── 014_add_set_type.ts
-    │   │       ├── 015_add_workout_exercise_notes.ts
-    │   │       ├── 016_add_rest_seconds.ts
-    │   │       ├── 017_user_preferences.ts
-    │   │       ├── 018_body_weight_log.ts
-    │   │       ├── 019_superset_groups.ts
-    │   │       ├── 020_add_max_reps.ts
-    │   │       ├── 021_primary_muscles_array.ts
-    │   │       ├── 027_add_exercise_key.ts
-    │   │       ├── 029_add_custom_exercise_fields.ts
-    │   │       ├── 030_add_exercise_load_cache.ts
-    │   │       ├── 031_remove_wger_seed_exercises.ts
-    │   │       ├── 032_add_partial_reps.ts
-    │   │       └── index.ts
-    │
-    │   ├── logger/
-    │   │   ├── logger.interface.ts
-    │   │   ├── console.logger.ts
-    │   │
-    │   ├── utils/
-    │   │   ├── date.ts
-    │   │   ├── generate-id.ts
-    │   │   ├── math.ts
-    │   │   ├── safe-json.ts
-    │   │
-    │   ├── errors/
-    │   │   └── errors.ts
-    │   │
-    │   ├── di/
-    │   │   └── container.ts
-    │
-    │   ├── types/
-    │   │   ├── equipment.ts
-    │   │   ├── muscle-group.ts
-    │   │   ├── set-type.ts
-    │   │   ├── session-context.ts
-    │
-    │
-    ├── api/
-    │   ├── hooks/
-    │   │   ├── useBackup.ts
-    │   │   ├── useBodyWeight.ts
-    │   │   ├── useContainer.ts
-    │   │   ├── useExercises.ts
-    │   │   ├── usePreferences.ts
-    │   │   ├── useRoutines.ts
-    │   │   ├── useStats.ts
-    │   │   ├── useWorkout.ts
-    │   │   └── index.ts
-    │
-    └── index.ts
+├── features/
+│
+│ ├── backup/
+│ │ ├── backup.service.ts
+│ │ ├── backup.repository.ts
+│ │ ├── sqlite-backup.repository.ts
+│ │ ├── export-csv.strategy.ts
+│ │ ├── export-txt.strategy.ts
+│ │ ├── backup.schemas.ts
+│ │
+│ ├── exercises/
+│ │ ├── exercise-load-cache.repository.ts
+│ │ ├── exercise.entity.ts
+│ │ ├── exercise.repository.ts
+│ │ ├── exercise.schemas.ts
+│ │ ├── exercise.service.ts
+│ │ ├── sqlite-exercise-load-cache.repository.ts
+│ │ ├── sqlite-exercise.repository.ts
+│ │ ├── suggest-weight.ts
+│ │ ├── suggest-warmup.ts
+│ │
+│ ├── routines/
+│ │ ├── routine.entity.ts
+│ │ ├── routine.repository.ts
+│ │ ├── sqlite-routine.repository.ts
+│ │ ├── routine.service.ts
+│ │
+│ ├── workouts/
+│ │ ├── workout.entity.ts
+│ │ ├── workout-set.entity.ts
+│ │ ├── workout.repository.ts
+│ │ ├── sqlite-workout.repository.ts
+│ │ ├── workout.service.ts
+│ │
+│ ├── stats/
+│ │ ├── stats.service.ts
+│ │ ├── stats.repository.ts
+│ │ ├── sqlite-stats.repository.ts
+│ │ ├── stats-calculator.ts
+│ │ ├── daily-stats.entity.ts
+│ │ ├── exercise-stats.entity.ts
+│ │ ├── personal-record.entity.ts
+│ │ ├── stats.schemas.ts
+│ │
+│ ├── bodyWeight/
+│ │ ├── body-weight.entity.ts
+│ │ ├── body-weight.repository.ts
+│ │ ├── sqlite-body-weight.repository.ts
+│ │ ├── body-weight.service.ts
+│ │ ├── body-weight.schemas.ts
+│ │
+│ ├── settings/
+│ │ ├── user-preferences.entity.ts
+│ │ ├── user-preferences.repository.ts
+│ │ ├── sqlite-user-preferences.repository.ts
+│ │ ├── settings.service.ts
+│ │ ├── preferences.schemas.ts
+│ │
+│
+├── core/
+│ ├── database/
+│ │ ├── connection.ts
+│ │ └── migrations/
+│ │ ├── 001_schema_migrations.ts
+│ │ ├── 002_exercises.ts
+│ │ ├── 003_routines.ts
+│ │ ├── 004_routine_exercises.ts
+│ │ ├── 005_workouts.ts
+│ │ ├── 006_workout_exercises.ts
+│ │ ├── 007_sets.ts
+│ │ ├── 008_exercise_stats.ts
+│ │ ├── 009_personal_records.ts
+│ │ ├── 010_daily_stats.ts
+│ │ ├── 011_add_rir_and_rep_range.ts
+│ │ ├── 012_add_anatomical_svg_to_exercises.ts
+│ │ ├── 014_add_set_type.ts
+│ │ ├── 015_add_workout_exercise_notes.ts
+│ │ ├── 016_add_rest_seconds.ts
+│ │ ├── 017_user_preferences.ts
+│ │ ├── 018_body_weight_log.ts
+│ │ ├── 019_superset_groups.ts
+│ │ ├── 020_add_max_reps.ts
+│ │ ├── 021_primary_muscles_array.ts
+│ │ ├── 027_add_exercise_key.ts
+│ │ ├── 029_add_custom_exercise_fields.ts
+│ │ ├── 030_add_exercise_load_cache.ts
+│ │ ├── 031_remove_wger_seed_exercises.ts
+│ │ ├── 032_add_partial_reps.ts
+│ │ └── index.ts
+│
+│ ├── logger/
+│ │ ├── logger.interface.ts
+│ │ ├── console.logger.ts
+│ │
+│ ├── utils/
+│ │ ├── date.ts
+│ │ ├── generate-id.ts
+│ │ ├── math.ts
+│ │ ├── safe-json.ts
+│ │
+│ ├── errors/
+│ │ └── errors.ts
+│ │
+│ ├── di/
+│ │ └── container.ts
+│
+│ ├── types/
+│ │ ├── equipment.ts
+│ │ ├── muscle-group.ts
+│ │ ├── set-type.ts
+│ │ ├── session-context.ts
+│
+│
+├── api/
+│ ├── hooks/
+│ │ ├── useBackup.ts
+│ │ ├── useBodyWeight.ts
+│ │ ├── useContainer.ts
+│ │ ├── useExercises.ts
+│ │ ├── usePreferences.ts
+│ │ ├── useRoutines.ts
+│ │ ├── useStats.ts
+│ │ ├── useWorkout.ts
+│ │ └── index.ts
+│
+└── index.ts
 ´´´

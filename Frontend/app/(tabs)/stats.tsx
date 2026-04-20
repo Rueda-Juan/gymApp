@@ -11,12 +11,12 @@ import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Screen } from '@/components/ui/Screen';
 import { CardBase } from '@/components/ui/Card';
-import { useExercises } from '@/hooks/domain/useExercises';
+import { useExercises } from '@/features/exercise/hooks/useExercises';
 import { useStatsData } from '@/hooks/application/useStatsData';
 import { getExerciseName } from '@/utils/exercise';
-import type { Exercise } from 'backend/shared/types';
-import type { WorkoutSet } from 'backend/domain/entities/WorkoutSet';
-import { WeeklyVolumeBarChart, ActivityGrid } from '@/components/charts/Index';
+import type { ExerciseDTO, WorkoutSetDTO } from '@shared';
+import type { WorkoutSet } from '@shared';
+import { WeeklyVolumeBarChart, ActivityGrid } from '@/components/charts/index';
 import { calculateEpley1RM } from '@/utils/workout';
 import { StatsSummaryGrid } from '@/components/stats/StatsSummaryGrid';
 import { BodyWeightCard } from '@/components/stats/BodyWeightCard';
@@ -37,9 +37,9 @@ export default function StatsScreen() {
 
   const { loading, stats, weightHistory, summaries, trainedDates } = useStatsData();
 
-  const [exerciseList, setExerciseList] = useState<Exercise[]>([]);
+  const [exerciseList, setExerciseList] = useState<ExerciseDTO[]>([]);
   const [exercisesLoaded, setExercisesLoaded] = useState(false);
-  const [strengthExercise, setStrengthExercise] = useState<Exercise | null>(null);
+  const [strengthExercise, setStrengthExercise] = useState<ExerciseDTO | null>(null);
   const [strengthHistory, setStrengthHistory] = useState<{ x: string; y: number }[]>([]);
   const exerciseSheetRef = useRef<BottomSheet>(null);
   const sheetSnapPoints = useMemo(() => ['60%'], []);
@@ -48,18 +48,20 @@ export default function StatsScreen() {
     ? strengthHistory[strengthHistory.length - 1]?.y ?? 0
     : 0;
 
-  const selectStrengthExercise = useCallback(async (exercise: Exercise) => {
+  const selectStrengthExercise = useCallback(async (exercise: ExerciseDTO) => {
     setStrengthExercise(exercise);
     exerciseSheetRef.current?.close();
     try {
       const history = await exerciseService.getExerciseHistory(exercise.id, STRENGTH_HISTORY_LIMIT);
       const oneRMPoints = (history ?? [])
-        .filter((s: WorkoutSet) => (s.weight ?? 0) > 0 && (s.reps ?? 0) > 0)
-        .map((s: WorkoutSet) => ({
-          x: s.createdAt instanceof Date ? s.createdAt.toISOString() : String(s.createdAt),
+        .filter((s: WorkoutSetDTO) => (s.weight ?? 0) > 0 && (s.reps ?? 0) > 0)
+        .map((s: WorkoutSetDTO) => ({
+          x: typeof s.createdAt === 'object' && s.createdAt !== null && 'toISOString' in s.createdAt
+            ? (s.createdAt as Date).toISOString()
+            : String(s.createdAt),
           y: calculateEpley1RM(s.weight ?? 0, s.reps ?? 0),
         }))
-        .filter((p) => p.y > 0 && p.x)
+        .filter((p: { x: string; y: number }) => p.y > 0 && p.x)
         .reverse();
       setStrengthHistory(oneRMPoints);
     } catch {
@@ -87,7 +89,7 @@ export default function StatsScreen() {
     exerciseSheetRef.current?.expand();
   }, [exerciseService, exercisesLoaded]);
 
-  const renderExerciseItem = useCallback(({ item }: { item: Exercise }) => (
+  const renderExerciseItem = useCallback(({ item }: { item: ExerciseDTO }) => (
     <Pressable onPress={() => selectStrengthExercise(item)} accessibilityRole="button" accessibilityLabel={`Seleccionar ${getExerciseName(item)}`}>
       <XStack paddingVertical="$md" alignItems="center" justifyContent="space-between">
         <AppText variant="bodyMd">{getExerciseName(item)}</AppText>
@@ -99,8 +101,8 @@ export default function StatsScreen() {
   ), [selectStrengthExercise, strengthExercise]);
 
   const weeklyChartData = useMemo<WeeklyChartPoint[]>(() => (stats?.weeklyStats || [])
-    .map((item) => ({ x: item.date, y: Number(item.totalVolume) || 0 }))
-    .filter((p) => !isNaN(p.y)), [stats?.weeklyStats]);
+    .map((item: any) => ({ x: item.date, y: Number(item.totalVolume) || 0 }))
+    .filter((p: any) => !isNaN(p.y)), [stats?.weeklyStats]);
 
   return (
     <>
@@ -173,7 +175,7 @@ export default function StatsScreen() {
       </BottomSheetView>
       <BottomSheetFlatList
         data={exerciseList}
-        keyExtractor={(item: Exercise) => item.id}
+        keyExtractor={(item: ExerciseDTO) => item.id}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
         ItemSeparatorComponent={SheetItemSeparator}
         renderItem={renderExerciseItem}

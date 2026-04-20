@@ -62,7 +62,8 @@ function createExerciseState(overrides: Partial<WorkoutExerciseState> = {}): Wor
     ],
     ...overrides,
   };
-}
+  }
+  // MOVED: Este test fue migrado a features/workout/__tests__/useWorkout.test.ts
 
 describe('useWorkout', () => {
   beforeEach(() => {

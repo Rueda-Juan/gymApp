@@ -13,7 +13,7 @@ import { AppText } from '@/components/ui/AppText';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { THEME_FALLBACKS } from '@/tamagui.config';
 import { calculateExercisesVolume, findMaxVolumeExercise } from '@/utils/workout';
-import { getExerciseName } from '@/utils/exercise';
+
 import { ROUTES } from '@/constants/routes';
 
 const CARD_BORDER_RADIUS = 12;
@@ -52,14 +52,11 @@ interface WorkoutSet {
 
 interface WorkoutExercise {
   id: string;
-  name?: string;
-  nameEs?: string | null;
   sets: WorkoutSet[];
 }
 
 interface WorkoutHistoryItem {
   id: string;
-  name?: string;
   date: string;
   durationSeconds: number;
   exercises: WorkoutExercise[];
@@ -68,7 +65,7 @@ interface WorkoutHistoryItem {
 interface HistoryWorkoutCardProps {
   item: WorkoutHistoryItem;
   index: number;
-  onDelete: (id: string, name: string) => void;
+  onDelete: (id: string, date: string) => void;
 }
 
 interface DeleteSwipeActionProps {
@@ -108,29 +105,25 @@ function DeleteSwipeAction({ dragX, onPress }: DeleteSwipeActionProps) {
   );
 }
 
+
 export const HistoryWorkoutCard = React.memo(function HistoryWorkoutCard({ item, index, onDelete }: HistoryWorkoutCardProps) {
   const parsedDate = item.date ? new Date(item.date) : null;
   const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
-  
   const title = isValidDate
     ? `Entrenamiento de ${format(parsedDate, 'EEEE', { locale: es })}`
     : 'Entrenamiento';
-    
+
   const maxVolumeResult = findMaxVolumeExercise(item.exercises);
-  const maxVolumeEx = maxVolumeResult?.exercise;
   const maxVolumeKg = maxVolumeResult?.volume ?? 0;
-  const maxVolumeExName = maxVolumeEx?.name
-    ? getExerciseName({ name: maxVolumeEx.name, nameEs: maxVolumeEx.nameEs })
-    : null;
 
   const renderRightActions = useCallback(
     (_progress: SharedValue<number>, dragX: SharedValue<number>) => (
       <DeleteSwipeAction
         dragX={dragX}
-        onPress={() => onDelete(item.id, item.name || title)}
+        onPress={() => onDelete(item.id, item.date)}
       />
     ),
-    [onDelete, item.id, item.name, title],
+    [onDelete, item.id, item.date],
   );
 
   return (
@@ -142,14 +135,14 @@ export const HistoryWorkoutCard = React.memo(function HistoryWorkoutCard({ item,
         <YStack
           onPress={() => router.push({ pathname: ROUTES.WORKOUT_SUMMARY, params: { id: item.id } })}
           accessibilityRole="button"
-          accessibilityLabel={`Ver detalle de ${item.name || title}`}
+          accessibilityLabel={`Ver detalle de ${title}`}
           cursor="pointer"
           pressStyle={{ opacity: 0.85 }}
         >
           <CardBase padding="$md" gap="$sm" shadowOpacity={0} elevation={0}>
             <XStack justifyContent="space-between" alignItems="center">
               <YStack flex={1}>
-                <AppText variant="bodyMd" fontWeight="700" numberOfLines={1}>{item.name || title}</AppText>
+                <AppText variant="bodyMd" fontWeight="700" numberOfLines={1}>{title}</AppText>
                 <XStack alignItems="center" gap="$xs" marginTop="$xs">
                   <AppIcon icon={Calendar} size={12} color="textTertiary" />
                   <AppText variant="bodySm" color="textTertiary">
@@ -181,9 +174,9 @@ export const HistoryWorkoutCard = React.memo(function HistoryWorkoutCard({ item,
               </XStack>
             </XStack>
 
-            {maxVolumeExName && (
+            {maxVolumeKg > 0 && (
               <AppText variant="label" color="textTertiary" numberOfLines={1}>
-                Mayor volumen: {maxVolumeExName} — {maxVolumeKg.toLocaleString('es')} kg
+                Mayor volumen: {maxVolumeKg.toLocaleString('es')} kg
               </AppText>
             )}
           </CardBase>

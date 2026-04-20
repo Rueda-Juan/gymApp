@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import DashboardScreen from '../app/dashboard/DashboardScreen';
-import ActiveWorkoutScreen from '../app/activeWorkout/ActiveWorkoutScreen';
+import ActiveWorkoutScreen from '../features/workout/screens/ActiveWorkoutScreen';
 
 describe('E2E: Start Workout Flow', () => {
   it('flujo de inicio de entrenamiento', () => {

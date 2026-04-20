@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import type { WorkoutSet } from 'backend/shared/types';
+import type { WorkoutSetDTO } from '@shared';
 
 import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useWorkout } from '@/hooks/domain/useWorkout';
@@ -17,7 +17,7 @@ type ExerciseWithSets = {
 export function usePreviousSets(activeExerciseId: string | undefined) {
   const workoutId = useActiveWorkout(s => s.workoutId);
   const workoutService = useWorkout();
-  const previousSetsCache = useRef<Map<string, WorkoutSet[]>>(new Map());
+  const previousSetsCache = useRef<Map<string, WorkoutSetDTO[]>>(new Map());
 
   useEffect(() => {
     if (!activeExerciseId) return;
@@ -25,10 +25,10 @@ export function usePreviousSets(activeExerciseId: string | undefined) {
 
     let cancelled = false;
     workoutService.getPreviousSets(activeExerciseId)
-      .then(sets => {
+      .then((sets: any) => {
         if (!cancelled) previousSetsCache.current.set(activeExerciseId, sets);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         if (!cancelled) console.warn('[usePreviousSets] failed to load:', err);
       });
 

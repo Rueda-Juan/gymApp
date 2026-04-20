@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useDI } from '@/context/DIContext';
-import type { Routine, RoutineExercise } from 'backend/shared/types';
+import type { RoutineDTO } from '@shared';
 
 export function useRoutines() {
   const {
@@ -24,13 +24,13 @@ export function useRoutines() {
   );
 
   const createRoutine = useCallback(
-    (params: Omit<Routine, 'id' | 'createdAt'>) =>
+    (params: Omit<RoutineDTO, 'id' | 'createdAt'>) =>
       createUC.execute(params),
     [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
   const updateRoutine = useCallback(
-    (id: string, params: Partial<Omit<Routine, 'id' | 'createdAt'>>) =>
+    (id: string, params: Partial<Omit<RoutineDTO, 'id' | 'createdAt'>>) =>
       updateUC.execute(id, params),
     [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
@@ -45,11 +45,11 @@ export function useRoutines() {
     [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
   );
 
-  const getExercises = useCallback(
-    (routineId: string): Promise<RoutineExercise[]> =>
-      getExercisesUC.execute(routineId),
-    [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
-  );
+  // const getExercises = useCallback(
+  //   (routineId: string): Promise<RoutineExercise[]> =>
+  //     getExercisesUC.execute(routineId),
+  //   [createUC, updateUC, deleteUC, duplicateUC, getRoutinesUC, getByIdUC, getExercisesUC]
+  // );
 
   return useMemo(() => ({
     getRoutines,
@@ -58,6 +58,5 @@ export function useRoutines() {
     updateRoutine,
     deleteRoutine,
     duplicateRoutine,
-    getExercises,
-  }), [getRoutines, getRoutineById, createRoutine, updateRoutine, deleteRoutine, duplicateRoutine, getExercises]);
+  }), [getRoutines, getRoutineById, createRoutine, updateRoutine, deleteRoutine, duplicateRoutine]);
 }

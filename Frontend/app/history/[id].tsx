@@ -13,8 +13,7 @@ import { useWorkout } from '@/hooks/domain/useWorkout';
 import { useWorkoutDetail } from '@/hooks/domain/useWorkoutDetail';
 import { useWorkoutStats } from '@/hooks/domain/useWorkoutStats';
 import { getExerciseName } from '@/utils/exercise';
-import type { WorkoutExercise } from 'backend/domain/entities/Workout';
-import type { WorkoutSet } from 'backend/domain/entities/WorkoutSet';
+import type { WorkoutSetDTO } from '@shared';
 
 const SCROLL_BOTTOM_INSET = 100;
 
@@ -37,7 +36,7 @@ function SupersetBar({ firstInGroup, lastInGroup }: SupersetBarProps) {
   );
 }
 
-function SetRow({ set, index }: { set: WorkoutSet; index: number }) {
+function SetRow({ set, index }: { set: WorkoutSetDTO; index: number }) {
   return (
     <XStack
       key={set.id}
@@ -58,9 +57,9 @@ function ExerciseBlock({
   index,
   allExercises,
 }: {
-  exercise: WorkoutExercise;
+  exercise: any;
   index: number;
-  allExercises: WorkoutExercise[];
+  allExercises: any[];
 }) {
   const inSuperset = exercise.supersetGroup != null;
   const firstInGroup = inSuperset && (index === 0 || allExercises[index - 1]?.supersetGroup !== exercise.supersetGroup);
@@ -86,7 +85,7 @@ function ExerciseBlock({
               {getExerciseName({ name: exercise.name ?? '', nameEs: exercise.nameEs }) || 'Ejercicio'}
             </AppText>
           </XStack>
-          {exercise.sets.map((set, setIndex) => (
+          {exercise.sets.map((set: any, setIndex: any) => (
             <SetRow key={set.id} set={set} index={setIndex} />
           ))}
         </YStack>

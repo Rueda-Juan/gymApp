@@ -4,7 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from 'tamagui';
 import config from '@/tamagui.config';
 
-import CreateExerciseScreen from '@/app/exercise/create';
+import CreateExerciseScreen from '@/features/exercise/screens/create';
 
 const mockCreateCustomExercise = jest.fn().mockResolvedValue(undefined);
 const mockRouterBack = jest.fn();

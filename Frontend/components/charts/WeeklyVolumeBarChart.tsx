@@ -10,7 +10,7 @@ import { useTheme, YStack } from 'tamagui';
 import { useWindowDimensions } from 'react-native';
 import { BarChart3 } from 'lucide-react-native';
 import { EmptyState } from '../ui/EmptyState';
-import { buildChartColors, CHART_TABULAR_NUMS, CHART_FONT_SIZE } from './ChartUtils';
+import { buildChartColors, CHART_TABULAR_NUMS, CHART_FONT_SIZE } from './chartUtils';
 
 const CONTAINER_HORIZONTAL_PADDING = 40;
 const MIN_BAR_WIDTH = 8;

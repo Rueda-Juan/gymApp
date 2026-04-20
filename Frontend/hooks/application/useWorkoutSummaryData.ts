@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWorkout } from '@/hooks/domain/useWorkout';
 import Toast from 'react-native-toast-message';
-import type { MuscleGroup } from 'backend/domain/valueObjects/MuscleGroup';
+import type { MuscleGroup } from '@shared';
 
 export type { MuscleGroup };
 

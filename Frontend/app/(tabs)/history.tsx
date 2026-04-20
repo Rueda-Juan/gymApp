@@ -18,11 +18,29 @@ import { ContentReveal } from '@/components/feedback/ContentReveal';
 import { groupWorkoutsByPeriod } from '@/utils/historyGrouping';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { HistoryWorkoutCard } from '@/components/cards/HistoryWorkoutCard';
-import type { Workout } from 'backend/shared/types';
+import type { WorkoutDTO } from '@shared/workout.dto';
 import { motion } from '@/constants/motion';
 
-type WorkoutNormalized = Omit<Workout, 'date'> & { date: string };
-type HistoryWorkout = Omit<Workout, 'date'> & { date: string; _searchIndex: string };
+
+interface WorkoutSet {
+  weight: number;
+  reps: number;
+}
+
+interface WorkoutExercise {
+  id: string;
+  sets: WorkoutSet[];
+}
+
+export interface WorkoutHistoryItem {
+  id: string;
+  date: string;
+  durationSeconds: number;
+  exercises: WorkoutExercise[];
+}
+
+type WorkoutNormalized = WorkoutHistoryItem;
+type HistoryWorkout = WorkoutHistoryItem & { _searchIndex: string };
 
 const HISTORY_LIMIT = 50;
 const LIST_BOTTOM_PADDING = 100;
@@ -48,7 +66,22 @@ export default function HistoryScreen() {
           if (mounted.current) setLoading(true);
           const data = await workoutService.getHistory(HISTORY_LIMIT);
 
-          const mapped: HistoryWorkout[] = (data ?? []).map((w: Workout) => {
+
+          const mapped: HistoryWorkout[] = (data ?? []).map((w: WorkoutDTO) => {
+            const durationSeconds = w.durationSeconds ?? 0;
+            const notes = w.notes ?? '';
+            const exercises = Array.isArray(w.exercises)
+              ? w.exercises.map(ex => ({
+                  id: ex.id,
+                  sets: Array.isArray(ex.sets)
+                    ? ex.sets.map(set => ({
+                        weight: set.weight,
+                        reps: set.reps,
+                      }))
+                    : [],
+                }))
+              : [];
+
             const dateStr = (() => {
               try {
                 return format(new Date(w.date), 'EEEE d MMM yyyy', { locale: es });
@@ -57,17 +90,15 @@ export default function HistoryScreen() {
               }
             })();
 
-            const routineName = (w as any).routineName ?? (w as any).name ?? '';
-            const notes = (w as any).notes ?? '';
-            const exerciseNames = (w as any).exercises?.map((ex: any) => (typeof ex === 'string' ? ex : ex.name ?? '')).join(' ') ?? '';
-
-            const _searchIndex = `${dateStr} ${routineName} ${notes} ${exerciseNames}`.toLowerCase();
+            const _searchIndex = `${dateStr} ${notes}`.toLowerCase();
 
             return {
-              ...((w as unknown) as Omit<Workout, 'date'>),
-              date: w.date instanceof Date ? w.date.toISOString() : String(w.date),
+              id: w.id,
+              date: w.date,
+              durationSeconds,
+              exercises,
               _searchIndex,
-            } as HistoryWorkout;
+            };
           });
 
           if (mounted.current) setWorkouts(mapped);
@@ -105,10 +136,10 @@ export default function HistoryScreen() {
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const handleDeleteWorkout = useCallback((id: string, nameOrDate: string) => {
+  const handleDeleteWorkout = useCallback((id: string, date: string) => {
     Alert.alert(
       '¿Eliminar Entrenamiento?',
-      `Se borrará "${nameOrDate}" y todo su progreso de forma irreversible.`,
+      `Se borrará el entrenamiento del día "${date}" y todo su progreso de forma irreversible.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -140,14 +171,14 @@ export default function HistoryScreen() {
     return w._searchIndex.includes(lowerSearch);
   }), [workouts, search]);
 
-  const sections = useMemo(() => groupWorkoutsByPeriod(filteredWorkouts as WorkoutNormalized[]), [filteredWorkouts]);
+  const sections = useMemo(() => groupWorkoutsByPeriod(filteredWorkouts as WorkoutHistoryItem[]), [filteredWorkouts]);
   const searchBarAnimatedStyle = useAnimatedStyle(() => ({
     height: interpolate(searchAnim.value, [0, 1], [0, 56]),
     opacity: interpolate(searchAnim.value, [0, 1], [0, 1]),
   }));
 
   const renderWorkout = useCallback(
-    ({ item, index }: { item: WorkoutNormalized; index: number }) => (
+    ({ item, index }: { item: WorkoutHistoryItem; index: number }) => (
       <HistoryWorkoutCard item={item} index={index} onDelete={handleDeleteWorkout} />
     ),
     [handleDeleteWorkout],

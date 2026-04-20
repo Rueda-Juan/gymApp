@@ -6,7 +6,9 @@
     "types": ["jest"],
     "paths": {
       "@/*": ["./*"],
-      "backend/*": ["../Backend/src/*"]
+      "backend/*": ["../Backend/src/*"],
+      "@shared": ["../packages/shared/src/index.ts"],
+      "@shared/*": ["../packages/shared/src/*", "../packages/shared/types/*"]
     }
   },
   "include": [

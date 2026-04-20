@@ -5,10 +5,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { Screen } from '@/components/ui/Screen';
-import { RoutineFormTemplate } from '@/components/routine/RoutineFormTemplate';
-import { useRoutineEditor } from '@/hooks/domain/useRoutineEditor';
-import { useRoutines } from '@/hooks/domain/useRoutines';
-import { mapStoreExercisesToPayload } from '@/utils/routine';
+import { RoutineFormTemplate } from '../../features/routines/components/RoutineFormTemplate';
+import { useRoutineEditor } from '../../features/routines/hooks/useRoutineEditor';
+import { useRoutines } from '../../features/routines/hooks/useRoutines';
+import { mapStoreExercisesToPayload } from '../../features/routines/utils/routine';
 
 export default function EditRoutineScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();

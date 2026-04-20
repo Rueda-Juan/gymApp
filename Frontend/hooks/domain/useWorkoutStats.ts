@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import type { Workout } from 'backend/domain/entities/Workout';
+import type { WorkoutDTO } from '@shared';
 
-function calculateVolume(workout: Workout): number {
+function calculateVolume(workout: WorkoutDTO): number {
   return workout.exercises.reduce((total, ex) => {
     const exerciseVolume = ex.sets
       .filter(set => set.completed)
@@ -10,7 +10,7 @@ function calculateVolume(workout: Workout): number {
   }, 0);
 }
 
-export function useWorkoutStats(workout: Workout | null) {
+export function useWorkoutStats(workout: WorkoutDTO | null) {
   const totalVolume = useMemo(() => {
     if (!workout) return 0;
     return calculateVolume(workout);

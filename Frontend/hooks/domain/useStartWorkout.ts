@@ -15,7 +15,7 @@ interface RoutineExerciseForWorkout {
   supersetGroup?: number | null;
 }
 
-interface StartableRoutine {
+export interface StartableRoutine {
   id: string;
   name: string;
   exercises: RoutineExerciseForWorkout[];

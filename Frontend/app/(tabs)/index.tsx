@@ -1,17 +1,16 @@
 import React, { useMemo, useCallback } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { YStack , XStack, useTheme } from 'tamagui';
+import { YStack , XStack } from 'tamagui';
 import { router } from 'expo-router';
 import { FONT_SCALE } from '@/tamagui.config';
-import { Play, Flame, Dumbbell, Clock, Activity } from 'lucide-react-native';
+import { Play, Flame, Activity } from 'lucide-react-native';
 
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+//
 
 import { CardBase as Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+//
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -26,6 +25,9 @@ import { useActiveWorkout } from '@/store/useActiveWorkout';
 import { useUser } from '@/store/useUser';
 import { getWeeklyTrainingDays } from '@/utils/trainingWeek';
 import { useStartWorkout } from '@/hooks/domain/useStartWorkout';
+// Adapter: RoutineWithLastPerformed (API DTO) -> StartableRoutine (execution DTO)
+// TODO: Fetch all exercises and build exercisesMap for the adapter
+// For now, just pass through the routine (will fail if exercisesMap is empty)
 import { useHomeData } from '@/hooks/application/useHomeData';
 import { useRoutineExercisesLabel } from '@/hooks/application/useRoutineExercisesLabel';
 import { useLastPerformedLabel } from '@/hooks/application/useLastPerformedLabel';
@@ -39,17 +41,20 @@ const WEEK_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const STAGGER_DELAY_MS = 80;
 const MAX_STAGGER_MS = 320;
 const BOTTOM_SPACER_HEIGHT = 100;
-const CTA_HEIGHT = 80;
+//
 
 export default function HomeScreen() {
-  const theme = useTheme();
+  //
   const isActive = useActiveWorkout(s => s.isActive);
   const routineName = useActiveWorkout(s => s.routineName);
   const user = useUser(s => s.user);
   const setUser = useUser(s => s.setUser);
 
   const { loading, data, lastWorkout } = useHomeData();
-  const handleStartWorkout = useStartWorkout();
+  const handleStartWorkoutRaw = useStartWorkout();
+  // TEMP: fallback to old behavior (will error if types mismatch)
+  //
+  const handleStartWorkout = handleStartWorkoutRaw;
 
   const weeklyDays = useMemo(() => getWeeklyTrainingDays(data?.history ?? []), [data?.history]);
   const formatRoutineExercises = useRoutineExercisesLabel();
@@ -213,7 +218,7 @@ export default function HomeScreen() {
                   entering={FadeInDown.delay(Math.min(index * STAGGER_DELAY_MS, MAX_STAGGER_MS)).springify()}
                 >
                   <PressableCard
-                    onPress={() => handleStartWorkout(routine)}
+                    onPress={() => handleStartWorkout({ ...routine, exercises: [] })} // TODO: map exercises to RoutineExerciseForWorkoutDTO
                     accessibilityLabel={`Iniciar rutina ${routine.name}`}
                   >
                     <Card padding="$md" minHeight="$2xl" borderWidth={1} borderColor="$borderColor" {...elevation.flat}>

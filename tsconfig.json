@@ -3,5 +3,10 @@
   "references": [
     { "path": "./Frontend" },
     { "path": "./Backend" }
-  ]
+  ],
+  "compilerOptions": {
+    "paths": {
+      "@shared/*": ["packages/shared/src/*"]
+    }
+  }
 }

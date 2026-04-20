@@ -9,8 +9,8 @@ const VALID_EXT = new Set(['.js', '.jsx', '.ts', '.tsx']);
 // Carpetas ignoradas (puedes agregar más)
 const IGNORE_DIRS = new Set([
   'node_modules',
-  '__tests__',
-  '__mocks__',
+  /*'__tests__',
+  '__mocks__',*/
   'Docs',
   '.git',
   'dist',

@@ -2,8 +2,8 @@ export const MUSCLE_OPTIONS = [
   'chest', 'upper-chest', 'mid-chest', 'lower-chest',
   'back', 'lats', 'upper-back', 'mid-back', 'lower-back',
   'shoulders', 'front-delts', 'side-delts', 'rear-delts',
-  'biceps', 'triceps', 'forearms',
-  'quadriceps', 'hamstrings', 'glutes', 'calves', 'adductors',
+  'arms', 'biceps', 'triceps', 'forearms',
+  'legs', 'quadriceps', 'hamstrings', 'glutes', 'calves', 'adductors',
   'abs', 'upper-abs', 'lower-abs', 'obliques',
   'traps',
 ] as const;
@@ -16,6 +16,8 @@ export type MuscleKey = typeof MUSCLE_OPTIONS[number];
 export type EquipmentKey = typeof EQUIPMENT_OPTIONS[number];
 
 export const MUSCLE_LABELS: Record<MuscleKey, string> = {
+  legs: 'Piernas',
+  arms: 'Brazos',
   chest: 'Pecho',
   'upper-chest': 'Pecho Superior',
   'mid-chest': 'Pecho Medio',
@@ -69,14 +71,8 @@ export const HIERARCHICAL_MUSCLES: { category: MuscleKey; subdivisions?: MuscleK
   { category: 'chest', subdivisions: ['upper-chest', 'mid-chest', 'lower-chest'] },
   { category: 'back', subdivisions: ['lats', 'upper-back', 'mid-back', 'lower-back'] },
   { category: 'shoulders', subdivisions: ['front-delts', 'side-delts', 'rear-delts'] },
-  { category: 'biceps' },
-  { category: 'triceps' },
-  { category: 'forearms' },
-  { category: 'quadriceps' },
-  { category: 'hamstrings' },
-  { category: 'glutes' },
-  { category: 'calves' },
-  { category: 'adductors' },
+  { category: 'arms', subdivisions: ['biceps', 'triceps', 'forearms'] },
+  { category: 'legs', subdivisions: ['quadriceps', 'hamstrings', 'glutes', 'calves', 'adductors'] },
   { category: 'abs', subdivisions: ['upper-abs', 'lower-abs', 'obliques'] },
   { category: 'traps' },
 ];

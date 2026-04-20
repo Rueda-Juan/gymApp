@@ -13,7 +13,14 @@ module.exports = {
     '^tamagui/(.*)$': '<rootDir>/__mocks__/tamagui.js',
     '^@react-native-async-storage/async-storage$': '@react-native-async-storage/async-storage/jest/async-storage-mock',
     '^zustand$': '<rootDir>/node_modules/zustand/index.js',
+    '^@/(.*)$': '<rootDir>/$1',
+    '^@shared$': '<rootDir>/../packages/shared/src/index.ts',
+    '^@shared/(.*)$': '<rootDir>/../packages/shared/src/$1',
   },
+  testMatch: [
+    '<rootDir>/__tests__/**/*.test.ts?(x)',
+    '<rootDir>/__tests__/**/*.int.test.ts?(x)'
+  ],
   transformIgnorePatterns: [
     'node_modules/(?!(@tamagui|tamagui|zustand|((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg))'
   ]
