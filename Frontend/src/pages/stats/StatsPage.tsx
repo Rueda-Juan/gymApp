@@ -1,0 +1,187 @@
+import React, { useState, useCallback, useRef, useMemo } from 'react';
+import { ScrollView, Pressable } from 'react-native';
+import { XStack, YStack, useTheme } from 'tamagui';
+import { router } from 'expo-router';
+import { TrendingUp } from 'lucide-react-native';
+import { format } from 'date-fns';
+import BottomSheet, { BottomSheetFlatList, BottomSheetView } from '@gorhom/bottom-sheet';
+import Toast from 'react-native-toast-message';
+
+import { AppText } from '@/shared/ui/AppText';
+import { AppIcon } from '@/shared/ui/AppIcon';
+import { Screen } from '@/shared/ui/Screen';
+import { CardBase } from '@/shared/ui/Card';
+import { useExercises } from '@/features/exercise/hooks/useExercises';
+import { useStatsData } from '@/features/stats/hooks/useStatsData';
+import { getExerciseName } from '@/lib/exercise';
+import type { ExerciseDTO, WorkoutSetDTO } from '@shared';
+import type { WorkoutSet } from '@shared';
+import { WeeklyVolumeBarChart } from '@/ui/charts/WeeklyVolumeBarChart';
+import { ActivityGrid } from '@/ui/charts/ActivityGrid';
+import { calculateEpley1RM } from '@/lib/workout';
+import { StatsSummaryGrid } from '@/ui/stats/StatsSummaryGrid';
+import { BodyWeightCard } from '@/ui/stats/BodyWeightCard';
+import { StrengthProgressCard } from '@/ui/stats/StrengthProgressCard';
+import { StatsPageSkeleton } from '@/ui/layout/Loaders';
+import { ContentReveal } from '@/ui/feedback/ContentReveal';
+import { ROUTES } from '@/constants/routes';
+
+const STRENGTH_HISTORY_LIMIT = 20;
+
+const SheetItemSeparator = () => <YStack height={1} backgroundColor="$borderColor" />;
+
+type WeeklyChartPoint = { x: string; y: number };
+
+export default function StatsScreen() {
+  const theme = useTheme();
+  const exerciseService = useExercises();
+
+  const { loading, stats, weightHistory, summaries, trainedDates } = useStatsData();
+
+  const [exerciseList, setExerciseList] = useState<ExerciseDTO[]>([]);
+  const [exercisesLoaded, setExercisesLoaded] = useState(false);
+  const [strengthExercise, setStrengthExercise] = useState<ExerciseDTO | null>(null);
+  const [strengthHistory, setStrengthHistory] = useState<{ x: string; y: number }[]>([]);
+  const exerciseSheetRef = useRef<BottomSheet>(null);
+  const sheetSnapPoints = useMemo(() => ['60%'], []);
+
+  const current1RM = strengthHistory.length > 0
+    ? strengthHistory[strengthHistory.length - 1]?.y ?? 0
+    : 0;
+
+  const selectStrengthExercise = useCallback(async (exercise: ExerciseDTO) => {
+    setStrengthExercise(exercise);
+    exerciseSheetRef.current?.close();
+    try {
+      const history = await exerciseService.getExerciseHistory(exercise.id, STRENGTH_HISTORY_LIMIT);
+      const oneRMPoints = (history ?? [])
+        .filter((s: WorkoutSetDTO) => (s.weight ?? 0) > 0 && (s.reps ?? 0) > 0)
+        .map((s: WorkoutSetDTO) => ({
+          x: typeof s.createdAt === 'object' && s.createdAt !== null && 'toISOString' in s.createdAt
+            ? (s.createdAt as Date).toISOString()
+            : String(s.createdAt),
+          y: calculateEpley1RM(s.weight ?? 0, s.reps ?? 0),
+        }))
+        .filter((p: { x: string; y: number }) => p.y > 0 && p.x)
+        .reverse();
+      setStrengthHistory(oneRMPoints);
+    } catch {
+      // Log error and show toast for observability
+       
+      console.error('[Stats] Failed to load progression for exercise', exercise?.id);
+      Toast.show({ type: 'error', text1: 'Error al cargar progresión', position: 'top' });
+    }
+  }, [exerciseService]);
+
+  const handleOpenExercisePicker = useCallback(async () => {
+    if (!exercisesLoaded) {
+      try {
+        const allExercises = await exerciseService.getAll();
+        setExerciseList(allExercises ?? []);
+        setExercisesLoaded(true);
+      } catch (e) {
+        // Log and surface an error to the user
+         
+        console.error('[Stats] Failed to load exercises:', e);
+        Toast.show({ type: 'error', text1: 'No se pudieron cargar los ejercicios', position: 'top' });
+        return;
+      }
+    }
+    exerciseSheetRef.current?.expand();
+  }, [exerciseService, exercisesLoaded]);
+
+  const renderExerciseItem = useCallback(({ item }: { item: ExerciseDTO }) => (
+    <Pressable onPress={() => selectStrengthExercise(item)} accessibilityRole="button" accessibilityLabel={`Seleccionar ${getExerciseName(item)}`}>
+      <XStack paddingVertical="$md" alignItems="center" justifyContent="space-between">
+        <AppText variant="bodyMd">{getExerciseName(item)}</AppText>
+        {strengthExercise?.id === item.id && (
+          <AppIcon icon={TrendingUp} size={16} color="primary" />
+        )}
+      </XStack>
+    </Pressable>
+  ), [selectStrengthExercise, strengthExercise]);
+
+  const weeklyChartData = useMemo<WeeklyChartPoint[]>(() => (stats?.weeklyStats || [])
+    .map((item: any) => ({ x: item.date, y: Number(item.totalVolume) || 0 }))
+    .filter((p: any) => !isNaN(p.y)), [stats?.weeklyStats]);
+
+  return (
+    <>
+    <Screen safeAreaEdges={['top','bottom','left','right']}>
+      <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$xl" paddingTop="$lg" paddingBottom="$md">
+        <AppText variant="titleLg">Estadísticas</AppText>
+      </XStack>
+
+      <ContentReveal
+        loading={loading}
+        skeleton={<StatsPageSkeleton />}
+      >
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 16, paddingTop: 8, paddingBottom: 120 }}
+          showsVerticalScrollIndicator={false}
+        >
+
+        <StatsSummaryGrid summaries={summaries} />
+
+        <BodyWeightCard
+          weightHistory={weightHistory}
+          onAddWeight={() => router.push(ROUTES.STATS_WEIGHT)}
+        />
+
+        <StrengthProgressCard
+          strengthExercise={strengthExercise}
+          strengthHistory={strengthHistory}
+          current1RM={current1RM}
+          onOpenExercisePicker={handleOpenExercisePicker}
+        />
+
+        {/* Weekly Volume Chart */}
+        <CardBase padding="$none">
+          <AppText variant="bodyMd" color="textTertiary" fontWeight="600" padding="$md">
+            Volumen Semanal
+          </AppText>
+          <WeeklyVolumeBarChart
+            data={weeklyChartData}
+            xTickFormat={(t) => {
+              try {
+                return format(new Date(t), 'EE');
+              } catch {
+                return String(t);
+              }
+            }}
+            yTickFormat={(x) => `${x / 1000}k`}
+          />
+        </CardBase>
+
+        {/* Activity Grid */}
+        <CardBase padding="$md">
+          <ActivityGrid trainedDates={trainedDates} />
+        </CardBase>
+
+      </ScrollView>
+      </ContentReveal>
+    </Screen>
+
+    {/* BottomSheet selector de ejercicio */}
+    <BottomSheet
+      ref={exerciseSheetRef}
+      index={-1}
+      snapPoints={sheetSnapPoints}
+      enablePanDownToClose
+      backgroundStyle={{ backgroundColor: theme.surface?.val }}
+      handleIndicatorStyle={{ backgroundColor: theme.textTertiary?.val }}
+    >
+      <BottomSheetView style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
+        <AppText variant="titleSm" marginBottom="$md">Seleccionar ejercicio</AppText>
+      </BottomSheetView>
+      <BottomSheetFlatList
+        data={exerciseList}
+        keyExtractor={(item: ExerciseDTO) => item.id}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+        ItemSeparatorComponent={SheetItemSeparator}
+        renderItem={renderExerciseItem}
+      />
+    </BottomSheet>
+    </>
+  );
+}
