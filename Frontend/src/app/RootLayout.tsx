@@ -9,10 +9,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
 
-import { useColorScheme } from '@/ui/hooks/use-color-scheme';
-import { useSettings } from '@/store/useSettings';
-import { DIProvider } from '../context/DIContext';
-import config from '../tamagui.config';
+import { useColorScheme } from '@/shared/ui/hooks/use-color-scheme';
+import { useSettings } from '@/entities/settings/useSettings';
+import { DIProvider } from '@/shared/context/DIContext'; // WE WILL MOVE CONTEXT SOON
+import config from '../../tamagui.config';
 
 import { TextureOverlay } from '@/shared/ui/TextureOverlay';
 
