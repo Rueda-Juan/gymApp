@@ -1,7 +1,8 @@
 import type { BodyWeightRepository } from './body-weight.repository';
 import type { BodyWeight } from './body-weight.entity';
-import { NotFoundError } from '../../core/errors/errors';
+import { NotFoundError, ValidationError } from '../../core/errors/errors';
 import { generateId } from '../../core/utils/generate-id';
+import { validateBodyWeightInput } from './body-weight.schemas';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,6 +25,8 @@ export class BodyWeightService {
   // ── Create ────────────────────────────────────────────────────────────────
 
   async logBodyWeight(params: Omit<BodyWeight, 'id' | 'createdAt'>): Promise<BodyWeight> {
+    validateBodyWeightInput(params);
+
     const entry: BodyWeight = {
       ...params,
       id: generateId(),
@@ -37,6 +40,11 @@ export class BodyWeightService {
   // ── Read ──────────────────────────────────────────────────────────────────
 
   async getBodyWeightHistory(startDate: string, endDate: string): Promise<BodyWeight[]> {
+    if (new Date(startDate) > new Date(endDate)) {
+      throw new ValidationError('La fecha de inicio no puede ser posterior a la fecha de fin', {
+        date: ['Rango de fechas inválido'],
+      });
+    }
     return this.bodyWeightRepo.getByDateRange(startDate, endDate);
   }
 
@@ -48,6 +56,12 @@ export class BodyWeightService {
     if (!entry) {
       throw new NotFoundError(`Body weight entry con ID ${params.id} no encontrada`);
     }
+
+    validateBodyWeightInput({
+      weight: params.weight,
+      date: params.date,
+      notes: params.notes ?? entry.notes,
+    });
 
     const normalizedDate =
       typeof params.date === 'string'

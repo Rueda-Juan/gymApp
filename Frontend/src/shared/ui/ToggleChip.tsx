@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable } from 'react-native';
 import { YStack } from 'tamagui';
-import { AppText } from '@/shared/ui/AppText';
+import { AppText } from './AppText';
 
 type ChipVariant = 'subtle' | 'solid' | 'secondary';
 

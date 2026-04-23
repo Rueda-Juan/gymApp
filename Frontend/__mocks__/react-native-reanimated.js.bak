@@ -1,0 +1,55 @@
+const Reanimated = require('react-native-reanimated/mock');
+
+const Easing = {
+  bezier: jest.fn(() => (t) => t),
+  out: jest.fn((f) => f),
+  in: jest.fn((f) => f),
+  inOut: jest.fn((f) => f),
+  linear: (t) => t,
+  ease: (t) => t,
+  quad: (t) => t,
+  cubic: (t) => t,
+  poly: (t) => t,
+  sin: (t) => t,
+  circle: (t) => t,
+  exp: (t) => t,
+  elastic: (t) => t,
+  back: (t) => t,
+  bounce: (t) => t,
+};
+
+const Fade = {
+  duration: jest.fn().mockReturnThis(),
+  delay: jest.fn().mockReturnThis(),
+  springify: jest.fn().mockReturnThis(),
+  damping: jest.fn().mockReturnThis(),
+  stiffness: jest.fn().mockReturnThis(),
+  withCallback: jest.fn().mockReturnThis(),
+};
+
+const mockExports = {
+  ...Reanimated,
+  Easing,
+  FadeIn: Fade,
+  FadeOut: Fade,
+  FadeInDown: Fade,
+  FadeOutDown: Fade,
+  FadeInUp: Fade,
+  FadeOutUp: Fade,
+  cancelAnimation: jest.fn(),
+  runOnJS: (fn) => fn,
+  runOnUI: (fn) => fn,
+  useSharedValue: jest.fn((v) => ({ value: v })),
+  useAnimatedStyle: jest.fn((fn) => fn()),
+  withTiming: jest.fn((v) => v),
+  withSpring: jest.fn((v) => v),
+};
+
+module.exports = {
+  __esModule: true,
+  ...mockExports,
+  default: {
+    ...Reanimated.default,
+    ...mockExports,
+  }
+};

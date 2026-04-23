@@ -1,1 +1,0 @@
-{"version":3,"file":"stats.dto.d.ts","sourceRoot":"","sources":["stats.dto.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,EAAE,EAAE,MAAM,gBAAgB,CAAC;AAEzC,MAAM,WAAW,gBAAgB;IAC/B,UAAU,EAAE,EAAE,CAAC;IACf,UAAU,EAAE,MAAM,CAAC;IACnB,QAAQ,EAAE,MAAM,CAAC;IACjB,YAAY,EAAE,MAAM,CAAC;CACtB"}

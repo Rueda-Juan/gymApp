@@ -10,8 +10,9 @@ const VALID_EXT = new Set(['.js', '.jsx', '.ts', '.tsx']);
 const IGNORE_DIRS = new Set([
   'node_modules',
   /*'__tests__',
-  '__mocks__',*/
+  '__mocks__','Backend',*/
   'Docs',
+  
   '.git',
   'dist',
   'build',

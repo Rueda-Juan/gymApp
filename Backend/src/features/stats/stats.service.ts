@@ -1,3 +1,4 @@
+import { ValidationError } from '../../core/errors/errors';
 import type { WorkoutSet } from '../workouts/workout-set.entity';
 import type { StatsRepository } from './stats.repository';
 import type { PersonalRecord, RecordType } from './personal-record.entity';
@@ -29,10 +30,12 @@ export class StatsService {
   // ── Daily stats ───────────────────────────────────────────────────────────
 
   async getWeeklyStats(startDate: string, endDate: string): Promise<DailyStats[]> {
+    this.validateDateRange(startDate, endDate);
     return this.statsRepo.getWeeklyStats(startDate, endDate);
   }
 
   async getTrainingFrequency(startDate: string, endDate: string): Promise<TrainingFrequencyResult> {
+    this.validateDateRange(startDate, endDate);
     const dailyStats = await this.statsRepo.getWeeklyStats(startDate, endDate);
     const workoutsPerDay = dailyStats.reduce((acc, stat) => {
       acc[stat.date] = stat.workoutCount;
@@ -46,6 +49,7 @@ export class StatsService {
   }
 
   async getMuscleBalance(startDate: string, endDate: string): Promise<MuscleVolumeDistribution[]> {
+    this.validateDateRange(startDate, endDate);
     return this.statsRepo.getMuscleVolumeDistribution(startDate, endDate);
   }
 
@@ -78,5 +82,11 @@ export class StatsService {
   > {
     const currentStats = await this.statsRepo.getExerciseStats(exerciseId);
     return detectBrokenRecords(currentStats, set);
+  }
+
+  private validateDateRange(start: string, end: string): void {
+    if (new Date(start) > new Date(end)) {
+      throw new ValidationError('La fecha de inicio no puede ser posterior a la fecha de fin', {});
+    }
   }
 }

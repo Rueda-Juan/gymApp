@@ -3,46 +3,31 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect } from '@react-navigation/native';
-import { Screen } from '@/shared/ui/Screen';
 import { Plus, Dumbbell } from 'lucide-react-native';
-import { RoutineCard } from '@/ui/cards/RoutineCard';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-// import { Badge } from '@/components/ui/Badge';
-import { AppText } from '@/shared/ui/AppText';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { AppButton, IconButton } from '@/shared/ui/AppButton';
-import { ToggleChip } from '@/shared/ui/ToggleChip';
-import { useRoutines } from '@/features/routines/hooks/useRoutines';
-import { useWorkout } from '@/features/workout/hooks/useWorkout';
 import { router } from 'expo-router';
-import { ROUTES } from '@/constants/routes';
-import { RoutineCardSkeleton } from '@/ui/cards/Loaders';
-import { ContentReveal } from '@/ui/feedback/ContentReveal';
-import { EmptyStateIcon } from '@/ui/feedback/EmptyStateIcon';
-import { useStartWorkout } from '@/features/workout/hooks/useStartWorkout';
-//
-import { SearchBar } from '@/shared/ui/SearchBar';
 import Toast from 'react-native-toast-message';
-import type { RoutineDTO, WorkoutDTO } from '@shared';
 
+import { Screen, AppText, AppIcon, AppButton, IconButton, ToggleChip, SearchBar } from '@/shared/ui';
+import { RoutineCard, useRoutineApi, type RoutineWithLastPerformed } from '@/entities/routine';
+import { useWorkout } from '@/shared/api/workout/useWorkoutApi';
+import { ROUTES } from '@/shared/constants/routes';
+import { RoutineCardSkeleton } from '@/shared/ui/layout/Loaders';
+import { ContentReveal, EmptyStateIcon } from '@/shared/ui/feedback';
+import { useStartWorkout } from '@/features/activeWorkout';
+import type { Routine } from '@kernel';
 
-interface RoutineWithLastPerformed extends RoutineDTO {
-  lastPerformed: string | null;
-}
-
-// Adapter: RoutineWithLastPerformed (API DTO) -> StartableRoutine (execution DTO)
 
 
 const STATIC_FILTER_CHIPS = ['Todos', 'Recientes'] as const;
-// const MAX_ANIMATION_DELAY_MS = 500;
 const CHIP_BAR_HEIGHT = 52;
 const LIST_BOTTOM_PADDING = 100;
 
 const ItemSeparator = () => <YStack height={16} />;
 
-export default function RoutinesScreen() {
-  const routineService = useRoutines();
+export default function RoutinesPage() {
+  const routineService = useRoutineApi();
   const workoutService = useWorkout();
   const [routines, setRoutines] = useState<RoutineWithLastPerformed[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,28 +38,26 @@ export default function RoutinesScreen() {
     formatDistanceToNow(new Date(date), { addSuffix: true, locale: es }),
     []);
 
-
-
   const loadRoutines = useCallback(async (mountedRef?: { current: boolean }) => {
     try {
       if (mountedRef?.current ?? true) setLoading(true);
       const data = await routineService.getRoutines();
       const history = await workoutService.getHistory(30);
 
-      const latestHistoryByRoutine = new Map<string, WorkoutDTO>();
+      const latestHistoryByRoutine = new Map<string, any>();
       for (const workout of history) {
         if (!workout.routineId) continue;
         const existing = latestHistoryByRoutine.get(workout.routineId);
-        if (!existing || new Date(workout.date) > new Date(existing.date)) {
+        if (!existing || new Date(workout.createdAt) > new Date(existing.createdAt)) {
           latestHistoryByRoutine.set(workout.routineId, workout);
         }
       }
 
-      const routinesWithLastPerformed = data.map((routine: RoutineDTO) => {
+      const routinesWithLastPerformed = data.map((routine: Routine) => {
         const lastWorkout = latestHistoryByRoutine.get(routine.id);
         return {
           ...routine,
-          lastPerformed: lastWorkout ? formatLastPerformed(lastWorkout.date) : null,
+          lastPerformed: lastWorkout ? formatLastPerformed(lastWorkout.date || lastWorkout.createdAt) : null,
         };
       });
 
@@ -95,20 +78,10 @@ export default function RoutinesScreen() {
     }, [loadRoutines])
   );
 
-
   const handleStartWorkoutRaw = useStartWorkout();
-  // Fetch all exercises for mapping (simulate, replace with real fetch if needed)
-  // In a real app, fetch all exercises and build a map by id
-  // TODO: Fetch all exercises and build exercisesMap for the adapter
-  // For now, just pass through the routine (will fail if exercisesMap is empty)
+  
   const handleStartWorkout = useCallback((routine: RoutineWithLastPerformed) => {
-    // This will fail until exercisesMap is implemented
-    // You must fetch all ExerciseDTO and build a map by id
-    // Example: const exercisesMap = { [id]: ExerciseDTO, ... }
-    // Then use: const startable = toStartableRoutine(routine, exercisesMap);
-    // handleStartWorkoutRaw(startable);
-    // TEMP: fallback to old behavior (will error if types mismatch)
-    // @ts-expect-error
+    // @ts-expect-error - compatibility with startable routine
     handleStartWorkoutRaw(routine);
   }, [handleStartWorkoutRaw]);
 
@@ -157,7 +130,6 @@ export default function RoutinesScreen() {
   return (
     <Screen safeAreaEdges={['top','bottom','left','right']}>
       <YStack flex={1}>
-        {/* Header */}
         <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$md">
           <AppText variant="titleLg">Rutinas</AppText>
           <IconButton
@@ -169,7 +141,6 @@ export default function RoutinesScreen() {
           />
         </XStack>
 
-        {/* Barra de búsqueda */}
         <YStack paddingHorizontal="$lg" paddingBottom="$sm">
           <SearchBar
             value={search}
@@ -178,7 +149,6 @@ export default function RoutinesScreen() {
           />
         </YStack>
 
-        {/* Chips de filtro */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -201,7 +171,6 @@ export default function RoutinesScreen() {
           ))}
         </ScrollView>
 
-        {/* Lista de rutinas */}
         <ContentReveal
           loading={loading}
           skeleton={

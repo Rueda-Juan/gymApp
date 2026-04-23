@@ -1,174 +1,70 @@
-Frontend
-├── app/                # routing (expo-router) → se queda
-│
-├── features/
-│   ├── exercise/
-│   │   ├── screens/
-│   │   │   ├── ExerciseBrowserScreen.tsx
-│   │   │   ├── ExerciseDetailScreen.tsx
-│   │   │   └── CreateExerciseScreen.tsx
-│   │   │
-│   │   ├── components/
-│   │   │   ├── CreateExerciseForm.tsx
-│   │   │   ├── MuscleSelectorSheet.tsx
-│   │   │   └── ExerciseCard.tsx
-│   │   │
-│   │   ├── hooks/
-│   │   │   ├── useExercises.ts
-│   │   │   ├── useExerciseFiltering.ts
-│   │   │   └── useMuscleSelection.ts
-│   │   │
-│   │   ├── utils/
-│   │   │   └── exercise.ts
-│   │   │
-│   │   └── index.ts
-│
-│   ├── workout/
-│   │   ├── screens/
-│   │   │   ├── ActiveWorkoutScreen.tsx
-│   │   │   └── SummaryScreen.tsx
-│   │   │
-│   │   ├── components/
-│   │   │   ├── ActiveWorkoutBottomBar.tsx
-│   │   │   ├── WorkoutHeader.tsx
-│   │   │   ├── SetRow.tsx
-│   │   │   └── ...
-│   │   │
-│   │   ├── hooks/
-│   │   │   ├── useWorkout.ts
-│   │   │   ├── useWorkoutTimer.ts
-│   │   │   └── useSetCompletion.ts
-│   │   │
-│   │   ├── store/
-│   │   │   └── useActiveWorkout.ts
-│   │   │
-│   │   └── index.ts
-│
-│   ├── routine/
-│   ├── stats/
-│   ├── settings/
-│   └── history/
-│
-├── shared/             # 🔑 SOLO lo reutilizable global
-│   ├── ui/
-│   │   ├── AppButton.tsx
-│   │   ├── AppText.tsx
-│   │   ├── Screen.tsx
-│   │   └── ToggleChip.tsx
-│   │
-│   ├── components/
-│   │   ├── EmptyState.tsx
-│   │   ├── ErrorState.tsx
-│   │   └── LoadingSkeleton.tsx
-│   │
-│   ├── hooks/
-│   │   ├── useTheme.ts
-│   │   └── useNetworkState.ts
-│   │
-│   ├── utils/
-│   │   ├── formatters.ts
-│   │   └── time.ts
-│   │
-│   └── constants/
-│
-├── core/               # 🔧 infraestructura global
-│   ├── di/
-│   ├── context/
-│   ├── config/
-│   └── navigation/
+1. Problemas de Redundancia y Organización
+   El problema más grave es la duplicidad de lógica entre entities, features, widgets y pages.
 
-Qué se mueve exactamente (mapping real)
-🔄 De esto:
-components/workout/activeWorkout/*
-hooks/domain/useWorkout.ts
-store/useActiveWorkout.ts
-👉 A esto:
-features/workout/components/*
-features/workout/hooks/*
-features/workout/store/*
-🔄 De esto:
-components/ui/*
-👉 A:
-shared/ui/*
+### Redundancia en "Active Workout"
 
-(SOLO si es reutilizable global)
+Tienes componentes idénticos o muy similares en tres lugares diferentes:
 
-🔄 De esto:
-utils/exercise.ts
-hooks/useExercises.ts
-👉 A:
-features/exercise/utils/
-features/exercise/hooks/
-⚠️ Reglas clave (esto es lo que define si tu arquitectura es buena o no)
-1. 🔒 Regla de oro
+- `src/entities/workout/ui/...`
+- `src/features/activeWorkout/components/...`
+- `src/widgets/activeWorkout/ui/...` (Aquí tienes de nuevo WorkoutHeader, PRCelebrationOverlay, etc.)
 
-Si solo lo usa un feature → VA DENTRO DEL FEATURE
+**Corrección:**
 
-2. 🌍 Shared NO es dumping ground
+- **Entities:** Solo componentes atómicos y transversales (ej. `WorkoutSetRow`).
+- **Features:** La lógica de acción (ej. `useSetCompletion`, `useStartWorkout`).
+- **Widgets:** Aquí es donde deberías ensamblar el `ActiveWorkoutBottomBar` o el `ActiveWorkoutController`. No dupliques los mismos archivos de UI en features y widgets.
 
-Solo cosas:
+### El dilema de src/pages vs src/app
 
-genéricas
-sin lógica de negocio
-reutilizadas mínimo 2–3 features
-3. 🚫 Evitá esto
-features/exercise → importa de → features/workout
+Tienes una carpeta `src/pages` y una carpeta `src/app` (Expo Router).
 
-Si pasa:
-👉 mover a shared/
+- **Recomendación:** Mantén las "Pages" como componentes puros que reciben props o usan hooks de la capa features/widgets, y deja que `src/app` solo actúe como el "Routing Layer" (definición de rutas y layouts).
 
-4. 🧠 Screens ≠ lógica
+2. Infraestructura y Archivos Faltantes
+   Para una app de fitness de este calibre, faltan piezas clave:
 
-Tu app/ queda como:
+- **src/shared/api:** Centralizar configuración de Axios/TanStack Query e interceptores de auth.
+- **src/shared/lib/auth:** Lógica de autenticación y almacenamiento de tokens.
+- **src/shared/ui/theme:** Centralizar `tamagui.config.ts` y tokens de diseño (espaciados, colores, animaciones). Asegurar que Features y Widgets consuman estos tokens estrictamente vía hooks o componentes de Tamagui, eliminando estilos hardcodeados.
 
-routing puro
-delega todo a features
+3. Estrategia de Tests y Cobertura
 
-Tal como recomiendan las arquitecturas modernas
+- **Mocks de Base de Datos/Storage:** Tests para `src/shared/lib/storage.ts`.
+- **Edge Cases en plateMath.ts:** Tests para valores críticos (negativos, 0, unidades).
+- **Flujos de Integración:** Test de "happy path" completo: Crear rutina -> Iniciar Workout -> Finalizar -> Ver en Historia.
+- **Visual Regression:** Snapshot testing para `BodyAnatomySvg.tsx`.
+- **Factories:** Implementar `fishery` para generar objetos de prueba (`Workout`, `Exercise`).
 
-💡 Insight importante (nivel senior)
+4. Estrategia de Ejecución (Roadmap)
+   Para evitar romper la app en un solo PR, seguiremos estas fases:
 
-Vos ya estás en una arquitectura casi clean + feature hybrid.
+- **Fase 1: Limpieza Estructural.** Mover archivos a carpetas correctas según FSD sin cambiar lógica. Eliminar duplicados en `ActiveWorkout` y definir qué es Widget y qué es Feature.
+- **Fase 2: Infraestructura.** Crear `shared/api`, centralizar tipos e implementar interceptores.
+- **Fase 3: Tests y Cobertura.** Agregar factories y tests de integración de flujo completo.
 
-Tu backend está:
+5. Protección de Fronteras Arquitectónicas (Linting)
+   Para asegurar que se respeten las reglas de FSD a largo plazo (ej. no importar un Feature dentro de un Entity):
 
-core/
-features/
+- **Configuración de Linter:** Implementar `@conarti/eslint-plugin-feature-sliced`.
+- **Regla de Oro:** Las capas superiores pueden importar de las inferiores, pero nunca al revés, ni entre hermanos de la misma capa (excepto en shared).
 
-👉 replicar eso en frontend es PERFECTO
+6. Alias de Rutas (Path Aliases)
+   Limpiar `tsconfig.json` y `babel.config.js` para usar alias absolutos que faciliten el movimiento de archivos:
 
-Te queda una arquitectura simétrica:
+- `@/app/*`
+- `@/pages/*`
+- `@/widgets/*`
+- `@/features/*`
+- `@/entities/*`
+- `@/shared/*`
 
-Backend:  core + features
-Frontend: core + features + shared
+> [!IMPORTANT]
+> En Expo, esto requiere sincronizar `tsconfig.json`, `babel.config.js` (module-resolver) y asegurar que el enrutamiento en `app.json` esté alineado con estos alias absolutos para el bundler Metro.
 
-Eso es arquitectura enterprise real, no tutorial.
+7. Estrategia de Manejo de Estado (State Management)
+   Reglas claras sobre la ubicación de los Stores (Zustand):
 
-🚀 Plan de migración (sin romper todo)
-
-No lo hagas de golpe.
-
-Crear /features
-Migrar SOLO exercise
-Ajustar imports
-Testear
-Repetir con workout, etc.
-🧠 Conclusión clara
-
-Tu proyecto ya está:
-
-bien pensado
-modular
-listo para escalar
-
-Lo único que te falta es:
-
-👉 colapsar horizontal → vertical por dominio
-
-Y con eso pasás de:
-
-proyecto prolijo
-
-a:
-
-proyecto escalable de verdad
+- **Estado de Dominio:** Reside en `entities/{entity}/model` (ej. lista de ejercicios, datos de usuario).
+- **Estado de Sesión/Flujo:** Reside en `features/{feature}/model`. Aquí debe vivir la "lógica dura" del entrenamiento (completar sets, calcular volumen total, sobrecarga progresiva).
+- **Estado Global/Cross-domain:** El estado del "Workout Activo" (que afecta al Mini Player y Dashboard) se centraliza en `app/store`. Estos componentes actúan como observadores de este estado pesado, mientras que la lógica de ejecución permanece aislada en la feature.

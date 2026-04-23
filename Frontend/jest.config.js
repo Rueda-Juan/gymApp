@@ -7,21 +7,20 @@ module.exports = {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   moduleNameMapper: {
-    '^react-native-reanimated$': '<rootDir>/__mocks__/react-native-reanimated.js',
     '^@tamagui/core$': '<rootDir>/__mocks__/@tamagui_core_mock.js',
     '^tamagui$': '<rootDir>/__mocks__/tamagui.js',
     '^tamagui/(.*)$': '<rootDir>/__mocks__/tamagui.js',
     '^@react-native-async-storage/async-storage$': '@react-native-async-storage/async-storage/jest/async-storage-mock',
     '^zustand$': '<rootDir>/node_modules/zustand/index.js',
-    '^@/(.*)$': '<rootDir>/$1',
-    '^@shared$': '<rootDir>/../packages/shared/src/index.ts',
-    '^@shared/(.*)$': '<rootDir>/../packages/shared/src/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@kernel$': '<rootDir>/../packages/shared/src/index.ts',
+    '^@kernel/(.*)$': '<rootDir>/../packages/shared/src/$1',
   },
   testMatch: [
     '<rootDir>/src/**/*.test.ts?(x)',
     '<rootDir>/src/**/*.int.test.ts?(x)'
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(@tamagui|tamagui|zustand|((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg))'
+    'node_modules/(?!(jest-)?react-native|@react-native|expo|@expo|@tamagui|tamagui|lucide-react-native|victory|victory-native|zustand|@react-navigation|@shopify/flash-list)'
   ]
 };

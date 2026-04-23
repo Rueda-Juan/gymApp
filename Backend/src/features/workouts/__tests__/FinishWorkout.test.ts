@@ -1,6 +1,9 @@
+import type * as SQLite from 'expo-sqlite';
 import { WorkoutService } from '../workout.service';
 import type { WorkoutRepository } from '../workout.repository';
 import type { ExerciseLoadCacheRepository } from '../../exercises/exercise-load-cache.repository';
+import type { StatsRepository } from '../../stats/stats.repository';
+import type { RoutineRepository } from '../../routines/routine.repository';
 import type { Workout } from '../workout.entity';
 import { NotFoundError } from '../../../core/errors/errors';
 
@@ -31,9 +34,9 @@ describe('WorkoutService - FinishWorkout', () => {
       invalidateAll: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<ExerciseLoadCacheRepository>;
 
-    const mockStatsRepo = {} as any;
-    const mockRoutineRepo = {} as any;
-    const mockDb = {} as any;
+    const mockStatsRepo = {} as unknown as jest.Mocked<StatsRepository>;
+    const mockRoutineRepo = {} as unknown as jest.Mocked<RoutineRepository>;
+    const mockDb = {} as unknown as SQLite.SQLiteDatabase;
 
     service = new WorkoutService(
       mockWorkoutRepo,
@@ -150,6 +153,20 @@ describe('WorkoutService - FinishWorkout', () => {
 
       expect(result.durationSeconds).toBeGreaterThanOrEqual(17990);
       expect(result.durationSeconds).toBeLessThanOrEqual(18010);
+    });
+  });
+
+  // ─── Idempotencia ──────────────────────────────────────────
+
+  describe('idempotencia', () => {
+    it('no actualiza la duración si el workout ya estaba finalizado', async () => {
+      const finishedWorkout = createWorkout({ durationSeconds: 3600 });
+      mockWorkoutRepo.getById.mockResolvedValue(finishedWorkout);
+
+      const result = await service.finishWorkout('w-1');
+
+      expect(result.durationSeconds).toBe(3600);
+      expect(mockWorkoutRepo.save).not.toHaveBeenCalled();
     });
   });
 

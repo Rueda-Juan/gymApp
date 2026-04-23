@@ -11,8 +11,8 @@ import Animated, {
 import { ChevronRight } from 'lucide-react-native';
 import { AppText } from './AppText';
 import { AppIcon } from './AppIcon';
-import { motion } from '@/constants/motion';
-import { triggerLightHaptic } from '@/utils/haptics';
+import { motion } from './theme/motion';
+import { triggerLightHaptic } from '../lib/haptics';
 
 const MIN_TOUCH_TARGET = 44;
 

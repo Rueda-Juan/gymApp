@@ -6,7 +6,7 @@ import type { ExerciseLoadCacheRepository } from '../exercise-load-cache.reposit
 import type { Workout } from '../../workouts/workout.entity';
 import type { Exercise } from '../exercise.entity';
 import { PlateRounder } from '../utils/plate-rounder';
-import { SessionContext } from '../../../core/types/session-context';
+
 
 const DEFAULT_EXERCISE_ID = 'ex-1';
 const DEFAULT_INCREMENT = 2.5;
@@ -20,7 +20,7 @@ const MOCK_EXERCISE = {
   loadType: 'weighted',
 } as unknown as Exercise;
 
-function createWorkout(date: Date, sets: any[]): Workout {
+function createWorkout(date: Date, sets: Array<{ reps: number; weight: number; rir: number }>): Workout {
   return {
     id: `w-${date.getTime()}`,
     date,

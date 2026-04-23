@@ -3,9 +3,9 @@ import { Button as TamaguiButton, ButtonProps, XStack, useTheme } from 'tamagui'
 import { AppText } from './AppText';
 import { ActivityIndicator, GestureResponderEvent } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
-import { FONT_SCALE } from '@/tamagui.config';
-import { triggerLightHaptic } from '@/utils/haptics';
-import { usePressScale } from '@/ui/hooks/usePressScale';
+import { FONT_SCALE } from './theme/tamagui.config';
+import { triggerLightHaptic } from '../lib/haptics';
+import { usePressScale } from './hooks/usePressScale';
 
 const BUTTON_CONFIG = {
   primary: {
@@ -141,7 +141,21 @@ export function AppButton({
               {label}
             </AppText>
           ) : (
-            loading ? null : children
+            loading ? null : (
+              typeof children === 'string' ? (
+                <AppText
+                  variant="bodyMd"
+                  color={styleToken.textColor as any}
+                  style={{ fontSize: sizeToken.fontSize, fontWeight: '700' }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {children}
+                </AppText>
+              ) : (
+                children
+              )
+            )
           )}
           {iconRight && !loading && (
             <XStack minWidth={20} alignItems="center" justifyContent="center">

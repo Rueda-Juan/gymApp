@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@testing-library/react-hooks": "^8.0.1",
+    "@types/jest": "^30.0.0",
     "@types/react-test-renderer": "^19.1.0",
     "typescript": "^6.0.2"
   },

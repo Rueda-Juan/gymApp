@@ -1,12 +1,12 @@
 import React, { useCallback, useRef, useMemo } from 'react';
-import config from '../../../tamagui.config';
+import config from '@/shared/ui/theme/tamagui.config';
 import { useTheme, ScrollView, YStack, XStack } from 'tamagui';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import type { BottomSheetDefaultBackdropProps } from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetBackdrop/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMuscleSelection } from '../hooks/useMuscleSelection';
-import { MuscleSelectorSheet } from '../screens/MuscleSelectorSheet';
+import { MuscleSelectorSheet } from './MuscleSelectorSheet';
 import { AppInput } from '@/shared/ui/AppInput';
 import { AppText } from '@/shared/ui/AppText';
 import { ValueToggleChip } from '@/shared/ui/ValueToggleChip';
@@ -15,10 +15,10 @@ import {
   EQUIPMENT_LABELS,
   HIERARCHICAL_MUSCLES,
   MUSCLE_LABELS,
-} from '@/constants/exercise';
-// import { MuscleSelector } from '@/components/workout/MuscleSelector';
-import { BodyAnatomySvg } from '@/shared/ui/BodyAnatomySvg';
-import type { MuscleGroup, Equipment, ExerciseType, LoadType } from '@shared';
+} from '@/shared/constants/exercise';
+// import { MuscleSelector } from '@/shared/ui/workout/MuscleSelector';
+import { BodyAnatomySvg } from '@/entities/anatomy';
+import type { MuscleGroup, Equipment, ExerciseType, LoadType } from '@kernel';
 const BOTTOM_SHEET_SNAP_POINTS = ['75%'];
 
 const SCROLL_BOTTOM_INSET = 92;
@@ -164,6 +164,7 @@ export function CreateExerciseForm(props: Props) {
             <BodyAnatomySvg
               primaryMuscles={primaryMuscles}
               secondaryMuscles={secondaryMuscles}
+              onPressMuscle={togglePrimaryMuscle}
             />
           </YStack>
 

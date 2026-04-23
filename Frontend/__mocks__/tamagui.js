@@ -21,5 +21,8 @@ module.exports = {
   Paragraph: RN.Text,
   styled: (c) => c,
   useTheme: () => ({ primary: { val: '#B5530A' }, color: { val: '#000' }, background: { val: '#fff' } }),
+  createFont: (config) => config,
+  createTokens: (config) => config,
+  createTamagui: (config) => config,
 };
 

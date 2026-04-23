@@ -1,4 +1,4 @@
-import { WorkoutSetDTO } from '../src/workout-set.dto';
+import type { WorkoutSetDTO } from '@shared';
 
 export interface WorkoutExerciseDTO {
   id: string;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text as TamaguiText, TextProps as TamaguiTextProps } from 'tamagui';
-import { ThemeColorKey } from '@/theme/types';
-import { FONT_SCALE } from '@/tamagui.config';
+import { ThemeColorKey } from '../config/types';
+import { FONT_SCALE } from './theme/tamagui.config';
 
 export type AppTextVariant = 'titleLg' | 'titleMd' | 'titleSm' | 'subtitle' | 'bodyLg' | 'bodyMd' | 'bodySm' | 'label';
 
@@ -38,7 +38,7 @@ export function AppText({
 
   return (
     <TamaguiText
-      color={`$${color}`}
+      color={color.startsWith('$') ? (color as any) : `$${color}`}
       fontSize={resolved.fontSize}
       fontWeight={resolved.fontWeight}
       letterSpacing={resolved.letterSpacing}

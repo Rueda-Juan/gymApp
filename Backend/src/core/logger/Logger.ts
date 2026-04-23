@@ -1,7 +1,6 @@
-import { documentDirectory, getInfoAsync, writeAsStringAsync, readAsStringAsync, deleteAsync, moveAsync, EncodingType } from 'expo-file-system/legacy';
+import { documentDirectory, getInfoAsync, writeAsStringAsync, readAsStringAsync, moveAsync, EncodingType } from 'expo-file-system/legacy';
 
-const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
-type LogLevel = (typeof LOG_LEVELS)[number];
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const LOG_FILE_PATH = `${documentDirectory}app_logs.txt`;
 const LOG_FILE_OLD_PATH = `${LOG_FILE_PATH}.old`;
@@ -54,12 +53,13 @@ async function flushLogs() {
 function safeStringify(obj: unknown): string {
   try {
     return JSON.stringify(obj);
-  } catch (err) {
+  } catch (_err) {
     return '[Unserializable data]';
   }
 }
 
 function queueLog(level: LogLevel, namespace: string, message: string, args: unknown[]) {
+  if (process.env.NODE_ENV === 'test') return;
   const timestamp = new Date().toISOString();
   const argsString = args.length > 0 ? safeStringify(args) : '';
   const logEntry = `[${timestamp}] [${level.toUpperCase()}] [${namespace}] ${message} ${argsString}`;
@@ -76,6 +76,7 @@ export class Logger {
   constructor(private readonly namespace: string) {}
 
   debug(message: string, ...args: unknown[]): void {
+    if (process.env.NODE_ENV === 'test') return;
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
       console.debug(`[${this.namespace}]`, message, ...args);
       queueLog('debug', this.namespace, message, args);
@@ -83,17 +84,23 @@ export class Logger {
   }
 
   info(message: string, ...args: unknown[]): void {
-    console.info(`[${this.namespace}]`, message, ...args);
+    if (process.env.NODE_ENV !== 'test') {
+      console.info(`[${this.namespace}]`, message, ...args);
+    }
     queueLog('info', this.namespace, message, args);
   }
 
   warn(message: string, ...args: unknown[]): void {
-    console.warn(`[${this.namespace}]`, message, ...args);
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn(`[${this.namespace}]`, message, ...args);
+    }
     queueLog('warn', this.namespace, message, args);
   }
 
   error(message: string, error?: unknown): void {
-    console.error(`[${this.namespace}]`, message, error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error(`[${this.namespace}]`, message, error);
+    }
     queueLog('error', this.namespace, message, error ? [error] : []);
   }
 }

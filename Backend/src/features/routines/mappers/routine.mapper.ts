@@ -1,7 +1,7 @@
-import { Routine } from '../routine.entity';
-import { RoutineDTO, RoutineExerciseDTO } from '@shared';
+import { Routine, RoutineExercise } from '../routine.entity';
+import { RoutineDTO, RoutineExerciseDTO, MuscleGroup } from '@shared';
 
-function toRoutineExerciseDTO(ex: any): RoutineExerciseDTO {
+function toRoutineExerciseDTO(ex: RoutineExercise): RoutineExerciseDTO {
   return {
     exerciseId: ex.exerciseId,
     order: ex.orderIndex,
@@ -15,6 +15,6 @@ export function toRoutineDTO(entity: Routine): RoutineDTO {
     notes: entity.notes ?? null,
     createdAt: typeof entity.createdAt === 'string' ? entity.createdAt : entity.createdAt.toISOString(),
     exercises: entity.exercises.map(toRoutineExerciseDTO),
-    ...(entity.muscles ? { muscles: entity.muscles } : {}),
+    ...(entity.muscles ? { muscles: entity.muscles as MuscleGroup[] } : {}),
   };
 }

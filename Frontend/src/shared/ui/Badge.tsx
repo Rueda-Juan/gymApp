@@ -1,8 +1,8 @@
 import React from 'react';
 import { XStack } from 'tamagui';
 import { AppText } from './AppText';
-import { ThemeColorKey } from '@/theme/types';
-import { FONT_SCALE } from '@/tamagui.config';
+import { ThemeColorKey } from '../config/types';
+import { FONT_SCALE } from './theme/tamagui.config';
 
 const BADGE_ICON_GAP = 4;
 

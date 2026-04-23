@@ -8,7 +8,7 @@ import type { WorkoutExercise } from './workout-exercise.entity';
 import type { WorkoutSet } from './workout-set.entity';
 import type { ExerciseStats } from '../stats/exercise-stats.entity';
 import type { RecordType } from '../stats/personal-record.entity';
-import { NotFoundError } from '../../core/errors/errors';
+import { NotFoundError, ValidationError } from '../../core/errors/errors';
 import { generateId } from '../../core/utils/generate-id';
 import { toSQLiteDate } from '../../core/utils/date';
 import { validateSetInput } from './workout.schemas';
@@ -123,13 +123,18 @@ export class WorkoutService {
       throw new NotFoundError(`Workout ${workoutId} no encontrado`);
     }
 
+    if (workout.durationSeconds > 0) {
+      log.info('Workout already finished, skipping duration update', { workoutId });
+      return workout;
+    }
+
     const durationSeconds = Math.floor(
       (Date.now() - workout.date.getTime()) / 1000,
     );
 
     const finishedWorkout: Workout = {
       ...workout,
-      durationSeconds,
+      durationSeconds: durationSeconds > 0 ? durationSeconds : 0,
     };
 
     await this.workoutRepo.save(finishedWorkout);
@@ -163,6 +168,20 @@ export class WorkoutService {
     const workout = await this.workoutRepo.getById(workoutId);
     if (!workout) {
       throw new NotFoundError(`Workout con ID ${workoutId} no encontrado`);
+    }
+
+    // Validar que los IDs proporcionados coincidan exactamente con los ejercicios actuales
+    const currentIds = workout.exercises.map((e) => e.id).sort();
+    const providedIds = [...exerciseIds].sort();
+
+    if (
+      currentIds.length !== providedIds.length ||
+      !currentIds.every((id, i) => id === providedIds[i])
+    ) {
+      throw new ValidationError(
+        'La lista de IDs no coincide con los ejercicios actuales del entrenamiento',
+        {},
+      );
     }
 
     await this.workoutRepo.reorderExercises(workoutId, exerciseIds);
@@ -309,6 +328,15 @@ export class WorkoutService {
     const workout = await this.workoutRepo.getById(workoutId);
     if (!workout) {
       throw new NotFoundError(`Workout ${workoutId} no encontrado`);
+    }
+
+    // Evitar duplicación si el workout ya tiene sets registrados
+    const hasExistingSets = workout.exercises.some((ex) => ex.sets.length > 0);
+    if (hasExistingSets) {
+      throw new ValidationError(
+        'El entrenamiento ya tiene sets registrados. Use recordSet para actualizaciones individuales.',
+        {},
+      );
     }
 
     const totalCompletedSets = exercises.reduce(

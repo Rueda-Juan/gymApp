@@ -2,7 +2,7 @@
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { View, Text, AccessibilityInfo } from 'react-native';
-import { MOTION } from '../../app/design/tokens/motion';
+import { MOTION } from './theme/motion';
 
 const AnimatedTrophyCard = () => {
   const scale = useSharedValue(0.8);
@@ -20,7 +20,7 @@ const AnimatedTrophyCard = () => {
   }));
   return (
     <Animated.View style={[{ backgroundColor: '#FDE68A', padding: 24, borderRadius: 16, alignItems: 'center' }, animatedStyle]} accessibilityLabel="Trofeo animado">
-      <Text style={{ fontSize: 32, color: '#B45309', fontWeight: 'bold' }}>🏆</Text>
+      <Text style={{ fontSize: 32, color: '#B45309', fontWeight: 'bold' }}>ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â </Text>
       <Text style={{ color: '#B45309', fontWeight: 'bold', marginTop: 8 }}>Trophy!</Text>
     </Animated.View>
   );

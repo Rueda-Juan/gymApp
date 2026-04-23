@@ -1,0 +1,461 @@
+Frontend/
+├── __mocks__
+│   ├── @tamagui_core_mock.js
+│   ├── react-native-reanimated.js
+│   ├── react-native-safe-area-context.js
+│   └── tamagui.js
+├── src
+│   ├── app
+│   │   ├── (tabs)
+│   │   │   ├── dashboard
+│   │   │   │   ├── __tests__
+│   │   │   │   │   ├── DashboardScreen.integration.test.tsx
+│   │   │   │   │   └── DashboardScreen.test.tsx
+│   │   │   │   └── index.tsx
+│   │   │   ├── exercise
+│   │   │   │   └── index.tsx
+│   │   │   ├── routines
+│   │   │   │   ├── __tests__
+│   │   │   │   │   └── RoutinesPage.test.tsx
+│   │   │   │   └── index.tsx
+│   │   │   ├── settings
+│   │   │   │   ├── __tests__
+│   │   │   │   │   └── SettingsPage.test.tsx
+│   │   │   │   └── index.tsx
+│   │   │   ├── stats
+│   │   │   │   └── index.tsx
+│   │   │   └── _layout.tsx
+│   │   ├── (workouts)
+│   │   │   ├── __tests__
+│   │   │   │   └── ActiveWorkoutPage.test.tsx
+│   │   │   ├── _layout.tsx
+│   │   │   ├── [workoutId].tsx
+│   │   │   └── rest-timer.tsx
+│   │   ├── exercise
+│   │   │   ├── __tests__
+│   │   │   │   ├── createExercise.int.test.tsx
+│   │   │   │   ├── exerciseBrowser.int.test.tsx
+│   │   │   │   └── ExerciseDetailScreen.test.tsx
+│   │   │   └── create.tsx
+│   │   ├── history
+│   │   │   ├── __tests__
+│   │   │   │   └── HistoryPage.test.tsx
+│   │   │   └── index.tsx
+│   │   ├── routine
+│   │   │   ├── [id].tsx
+│   │   │   └── create.tsx
+│   │   ├── stats
+│   │   │   └── weight.tsx
+│   │   ├── summary
+│   │   │   └── index.tsx
+│   │   └── _layout.tsx
+│   ├── entities
+│   │   ├── anatomy
+│   │   │   ├── lib
+│   │   │   │   └── musclePaths.ts
+│   │   │   ├── ui
+│   │   │   │   ├── __tests__
+│   │   │   │   │   └── BodyAnatomySvg.test.tsx
+│   │   │   │   └── BodyAnatomySvg.tsx
+│   │   │   └── index.ts
+│   │   ├── exercise
+│   │   │   ├── lib
+│   │   │   │   └── exercise.ts
+│   │   │   ├── ui
+│   │   │   │   ├── ExerciseList.tsx
+│   │   │   │   └── MuscleFilterSheet.tsx
+│   │   │   └── index.ts
+│   │   ├── routine
+│   │   │   ├── lib
+│   │   │   │   └── routine.ts
+│   │   │   ├── model
+│   │   │   │   ├── helpers.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── routineStore.ts
+│   │   │   │   └── types.ts
+│   │   │   ├── ui
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── RoutineCard.tsx
+│   │   │   │   ├── RoutineExerciseRow.tsx
+│   │   │   │   └── useRoutineExercisesLabel.ts
+│   │   │   └── index.ts
+│   │   ├── settings
+│   │   │   ├── lib
+│   │   │   │   ├── __tests__
+│   │   │   │   │   └── useSensoryFeedback.test.tsx
+│   │   │   │   ├── useRestTimerSetting.ts
+│   │   │   │   └── useSensoryFeedback.ts
+│   │   │   ├── model
+│   │   │   │   ├── useSettings.ts
+│   │   │   │   └── useUser.ts
+│   │   │   ├── ui
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── SegmentedPicker.tsx
+│   │   │   │   ├── SettingItem.tsx
+│   │   │   │   └── SettingsPage.tsx
+│   │   │   └── index.ts
+│   │   ├── stats
+│   │   │   ├── lib
+│   │   │   │   ├── historyGrouping.ts
+│   │   │   │   ├── trainingWeek.ts
+│   │   │   │   └── useAchievementEvaluator.ts
+│   │   │   ├── model
+│   │   │   │   ├── helpers.ts
+│   │   │   │   ├── types.ts
+│   │   │   │   ├── useBodyWeight.ts
+│   │   │   │   └── usePersonalRecords.ts
+│   │   │   ├── ui
+│   │   │   │   ├── BodyWeightCard.tsx
+│   │   │   │   ├── StatsSummaryGrid.tsx
+│   │   │   │   └── StrengthProgressCard.tsx
+│   │   │   └── index.ts
+│   │   ├── workout
+│   │   │   ├── lib
+│   │   │   │   ├── __tests__
+│   │   │   │   │   ├── plateMath.test.ts
+│   │   │   │   │   └── useWorkoutTimer.test.ts
+│   │   │   │   ├── plateMath.ts
+│   │   │   │   ├── useWeightEngine.ts
+│   │   │   │   ├── useWorkoutTimer.ts
+│   │   │   │   └── workout.ts
+│   │   │   ├── model
+│   │   │   │   ├── __tests__
+│   │   │   │   │   └── usePreviousSets.test.tsx
+│   │   │   │   ├── helpers.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── types.ts
+│   │   │   │   ├── useActiveWorkout.ts
+│   │   │   │   ├── useRestTimer.ts
+│   │   │   │   ├── useWorkoutSummary.ts
+│   │   │   │   └── workoutStore.ts
+│   │   │   ├── ui
+│   │   │   │   ├── CableStackSelectorSheet.tsx
+│   │   │   │   ├── ExampleSheetIntegration.tsx
+│   │   │   │   ├── HistoryWorkoutCard.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── PlateCalculatorModal.tsx
+│   │   │   │   ├── SetRow.tsx
+│   │   │   │   ├── SetRowNumberInput.tsx
+│   │   │   │   ├── SetRowRirSelector.tsx
+│   │   │   │   ├── useLastPerformedLabel.ts
+│   │   │   │   ├── WeightInputModal.tsx
+│   │   │   │   └── WorkoutSetRow.tsx
+│   │   │   ├── index.ts
+│   │   │   └── useWorkoutSummary.ts
+│   │   └── useRestTimer.ts
+│   ├── features
+│   │   ├── activeWorkout
+│   │   │   ├── __tests__
+│   │   │   │   ├── ActiveWorkout.integration.test.tsx
+│   │   │   │   ├── ActiveWorkoutScreen.test.tsx
+│   │   │   │   ├── e2e.startWorkout.test.tsx
+│   │   │   │   ├── useSetCompletion.test.tsx
+│   │   │   │   ├── useStartWorkout.test.ts
+│   │   │   │   ├── useWorkout.test.ts
+│   │   │   │   └── useWorkoutTimer.test.ts
+│   │   │   ├── components
+│   │   │   │   ├── ActiveWorkoutExercisePickerSheet.tsx
+│   │   │   │   ├── ActiveWorkoutOptionsSheet.tsx
+│   │   │   │   ├── ActiveWorkoutRestTimerChip.tsx
+│   │   │   │   ├── PRCelebrationOverlay.tsx
+│   │   │   │   └── WorkoutSessionNoteSheet.tsx
+│   │   │   ├── hooks
+│   │   │   │   └── __tests__
+│   │   │   │       └── useSupersetNavigation.test.tsx
+│   │   │   ├── model
+│   │   │   │   ├── hooks
+│   │   │   │   │   ├── useActiveWorkoutController.ts
+│   │   │   │   │   ├── useRestTimerAnimation.ts
+│   │   │   │   │   ├── useSetCompletion.ts
+│   │   │   │   │   ├── useStartWorkout.ts
+│   │   │   │   │   ├── useSupersetCarousel.ts
+│   │   │   │   │   ├── useSupersetFlow.ts
+│   │   │   │   │   └── useSupersetNavigation.ts
+│   │   │   │   └── utils
+│   │   │   │       └── workout.ts
+│   │   │   └── index.ts
+│   │   ├── dashboardSummary
+│   │   │   ├── model
+│   │   │   │   ├── useDashboardStore.ts
+│   │   │   │   └── useHomeData.ts
+│   │   │   ├── ui
+│   │   │   │   └── StatsSummaryGrid.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── useDashboardStore.ts
+│   │   │   └── useHomeData.ts
+│   │   ├── exercise
+│   │   │   ├── __tests__
+│   │   │   │   ├── exercise-schemas.test.ts
+│   │   │   │   ├── ExerciseDetailScreen.test.tsx
+│   │   │   │   └── useExerciseFiltering.test.ts
+│   │   │   ├── components
+│   │   │   │   ├── CreateExerciseForm.tsx
+│   │   │   │   ├── CreateExerciseHeader.tsx
+│   │   │   │   └── MuscleSelectorSheet.tsx
+│   │   │   ├── hooks
+│   │   │   │   └── useMuscleSelection.ts
+│   │   │   ├── utils
+│   │   │   │   ├── exercise.ts
+│   │   │   │   └── helpers.ts
+│   │   │   └── index.ts
+│   │   ├── onboarding
+│   │   │   ├── ui
+│   │   │   │   └── ProfileSetupForm.tsx
+│   │   │   └── index.ts
+│   │   └── routineEditor
+│   │       ├── __tests__
+│   │       │   ├── useRoutineEditor.test.tsx
+│   │       │   └── useRoutines.test.tsx
+│   │       ├── hooks
+│   │       │   └── useRoutineEditor.ts
+│   │       ├── utils
+│   │       │   └── routine.ts
+│   │       └── index.ts
+│   ├── pages
+│   │   ├── activeWorkout
+│   │   │   ├── __tests__
+│   │   │   │   └── ActiveWorkoutPage.test.tsx
+│   │   │   └── ActiveWorkoutPage.tsx
+│   │   ├── dashboard
+│   │   │   ├── __tests__
+│   │   │   │   └── DashboardPage.test.tsx
+│   │   │   └── DashboardPage.tsx
+│   │   ├── exercise
+│   │   │   ├── __tests__
+│   │   │   │   ├── ExerciseCreatePage.test.tsx
+│   │   │   │   └── ExerciseListPage.test.tsx
+│   │   │   ├── ExerciseCreatePage.tsx
+│   │   │   └── ExerciseListPage.tsx
+│   │   ├── history
+│   │   │   ├── __tests__
+│   │   │   │   └── HistoryPage.test.tsx
+│   │   │   └── HistoryPage.tsx
+│   │   ├── modal
+│   │   │   ├── __tests__
+│   │   │   │   └── ModalPage.test.tsx
+│   │   │   └── ModalPage.tsx
+│   │   ├── routines
+│   │   │   ├── __tests__
+│   │   │   │   ├── RoutineCreatePage.test.tsx
+│   │   │   │   ├── routineDetailPage.test.tsx
+│   │   │   │   └── RoutinesPage.test.tsx
+│   │   │   ├── RoutineCreatePage.tsx
+│   │   │   ├── RoutineDetailPage.tsx
+│   │   │   └── RoutinesPage.tsx
+│   │   ├── settings
+│   │   │   ├── __tests__
+│   │   │   │   └── SettingsPage.test.tsx
+│   │   │   └── SettingsPage.tsx
+│   │   ├── stats
+│   │   │   ├── __tests__
+│   │   │   │   ├── LogWeightPage.test.tsx
+│   │   │   │   └── StatsPage.test.tsx
+│   │   │   ├── LogWeightPage.tsx
+│   │   │   └── StatsPage.tsx
+│   │   └── summary
+│   │       ├── __tests__
+│   │       │   └── SummaryPage.test.tsx
+│   │       └── SummaryPage.tsx
+│   ├── shared
+│   │   ├── api
+│   │   │   ├── __tests__
+│   │   │   │   └── api.integration.test.tsx
+│   │   │   ├── exercise
+│   │   │   │   └── useExerciseApi.ts
+│   │   │   ├── routine
+│   │   │   │   └── useRoutines.ts
+│   │   │   ├── stats
+│   │   │   │   ├── useStatsApi.ts
+│   │   │   │   └── useStatsData.ts
+│   │   │   ├── workout
+│   │   │   │   ├── __tests__
+│   │   │   │   │   └── useWorkout.test.ts
+│   │   │   │   ├── usePreviousSets.ts
+│   │   │   │   ├── useWorkoutApi.ts
+│   │   │   │   ├── useWorkoutDetail.ts
+│   │   │   │   ├── useWorkoutStats.ts
+│   │   │   │   └── useWorkoutSummaryData.ts
+│   │   │   ├── base.ts
+│   │   │   └── index.ts
+│   │   ├── config
+│   │   │   ├── bottomBar.ts
+│   │   │   ├── components.ts
+│   │   │   ├── exercise.ts
+│   │   │   ├── featureFlags.ts
+│   │   │   ├── muscleMetadata.ts
+│   │   │   ├── routes.ts
+│   │   │   └── types.ts
+│   │   ├── constants
+│   │   │   ├── bottomBar.ts
+│   │   │   ├── elevation.ts
+│   │   │   ├── exercise.ts
+│   │   │   ├── featureFlags.ts
+│   │   │   ├── haptics.ts
+│   │   │   ├── interaction.ts
+│   │   │   ├── motion.ts
+│   │   │   ├── muscleMetadata.ts
+│   │   │   ├── routes.ts
+│   │   │   └── workout.ts
+│   │   ├── context
+│   │   │   ├── BottomBarHeightContext.tsx
+│   │   │   └── DIContext.tsx
+│   │   ├── lib
+│   │   │   ├── __tests__
+│   │   │   │   ├── auth.test.ts
+│   │   │   │   └── storage.test.ts
+│   │   │   ├── hooks
+│   │   │   │   ├── __tests__
+│   │   │   │   │   ├── useDeletionTimeouts.test.ts
+│   │   │   │   │   ├── useMotion.test.tsx
+│   │   │   │   │   ├── useNetworkState.test.ts
+│   │   │   │   │   └── useOfflineQueue.test.ts
+│   │   │   │   ├── use-color-scheme.ts
+│   │   │   │   ├── useBottomBarGestureAndAnimation.ts
+│   │   │   │   ├── useBottomSheetStyles.ts
+│   │   │   │   ├── useDeletionTimeouts.ts
+│   │   │   │   ├── useMotion.ts
+│   │   │   │   ├── useNetworkState.ts
+│   │   │   │   ├── useOfflineQueue.ts
+│   │   │   │   └── usePressScale.ts
+│   │   │   ├── tests
+│   │   │   │   └── factories
+│   │   │   │       ├── exercise.factory.ts
+│   │   │   │       ├── index.ts
+│   │   │   │       ├── routine.factory.ts
+│   │   │   │       └── workout.factory.ts
+│   │   │   ├── auth.ts
+│   │   │   ├── clientId.ts
+│   │   │   ├── errorHelpers.ts
+│   │   │   ├── formatters.ts
+│   │   │   ├── haptics.ts
+│   │   │   ├── index.ts
+│   │   │   ├── instrumentation.ts
+│   │   │   ├── route.ts
+│   │   │   ├── storage.ts
+│   │   │   ├── time.ts
+│   │   │   └── trainingWeek.ts
+│   │   ├── types
+│   │   │   ├── schema.d.ts
+│   │   │   └── workout.ts
+│   │   └── ui
+│   │       ├── __tests__
+│   │       │   └── AppButton.test.tsx
+│   │       ├── cards
+│   │       │   ├── Loaders.tsx
+│   │       │   ├── RoutineCard.tsx
+│   │       │   └── RoutineExerciseRow.tsx
+│   │       ├── charts
+│   │       │   ├── chartUtils.ts
+│   │       │   ├── index.ts
+│   │       │   ├── PlaceholderCharts.tsx
+│   │       │   └── StatsLineChart.tsx
+│   │       ├── context
+│   │       │   └── MotionContext.tsx
+│   │       ├── decor
+│   │       │   ├── BodyAnatomySvg.tsx
+│   │       │   ├── index.ts
+│   │       │   └── TextureOverlay.tsx
+│   │       ├── feedback
+│   │       │   ├── AnimatedNumber.tsx
+│   │       │   ├── ContentReveal.tsx
+│   │       │   ├── EmptyState.tsx
+│   │       │   ├── EmptyStateIcon.tsx
+│   │       │   ├── ErrorState.tsx
+│   │       │   ├── index.ts
+│   │       │   └── SkeletonLoader.tsx
+│   │       ├── hooks
+│   │       │   ├── __tests__
+│   │       │   │   ├── useBottomBarGestureAndAnimation.test.ts
+│   │       │   │   ├── useBottomSheetStyles.test.ts
+│   │       │   │   ├── useExerciseFiltering.test.ts
+│   │       │   │   ├── usePressScale.test.tsx
+│   │       │   │   └── useSetRowAnimation.test.ts
+│   │       │   ├── use-color-scheme.ts
+│   │       │   ├── useBottomBarGestureAndAnimation.ts
+│   │       │   ├── useBottomSheetStyles.ts
+│   │       │   ├── useExerciseFiltering.ts
+│   │       │   ├── usePressScale.ts
+│   │       │   └── useSetRowAnimation.ts
+│   │       ├── layout
+│   │       │   └── Loaders.tsx
+│   │       ├── theme
+│   │       │   ├── elevation.ts
+│   │       │   ├── motion.ts
+│   │       │   ├── primitives.ts
+│   │       │   ├── semantic.ts
+│   │       │   └── tamagui.config.ts
+│   │       ├── AnimatedTrophyCard.tsx
+│   │       ├── AnimatedViewShared.tsx
+│   │       ├── AppButton.tsx
+│   │       ├── AppIcon.tsx
+│   │       ├── AppInput.tsx
+│   │       ├── AppText.tsx
+│   │       ├── Badge.tsx
+│   │       ├── Card.tsx
+│   │       ├── Collapsible.tsx
+│   │       ├── EmptyState.tsx
+│   │       ├── ExerciseMuscleBadge.tsx
+│   │       ├── HapticTab.tsx
+│   │       ├── index.ts
+│   │       ├── LoadingSkeleton.tsx
+│   │       ├── PressableCard.tsx
+│   │       ├── PrimaryButton.tsx
+│   │       ├── Screen.tsx
+│   │       ├── SearchBar.tsx
+│   │       ├── SecondaryButton.tsx
+│   │       ├── SessionProgressBar.tsx
+│   │       ├── TextureOverlay.tsx
+│   │       ├── ToggleChip.tsx
+│   │       ├── UndoToast.tsx
+│   │       ├── ValueToggleChip.tsx
+│   │       └── WorkoutSetRow.tsx
+│   └── widgets
+│       ├── activeWorkout
+│       │   ├── ui
+│       │   │   ├── __tests__
+│       │   │   │   ├── ActiveWorkoutBottomBar.layout.test.tsx
+│       │   │   │   └── ActiveWorkoutBottomBar.test.tsx
+│       │   │   ├── ActiveWorkoutBottomBar.tsx
+│       │   │   ├── ActiveWorkoutController.tsx
+│       │   │   ├── ActiveWorkoutExerciseDetail.tsx
+│       │   │   ├── WorkoutExerciseSummaryList.tsx
+│       │   │   └── WorkoutHeader.tsx
+│       │   └── index.ts
+│       ├── anatomy
+│       │   └── ui
+│       │       └── muscleSelectorWidget.tsx
+│       ├── examples
+│       │   └── ExampleSheetIntegration.tsx
+│       ├── home
+│       │   ├── ui
+│       │   │   ├── HomeCTA.tsx
+│       │   │   ├── HomeHeader.tsx
+│       │   │   ├── index.ts
+│       │   │   └── LastWorkoutCard.tsx
+│       │   └── index.ts
+│       ├── miniPlayer
+│       │   ├── model
+│       │   │   └── useMiniPlayerState.ts
+│       │   ├── ui
+│       │   │   ├── __tests__
+│       │   │   │   ├── mini-player.test.tsx
+│       │   │   │   └── MiniPlayer.test.tsx
+│       │   │   └── MiniPlayer.tsx
+│       │   └── index.ts
+│       └── RoutineEditor
+│           ├── ui
+│           │   ├── RoutineEditorList.tsx
+│           │   └── RoutineFormTemplate.tsx
+│           └── index.ts
+├── app.json
+├── babel.config.js
+├── eslint.config.js
+├── expo-env.d.ts
+├── jest.config.js
+├── jest.setup.js
+├── metro.config.js
+├── package-lock.json
+├── package.json
+├── README.md
+├── tree.js
+└── tsconfig.json

@@ -1,1 +1,2 @@
-// ...existing code from components/charts/index.ts
+export * from './StatsLineChart';
+export * from './chartUtils';

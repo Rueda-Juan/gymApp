@@ -1,1 +1,0 @@
-// ...existing code from components/charts/WeeklyVolumeBarChart.tsx

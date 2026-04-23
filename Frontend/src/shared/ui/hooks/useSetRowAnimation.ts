@@ -11,8 +11,8 @@ import {
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture } from 'react-native-gesture-handler';
-import { motion } from '@/constants/motion';
-import { useMotion } from '@/ui/hooks/useMotion';
+import { motion } from '../theme/motion';
+import { useMotion } from '../../lib/hooks/useMotion';
 
 const DELETE_BUTTON_WIDTH = 80;
 const SWIPE_DELETE_RATIO = 0.2;

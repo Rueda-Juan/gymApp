@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useSharedValue, withSpring, useAnimatedStyle } from 'react-native-reanimated';
-import { motion } from '@/constants/motion';
-import { useMotion } from '@/ui/hooks/useMotion';
+import { motion } from '../theme/motion';
+import { useMotion } from '../../lib/hooks/useMotion';
 
 export function usePressScale(disabled = false) {
   const { isReduced } = useMotion();

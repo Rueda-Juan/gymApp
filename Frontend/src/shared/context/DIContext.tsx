@@ -7,9 +7,6 @@ export function useDI() {
   if (!ctx) throw new Error('DIContext not found');
   return ctx;
 }
-// import { createContainer, AppContainer } from 'backend/shared/container';
-// import { getDatabase } from 'backend/infrastructure/database/connection';
-// import { runMigrations } from 'backend/infrastructure/database/migrations';
 
 type AppContainer = {
   // Workout
@@ -69,13 +66,11 @@ type AppContainer = {
   evaluateSetPR: { execute: (...args: any[]) => Promise<any> };
   // Misc
   countSince: { execute: (...args: any[]) => Promise<number> };
+  wipeDatabase: { execute: () => Promise<void> };
 };
 
 const DIContext = createContext<AppContainer | null>(null);
 
-// Error screen renders before the theme provider is available (DB init failure
-// happens before any React tree is mounted), so raw hex fallbacks are
-// intentional here — do NOT replace with Tamagui tokens.
 const ERROR_FALLBACK_COLORS = {
   background:  '#000',
   title:       '#fff',
@@ -97,11 +92,6 @@ export function DIProvider({ children }: DIProviderProps) {
 
     async function initDB() {
       try {
-        // open DB and run migrations
-        // lightweight logs help verify migration execution in Metro/Expo logs
-        // without changing migration behavior
-        //
-        // Aquí deberías inicializar la base real si existe, si no, usar el mock:
         const appContainer = createContainer(undefined);
         if (!controller.signal.aborted) {
           setContainer(appContainer);
@@ -115,7 +105,6 @@ export function DIProvider({ children }: DIProviderProps) {
     }
 
     initDB();
-    // (El bloque de return de objeto fue eliminado, solo se usa createContainer para el mock persistente)
     return () => controller.abort();
   }, []);
 
@@ -144,12 +133,12 @@ export function DIProvider({ children }: DIProviderProps) {
     </DIContext.Provider>
   );
 }
+
 function createContainer(db: any): AppContainer {
   const emptyArr = async () => [];
   const emptyObj = async () => ({});
   const zero = async () => 0;
   return {
-    // Workout
     startWorkout: { execute: emptyObj },
     finishWorkout: { execute: emptyObj },
     deleteWorkout: { execute: emptyObj },
@@ -167,45 +156,36 @@ function createContainer(db: any): AppContainer {
     getWorkoutById: { execute: emptyObj },
     recordAllSets: { execute: emptyObj },
     getPreviousSets: { execute: emptyArr },
-    // Routines
     getRoutines: { execute: emptyArr },
     getRoutineById: { execute: emptyObj },
     createRoutine: { execute: emptyObj },
     updateRoutine: { execute: emptyObj },
     deleteRoutine: { execute: emptyObj },
     duplicateRoutine: { execute: emptyObj },
-    // Exercises
     createExercise: { execute: emptyObj },
     updateExercise: { execute: emptyObj },
     deleteExercise: { execute: emptyObj },
     getExerciseHistory: { execute: emptyArr },
     getExercises: { execute: emptyArr },
     getExerciseById: { execute: emptyObj },
-    // BodyWeight
     logBodyWeight: { execute: emptyObj },
     getBodyWeightHistory: { execute: emptyArr },
     updateBodyWeight: { execute: emptyObj },
     deleteBodyWeight: { execute: emptyObj },
-    // Stats
     getStatsOverview: { execute: emptyObj },
     getWeeklyStats: { execute: emptyArr },
     getMuscleBalance: { execute: emptyArr },
     getTrainingFrequency: { execute: emptyObj },
-    // Personal Records
     getPersonalRecords: { execute: emptyArr },
     getBestPersonalRecord: { execute: emptyObj },
     getPRCountSince: { execute: zero },
-    // Preferences
     getPreferences: { execute: emptyObj },
     updatePreference: { execute: emptyObj },
-    // Backup
     createBackup: { execute: emptyObj },
     restoreBackup: { execute: emptyObj },
     exportCSV: { execute: emptyObj },
-    // Achievement Evaluator
     evaluateSetPR: { execute: emptyObj },
-    // Misc
     countSince: { execute: zero },
+    wipeDatabase: { execute: async () => {} },
   };
 }
-

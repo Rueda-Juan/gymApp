@@ -1,15 +1,18 @@
+import type * as SQLite from 'expo-sqlite';
 import { WorkoutService } from '../workout.service';
 import type { WorkoutRepository } from '../workout.repository';
 import type { StatsRepository } from '../../stats/stats.repository';
 import type { ExerciseLoadCacheRepository } from '../../exercises/exercise-load-cache.repository';
 import type { ExerciseStats } from '../../stats/exercise-stats.entity';
-import { ValidationError } from '../../../core/errors/errors';
+import type { RoutineRepository } from '../../routines/routine.repository';
+import type { PersonalRecord } from '../../stats/personal-record.entity';
+
 
 const mockWithTransactionAsync = jest.fn(async (cb: () => Promise<void>) => cb());
 
 const mockDb = {
   withTransactionAsync: mockWithTransactionAsync,
-} as any;
+} as unknown as SQLite.SQLiteDatabase;
 
 const VALID_SET_INPUT = {
   exerciseId: 'ex-1',
@@ -62,7 +65,7 @@ describe('WorkoutService - RecordSet', () => {
       invalidate: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<ExerciseLoadCacheRepository>;
 
-    const mockRoutineRepo = {} as any;
+    const mockRoutineRepo = {} as unknown as jest.Mocked<RoutineRepository>;
 
     service = new WorkoutService(
       mockWorkoutRepo,
@@ -123,7 +126,7 @@ describe('WorkoutService - RecordSet', () => {
 
       const result = await service.recordSet('w-1', { ...VALID_SET_INPUT, weight: 80 });
 
-      const hasWeightPR = result.newRecords.some((r: any) => r.recordType === 'max_weight');
+      const hasWeightPR = result.newRecords.some((r: { recordType: string }) => r.recordType === 'max_weight');
       expect(hasWeightPR).toBe(true);
     });
 
@@ -133,7 +136,7 @@ describe('WorkoutService - RecordSet', () => {
 
       const result = await service.recordSet('w-1', { ...VALID_SET_INPUT, reps: 10 });
 
-      const hasRepsPR = result.newRecords.some((r: any) => r.recordType === 'max_reps');
+      const hasRepsPR = result.newRecords.some((r: { recordType: string }) => r.recordType === 'max_reps');
       expect(hasRepsPR).toBe(true);
     });
 
@@ -143,7 +146,7 @@ describe('WorkoutService - RecordSet', () => {
 
       const result = await service.recordSet('w-1', { ...VALID_SET_INPUT, weight: 80, reps: 10 });
 
-      const hasVolumePR = result.newRecords.some((r: any) => r.recordType === 'max_volume');
+      const hasVolumePR = result.newRecords.some((r: { recordType: string }) => r.recordType === 'max_volume');
       expect(hasVolumePR).toBe(true);
     });
 
@@ -154,7 +157,7 @@ describe('WorkoutService - RecordSet', () => {
       const result = await service.recordSet('w-1', { ...VALID_SET_INPUT, weight: 80, reps: 10 });
 
       // Epley: 80 * (1 + 10/30) = 106.67 > 90
-      const has1RMPR = result.newRecords.some((r: any) => r.recordType === 'estimated_1rm');
+      const has1RMPR = result.newRecords.some((r: { recordType: string }) => r.recordType === 'estimated_1rm');
       expect(has1RMPR).toBe(true);
     });
 

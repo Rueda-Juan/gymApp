@@ -20,15 +20,7 @@ interface WorkoutRow {
   notes: string | null;
 }
 
-interface WorkoutExerciseRow {
-  id: string;
-  workout_id: string;
-  exercise_id: string;
-  order_index: number;
-  skipped: number;
-  notes: string | null;
-  superset_group: number | null;
-}
+
 
 interface SetRow {
   id: string;

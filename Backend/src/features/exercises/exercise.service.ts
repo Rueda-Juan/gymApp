@@ -100,9 +100,33 @@ export class ExerciseService {
       });
     }
 
+    let exerciseKey = existing.exerciseKey;
+    if (params.name && params.name !== existing.name) {
+      exerciseKey = generateExerciseKey(params.name, existing.isCustom);
+      const existingWithKey = await this.exerciseRepository.getByKey(exerciseKey);
+      if (existingWithKey && existingWithKey.id !== id) {
+        throw new ValidationError('Ya existe un ejercicio con ese nombre', {
+          name: ['Ya existe un ejercicio con ese nombre'],
+        });
+      }
+    }
+
+    if (existing.isCustom && (params.name || params.primaryMuscles || params.exerciseType)) {
+      validateCustomExerciseInput({
+        name: params.name ?? existing.name,
+        primaryMuscles: params.primaryMuscles ?? existing.primaryMuscles,
+        secondaryMuscles: params.secondaryMuscles ?? existing.secondaryMuscles,
+        equipment: params.equipment ?? existing.equipment,
+        exerciseType: params.exerciseType ?? existing.exerciseType,
+        loadType: params.loadType ?? existing.loadType,
+        description: params.description ?? existing.description,
+      });
+    }
+
     const updatedExercise: Exercise = {
       ...existing,
       ...params,
+      exerciseKey,
     };
 
     await this.exerciseRepository.save(updatedExercise);

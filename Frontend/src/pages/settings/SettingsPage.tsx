@@ -2,32 +2,27 @@ import React from 'react';
 import { Pressable, Switch, Alert, ActivityIndicator } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { User, Bell, Lock, CircleHelp, Info, LogOut, Moon, Hourglass, Wind } from 'lucide-react-native';
-import useRestTimer from '@/ui/hooks/useRestTimer';
-
-import { Screen } from '@/shared/ui/Screen';
-import { CardBase } from '@/shared/ui/Card';
-import { AppText } from '@/shared/ui/AppText';
-import { AppInput } from '@/shared/ui/AppInput';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { ToggleChip } from '@/shared/ui/ToggleChip';
-import { SettingItem } from '@/ui/settings/SettingItem';
-import { SegmentedPicker } from '@/ui/settings/SegmentedPicker';
-import { useSettings, STANDARD_PLATES, BAR_WEIGHTS } from '@/store/useSettings';
-import { useUser } from '@/store/useUser';
-import { useDI } from '@/context/DIContext';
 import { router } from 'expo-router';
-import { ROUTES } from '@/constants/routes';
+
+import { 
+  Screen, 
+  CardBase, 
+  AppText, 
+  AppInput, 
+  AppIcon, 
+  ToggleChip 
+} from '@/shared/ui';
+import { SettingItem, SegmentedPicker, useSettings, STANDARD_PLATES, BAR_WEIGHTS, useUser, useRestTimerSetting } from '@/entities/settings';
+import { useDI } from '@/shared/context/DIContext';
+import { ROUTES } from '@/shared/constants/routes';
 
 const REST_TIMER_PRESETS = [60, 90, 120, 180] as const;
-
-
 const THEME_OPTIONS = ['system', 'light', 'dark'] as const;
 const THEME_LABELS: Record<typeof THEME_OPTIONS[number], string> = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' };
-
 const MOTION_OPTIONS = ['system', 'full', 'reduced'] as const;
 const MOTION_LABELS: Record<typeof MOTION_OPTIONS[number], string> = { system: 'Sistema', full: 'Completa', reduced: 'Reducida' };
 
-export default function SettingsScreen() {
+export default function SettingsPage() {
   const availablePlates = useSettings(s => s.availablePlates);
   const defaultBarWeight = useSettings(s => s.defaultBarWeight);
   const themeMode = useSettings(s => s.themeMode);
@@ -42,7 +37,7 @@ export default function SettingsScreen() {
   const { wipeDatabase } = useDI();
   const theme = useTheme();
   const [resetLoading, setResetLoading] = React.useState(false);
-  const { restTimerInput, setRestTimerInput, restTimerSeconds, applyRestTimerSeconds, handleRestTimerInputChange } = useRestTimer();
+  const { restTimerInput, setRestTimerInput, restTimerSeconds, applyRestTimerSeconds, handleRestTimerInputChange } = useRestTimerSetting();
 
   return (
     <Screen

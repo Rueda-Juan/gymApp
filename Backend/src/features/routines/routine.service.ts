@@ -24,10 +24,18 @@ export class RoutineService {
       ...params,
       id: generateId(),
       createdAt: new Date(),
-      exercises: params.exercises.map((ex) => ({
-        ...ex,
-        id: ex.id || generateId(),
-      })),
+      exercises: params.exercises.map((ex) => {
+        if (ex.minReps > ex.maxReps) {
+          throw new ValidationError('El rango de repeticiones es inválido (min > max)', {});
+        }
+        if (ex.targetSets <= 0) {
+          throw new ValidationError('El número de series debe ser mayor a 0', {});
+        }
+        return {
+          ...ex,
+          id: ex.id || generateId(),
+        };
+      }),
     };
 
     await this.routineRepository.save(newRoutine);
@@ -131,7 +139,15 @@ export class RoutineService {
       ...existing,
       ...params,
       exercises: params.exercises
-        ? params.exercises.map((ex) => ({ ...ex, id: ex.id || generateId() }))
+        ? params.exercises.map((ex) => {
+            if (ex.minReps > ex.maxReps) {
+              throw new ValidationError('El rango de repeticiones es inválido (min > max)', {});
+            }
+            if (ex.targetSets <= 0) {
+              throw new ValidationError('El número de series debe ser mayor a 0', {});
+            }
+            return { ...ex, id: ex.id || generateId() };
+          })
         : existing.exercises,
     };
 

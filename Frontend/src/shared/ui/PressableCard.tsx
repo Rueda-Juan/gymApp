@@ -1,10 +1,10 @@
 import React, { useCallback } from 'react';
 import { Pressable, ViewStyle } from 'react-native';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
-import { motion } from '@/constants/motion';
-import { usePressScale } from '@/ui/hooks/usePressScale';
-import { triggerLightHaptic } from '@/utils/haptics';
-import { elevation } from '@/constants/elevation';
+import { motion } from './theme/motion';
+import { usePressScale } from './hooks/usePressScale';
+import { triggerLightHaptic } from '../lib/haptics';
+import { elevation } from './theme/elevation';
 
 const PRESS_TRANSLATE_Y = 1;
 const CARD_BORDER_RADIUS = 12;

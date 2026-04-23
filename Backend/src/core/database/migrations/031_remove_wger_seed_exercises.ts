@@ -59,7 +59,7 @@ export async function up(db: SQLite.SQLiteDatabase): Promise<void> {
             OR (description IS NOT NULL AND description LIKE '${marker}')
         );
       `);
-    } catch (e) {
+    } catch (_e) {
       // ignore if table does not exist
     }
 

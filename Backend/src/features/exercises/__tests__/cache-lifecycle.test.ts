@@ -1,3 +1,4 @@
+import type * as SQLite from 'expo-sqlite';
 import { SuggestWeightUseCase } from '../services/suggest-weight';
 import { WorkoutService } from '../../workouts/workout.service';
 import type { WorkoutRepository } from '../../workouts/workout.repository';
@@ -5,6 +6,7 @@ import type { StatsRepository } from '../../stats/stats.repository';
 import type { ExerciseRepository } from '../exercise.repository';
 import type { ExerciseLoadCacheRepository, CachedWeightSuggestion } from '../exercise-load-cache.repository';
 import type { Exercise } from '../exercise.entity';
+import type { RoutineRepository } from '../../routines/routine.repository';
 import type { Workout } from '../../workouts/workout.entity';
 import { PlateRounder } from '../utils/plate-rounder';
 
@@ -73,7 +75,7 @@ describe('Cache lifecycle integration', () => {
 
   const mockDb = {
     withTransactionAsync: jest.fn(async (cb: () => Promise<void>) => cb()),
-  } as any;
+  } as unknown as SQLite.SQLiteDatabase;
 
   beforeEach(() => {
     cacheStore = new Map();
@@ -118,7 +120,7 @@ describe('Cache lifecycle integration', () => {
       new PlateRounder(),
     );
 
-    const mockRoutineRepo = {} as any;
+    const mockRoutineRepo = {} as unknown as jest.Mocked<RoutineRepository>;
 
     workoutService = new WorkoutService(
       mockWorkoutRepo,

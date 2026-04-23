@@ -2,41 +2,33 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { SectionList, Alert, TextInput, View } from 'react-native';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle, interpolate, runOnJS } from 'react-native-reanimated';
 import { XStack, YStack } from 'tamagui';
-import { Screen } from '@/shared/ui/Screen';
 import { useFocusEffect } from '@react-navigation/native';
-import { History, Search, X } from 'lucide-react-native';
+import { History as HistoryIcon, Search, X } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
-import { AppText } from '@/shared/ui/AppText';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { EmptyStateIcon } from '@/ui/feedback/EmptyStateIcon';
-import { IconButton } from '@/shared/ui/AppButton';
-import { useWorkout } from '@/features/workout/hooks/useWorkout';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { HistoryCardSkeleton } from '@/ui/cards/Loaders';
-import { ContentReveal } from '@/ui/feedback/ContentReveal';
-import { groupWorkoutsByPeriod } from '@/lib/historyGrouping';
-import { SearchBar } from '@/shared/ui/SearchBar';
-import { HistoryWorkoutCard } from '@/ui/cards/HistoryWorkoutCard';
-import type { WorkoutDTO } from '@shared/workout.dto';
-import { motion } from '@/constants/motion';
 
-
-interface WorkoutSet {
-  weight: number;
-  reps: number;
-}
-
-interface WorkoutExercise {
-  id: string;
-  sets: WorkoutSet[];
-}
+import { 
+  Screen, 
+  AppText, 
+  AppIcon, 
+  IconButton, 
+  SearchBar,
+  ContentReveal,
+  EmptyStateIcon 
+} from '@/shared/ui';
+import { HistoryWorkoutCard } from '@/entities/workout';
+import { useWorkout } from '@/shared/api/workout/useWorkoutApi';
+import { groupWorkoutsByPeriod } from '@/entities/stats';
+import { HistoryCardSkeleton } from '@/shared/ui/layout/Loaders';
+import { motion } from '@/shared/ui/theme/motion';
+import type { WorkoutDTO } from '@kernel';
 
 export interface WorkoutHistoryItem {
   id: string;
   date: string;
   durationSeconds: number;
-  exercises: WorkoutExercise[];
+  exercises: any[];
 }
 
 type WorkoutNormalized = WorkoutHistoryItem;
@@ -46,7 +38,7 @@ const HISTORY_LIMIT = 50;
 const LIST_BOTTOM_PADDING = 100;
 const ItemSeparator = () => <View style={{ height: 12 }} />;
 
-export default function HistoryScreen() {
+export default function HistoryPage() {
   const workoutService = useWorkout();
 
   const [workouts, setWorkouts] = useState<HistoryWorkout[]>([]);
@@ -66,15 +58,14 @@ export default function HistoryScreen() {
           if (mounted.current) setLoading(true);
           const data = await workoutService.getHistory(HISTORY_LIMIT);
 
-
           const mapped: HistoryWorkout[] = (data ?? []).map((w: WorkoutDTO) => {
             const durationSeconds = w.durationSeconds ?? 0;
             const notes = w.notes ?? '';
             const exercises = Array.isArray(w.exercises)
-              ? w.exercises.map(ex => ({
+              ? w.exercises.map((ex: any) => ({
                   id: ex.id,
                   sets: Array.isArray(ex.sets)
-                    ? ex.sets.map(set => ({
+                    ? ex.sets.map((set: any) => ({
                         weight: set.weight,
                         reps: set.reps,
                       }))
@@ -187,7 +178,6 @@ export default function HistoryScreen() {
   return (
     <Screen safeAreaEdges={['top','bottom','left','right']}>
       <YStack flex={1}>
-        {/* Header */}
         <XStack
           justifyContent="space-between"
           alignItems="center"
@@ -208,7 +198,6 @@ export default function HistoryScreen() {
           />
         </XStack>
 
-        {/* Barra de búsqueda animada */}
         <Animated.View
           style={[
             searchBarAnimatedStyle,
@@ -228,7 +217,6 @@ export default function HistoryScreen() {
             />
         </Animated.View>
 
-        {/* Contenido */}
         <ContentReveal
           loading={loading}
           skeleton={
@@ -263,7 +251,7 @@ export default function HistoryScreen() {
             renderItem={renderWorkout}
             ListEmptyComponent={() => (
               <YStack alignItems="center" justifyContent="center" marginTop="$5xl">
-                <EmptyStateIcon icon={History} size={48} color="textTertiary" />
+                <EmptyStateIcon icon={HistoryIcon} size={48} color="textTertiary" />
                 <AppText variant="bodyMd" color="textTertiary" marginTop="$md">
                   No hay entrenamientos guardados aún
                 </AppText>

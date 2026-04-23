@@ -10,7 +10,6 @@ export interface MuscleMetadata {
   children?: MuscleKey[];
   svgId?: string; // SVG group/path id for hit-testing
   isSelectable?: boolean; // For future: allow disabling selection
-  // Add more fields as needed (e.g., stats, color, etc.)
 }
 
 // Flat map for fast lookup
@@ -54,29 +53,35 @@ export const MUSCLE_METADATA: Record<MuscleKey, MuscleMetadata> = {
   'rear-delts': {
     key: 'rear-delts', label: 'Deltoides Posterior', parent: 'shoulders', svgId: 'rear-delts',
   },
+  arms: {
+    key: 'arms', label: 'Brazos', children: ['biceps', 'triceps', 'forearms'], svgId: 'arms',
+  },
   biceps: {
-    key: 'biceps', label: 'Bíceps', svgId: 'biceps',
+    key: 'biceps', label: 'Bíceps', parent: 'arms', svgId: 'biceps',
   },
   triceps: {
-    key: 'triceps', label: 'Tríceps', svgId: 'triceps',
+    key: 'triceps', label: 'Tríceps', parent: 'arms', svgId: 'triceps',
   },
   forearms: {
-    key: 'forearms', label: 'Antebrazos', svgId: 'forearms',
+    key: 'forearms', label: 'Antebrazos', parent: 'arms', svgId: 'forearms',
+  },
+  legs: {
+    key: 'legs', label: 'Piernas', children: ['quadriceps', 'hamstrings', 'glutes', 'calves', 'adductors'], svgId: 'legs',
   },
   quadriceps: {
-    key: 'quadriceps', label: 'Cuádriceps', svgId: 'quadriceps',
+    key: 'quadriceps', label: 'Cuádriceps', parent: 'legs', svgId: 'quadriceps',
   },
   hamstrings: {
-    key: 'hamstrings', label: 'Isquiotibiales', svgId: 'hamstrings',
+    key: 'hamstrings', label: 'Isquiotibiales', parent: 'legs', svgId: 'hamstrings',
   },
   glutes: {
-    key: 'glutes', label: 'Glúteos', svgId: 'glutes',
+    key: 'glutes', label: 'Glúteos', parent: 'legs', svgId: 'glutes',
   },
   calves: {
-    key: 'calves', label: 'Pantorrillas', svgId: 'calves',
+    key: 'calves', label: 'Pantorrillas', parent: 'legs', svgId: 'calves',
   },
   adductors: {
-    key: 'adductors', label: 'Aductores', svgId: 'adductors',
+    key: 'adductors', label: 'Aductores', parent: 'legs', svgId: 'adductors',
   },
   abs: {
     key: 'abs', label: 'Abdominales', children: ['upper-abs', 'lower-abs', 'obliques'], svgId: 'abs',
@@ -90,8 +95,17 @@ export const MUSCLE_METADATA: Record<MuscleKey, MuscleMetadata> = {
   obliques: {
     key: 'obliques', label: 'Oblicuos', parent: 'abs', svgId: 'obliques',
   },
+  core: {
+    key: 'core', label: 'Core', svgId: 'core',
+  },
   traps: {
     key: 'traps', label: 'Trapecios', svgId: 'traps',
+  },
+  quads: {
+    key: 'quads', label: 'Cuádriceps', parent: 'legs', svgId: 'quads',
+  },
+  abductors: {
+    key: 'abductors', label: 'Abductores', parent: 'legs', svgId: 'abductors',
   },
 };
 

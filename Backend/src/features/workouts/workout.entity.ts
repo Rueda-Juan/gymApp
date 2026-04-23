@@ -1,4 +1,4 @@
-import type { SetType } from '@shared';
+
 import type { WorkoutExercise } from './workout-exercise.entity';
 
 /**

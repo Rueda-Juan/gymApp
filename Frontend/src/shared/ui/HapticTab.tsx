@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle, 
   withSpring 
 } from 'react-native-reanimated';
-import { triggerLightHaptic } from '@/utils/haptics';
+import { triggerLightHaptic } from '../lib/haptics';
 
 export function HapticTab(props: BottomTabBarButtonProps) {
   const scale = useSharedValue(1);

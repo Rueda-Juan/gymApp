@@ -2,102 +2,89 @@ import React from 'react';
 import { YStack, XStack } from 'tamagui';
 import { SkeletonLoader } from '../feedback/SkeletonLoader';
 
-export const StatsSummaryGridSkeleton = React.memo(function StatsSummaryGridSkeleton() {
-  return (
-    <YStack gap="$md">
-      {[0, 1].map((row) => (
-        <XStack key={row} gap="$md">
-          {[0, 1].map((col) => (
-            <YStack key={col} flex={1} padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface">
-              <SkeletonLoader width="50%" height={14} marginBottom="$xs" />
-              <SkeletonLoader width="40%" height={24} />
-            </YStack>
-          ))}
-        </XStack>
-      ))}
+export const RoutineCardSkeleton = () => (
+  <YStack
+    padding="$lg"
+    backgroundColor="$surfaceSecondary"
+    borderRadius="$xl"
+    gap="$md"
+    height={120}
+  >
+    <XStack justifyContent="space-between" alignItems="center">
+      <SkeletonLoader width={120} height={20} />
+      <SkeletonLoader width={60} height={16} />
+    </XStack>
+    <XStack gap="$sm">
+      <SkeletonLoader width={40} height={24} borderRadius={12} />
+      <SkeletonLoader width={40} height={24} borderRadius={12} />
+    </XStack>
+  </YStack>
+);
+
+export const ExerciseCardSkeleton = () => (
+  <XStack
+    padding="$md"
+    backgroundColor="$surfaceSecondary"
+    borderRadius="$lg"
+    gap="$md"
+    alignItems="center"
+  >
+    <SkeletonLoader width={40} height={40} borderRadius={20} />
+    <YStack flex={1} gap="$xs">
+      <SkeletonLoader width="60%" height={20} />
+      <SkeletonLoader width="40%" height={16} />
     </YStack>
-  );
-});
+  </XStack>
+);
 
-export const StatsPageSkeleton = React.memo(function StatsPageSkeleton() {
-  return (
-    <YStack gap="$lg" paddingHorizontal="$xl" paddingTop="$sm">
-      <StatsSummaryGridSkeleton />
+export const SetRowSkeleton = () => (
+  <XStack alignItems="center" gap="$md" paddingVertical="$sm">
+    <SkeletonLoader width={30} height={24} />
+    <SkeletonLoader width="60%" height={24} />
+    <SkeletonLoader width={40} height={24} />
+  </XStack>
+);
 
-      {/* BodyWeight card skeleton */}
-      <YStack padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" gap="$md">
-        <XStack justifyContent="space-between" alignItems="center">
-          <SkeletonLoader width={140} height={20} />
-          <SkeletonLoader width={44} height={44} borderRadius="$full" />
-        </XStack>
-        <SkeletonLoader width={80} height={32} />
-        <SkeletonLoader width="60%" height={14} />
-        <SkeletonLoader width="100%" height={120} borderRadius="$md" />
-      </YStack>
+export const DashboardStatsSkeleton = () => (
+  <XStack gap="$md" paddingHorizontal="$lg">
+    <LoaderItem />
+  </XStack>
+);
 
-      {/* Strength card skeleton */}
-      <YStack padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" gap="$md">
-        <SkeletonLoader width={160} height={20} />
-        <SkeletonLoader width="100%" height={44} borderRadius="$md" />
-        <SkeletonLoader width="100%" height={160} borderRadius="$md" />
-      </YStack>
+export const StatsPageSkeleton = () => (
+  <YStack padding="$lg" gap="$md">
+    <SkeletonLoader width="60%" height={32} />
+    <XStack gap="$md">
+      <LoaderItem />
+      <LoaderItem />
+    </XStack>
+    <SkeletonLoader width="100%" height={200} />
+  </YStack>
+);
 
-      {/* Volume chart skeleton */}
-      <YStack borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface">
-        <SkeletonLoader width={140} height={16} margin="$md" />
-        <SkeletonLoader width="100%" height={200} borderRadius={0} />
-      </YStack>
-
-      {/* Activity grid skeleton */}
-      <YStack padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface">
-        <SkeletonLoader width="100%" height={140} borderRadius="$md" />
-      </YStack>
+export const DashboardSkeleton = () => (
+  <YStack gap="$lg" paddingVertical="$lg">
+    <XStack gap="$md" paddingHorizontal="$lg">
+      <LoaderItem />
+      <LoaderItem />
+    </XStack>
+    <YStack gap="$md" paddingHorizontal="$lg">
+      <SkeletonLoader width="40%" height={24} />
+      <SkeletonLoader width="100%" height={100} borderRadius="$lg" />
+      <SkeletonLoader width="100%" height={100} borderRadius="$lg" />
     </YStack>
-  );
-});
+  </YStack>
+);
 
-export const DashboardSkeleton = React.memo(function DashboardSkeleton() {
-  return (
-    <YStack gap="$lg" paddingHorizontal="$xl">
-      {/* Stats row */}
-      <XStack gap="$md">
-        <YStack flex={1} padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" borderWidth={1} borderColor="$borderColor" gap="$sm">
-          <SkeletonLoader width="60%" height={14} />
-          <SkeletonLoader width="50%" height={24} />
-        </YStack>
-        <YStack flex={1} padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" borderWidth={1} borderColor="$borderColor" gap="$sm">
-          <SkeletonLoader width="60%" height={14} />
-          <SkeletonLoader width="50%" height={24} />
-        </YStack>
-      </XStack>
+export const HistoryCardSkeleton = () => (
+  <YStack padding="$md" backgroundColor="$surfaceSecondary" borderRadius="$lg" gap="$sm">
+    <SkeletonLoader width="70%" height={20} />
+    <SkeletonLoader width="40%" height={16} />
+    <XStack gap="$md">
+      <SkeletonLoader width={60} height={24} />
+      <SkeletonLoader width={60} height={24} />
+    </XStack>
+  </YStack>
+);
 
-      {/* Weekly circles */}
-      <XStack justifyContent="center" gap="$sm">
-        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-          <SkeletonLoader key={i} width={28} height={28} borderRadius={14} />
-        ))}
-      </XStack>
-
-      {/* Last workout card */}
-      <YStack padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" gap="$md">
-        <SkeletonLoader width="50%" height={16} />
-        <SkeletonLoader width="100%" height={80} borderRadius="$md" />
-      </YStack>
-
-      {/* Routine cards */}
-      <YStack gap="$md">
-        <SkeletonLoader width={120} height={20} />
-        <YStack padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" gap="$sm">
-          <SkeletonLoader width="70%" height={20} />
-          <SkeletonLoader width="40%" height={14} />
-          <SkeletonLoader width="90%" height={16} />
-        </YStack>
-        <YStack padding="$md" borderRadius="$lg" borderCurve="continuous" backgroundColor="$surface" gap="$sm">
-          <SkeletonLoader width="60%" height={20} />
-          <SkeletonLoader width="45%" height={14} />
-          <SkeletonLoader width="80%" height={16} />
-        </YStack>
-      </YStack>
-    </YStack>
-  );
-});
+const LoaderItem = () => <SkeletonLoader width={100} height={80} borderRadius="$lg" />;

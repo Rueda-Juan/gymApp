@@ -7,40 +7,37 @@ import { format } from 'date-fns';
 import BottomSheet, { BottomSheetFlatList, BottomSheetView } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
 
-import { AppText } from '@/shared/ui/AppText';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { Screen } from '@/shared/ui/Screen';
-import { CardBase } from '@/shared/ui/Card';
-import { useExercises } from '@/features/exercise/hooks/useExercises';
-import { useStatsData } from '@/features/stats/hooks/useStatsData';
-import { getExerciseName } from '@/lib/exercise';
-import type { ExerciseDTO, WorkoutSetDTO } from '@shared';
-import type { WorkoutSet } from '@shared';
-import { WeeklyVolumeBarChart } from '@/ui/charts/WeeklyVolumeBarChart';
-import { ActivityGrid } from '@/ui/charts/ActivityGrid';
-import { calculateEpley1RM } from '@/lib/workout';
-import { StatsSummaryGrid } from '@/ui/stats/StatsSummaryGrid';
-import { BodyWeightCard } from '@/ui/stats/BodyWeightCard';
-import { StrengthProgressCard } from '@/ui/stats/StrengthProgressCard';
-import { StatsPageSkeleton } from '@/ui/layout/Loaders';
-import { ContentReveal } from '@/ui/feedback/ContentReveal';
-import { ROUTES } from '@/constants/routes';
+import { 
+  AppText, 
+  AppIcon, 
+  Screen, 
+  CardBase, 
+  ContentReveal 
+} from '@/shared/ui';
+import { useExerciseApi } from '@/shared/api';
+import { BodyWeightCard, StrengthProgressCard, StatsSummaryGrid } from '@/entities/stats';
+import { useStatsData } from './useStatsData';
+import { getExerciseName } from '@/entities/exercise';
+import { calculateEpley1RM } from '@/entities/workout';
+import { WeeklyVolumeBarChart, ActivityGrid } from '@/shared/ui/charts/PlaceholderCharts';
+import { StatsPageSkeleton } from '@/shared/ui/layout/Loaders';
+import { ROUTES } from '@/shared/constants/routes';
+import type { Exercise } from '@kernel';
 
 const STRENGTH_HISTORY_LIMIT = 20;
-
 const SheetItemSeparator = () => <YStack height={1} backgroundColor="$borderColor" />;
 
 type WeeklyChartPoint = { x: string; y: number };
 
-export default function StatsScreen() {
+export default function StatsPage() {
   const theme = useTheme();
-  const exerciseService = useExercises();
+  const exerciseService = useExerciseApi();
 
   const { loading, stats, weightHistory, summaries, trainedDates } = useStatsData();
 
-  const [exerciseList, setExerciseList] = useState<ExerciseDTO[]>([]);
+  const [exerciseList, setExerciseList] = useState<Exercise[]>([]);
   const [exercisesLoaded, setExercisesLoaded] = useState(false);
-  const [strengthExercise, setStrengthExercise] = useState<ExerciseDTO | null>(null);
+  const [strengthExercise, setStrengthExercise] = useState<Exercise | null>(null);
   const [strengthHistory, setStrengthHistory] = useState<{ x: string; y: number }[]>([]);
   const exerciseSheetRef = useRef<BottomSheet>(null);
   const sheetSnapPoints = useMemo(() => ['60%'], []);
@@ -49,25 +46,21 @@ export default function StatsScreen() {
     ? strengthHistory[strengthHistory.length - 1]?.y ?? 0
     : 0;
 
-  const selectStrengthExercise = useCallback(async (exercise: ExerciseDTO) => {
+  const selectStrengthExercise = useCallback(async (exercise: Exercise) => {
     setStrengthExercise(exercise);
     exerciseSheetRef.current?.close();
     try {
       const history = await exerciseService.getExerciseHistory(exercise.id, STRENGTH_HISTORY_LIMIT);
       const oneRMPoints = (history ?? [])
-        .filter((s: WorkoutSetDTO) => (s.weight ?? 0) > 0 && (s.reps ?? 0) > 0)
-        .map((s: WorkoutSetDTO) => ({
-          x: typeof s.createdAt === 'object' && s.createdAt !== null && 'toISOString' in s.createdAt
-            ? (s.createdAt as Date).toISOString()
-            : String(s.createdAt),
+        .filter((s: any) => (s.weight ?? 0) > 0 && (s.reps ?? 0) > 0)
+        .map((s: any) => ({
+          x: typeof s.date === 'string' ? s.date : (s.createdAt ? String(s.createdAt) : new Date().toISOString()),
           y: calculateEpley1RM(s.weight ?? 0, s.reps ?? 0),
         }))
         .filter((p: { x: string; y: number }) => p.y > 0 && p.x)
         .reverse();
       setStrengthHistory(oneRMPoints);
     } catch {
-      // Log error and show toast for observability
-       
       console.error('[Stats] Failed to load progression for exercise', exercise?.id);
       Toast.show({ type: 'error', text1: 'Error al cargar progresión', position: 'top' });
     }
@@ -80,8 +73,6 @@ export default function StatsScreen() {
         setExerciseList(allExercises ?? []);
         setExercisesLoaded(true);
       } catch (e) {
-        // Log and surface an error to the user
-         
         console.error('[Stats] Failed to load exercises:', e);
         Toast.show({ type: 'error', text1: 'No se pudieron cargar los ejercicios', position: 'top' });
         return;
@@ -90,7 +81,7 @@ export default function StatsScreen() {
     exerciseSheetRef.current?.expand();
   }, [exerciseService, exercisesLoaded]);
 
-  const renderExerciseItem = useCallback(({ item }: { item: ExerciseDTO }) => (
+  const renderExerciseItem = useCallback(({ item }: { item: Exercise }) => (
     <Pressable onPress={() => selectStrengthExercise(item)} accessibilityRole="button" accessibilityLabel={`Seleccionar ${getExerciseName(item)}`}>
       <XStack paddingVertical="$md" alignItems="center" justifyContent="space-between">
         <AppText variant="bodyMd">{getExerciseName(item)}</AppText>
@@ -135,25 +126,23 @@ export default function StatsScreen() {
           onOpenExercisePicker={handleOpenExercisePicker}
         />
 
-        {/* Weekly Volume Chart */}
         <CardBase padding="$none">
           <AppText variant="bodyMd" color="textTertiary" fontWeight="600" padding="$md">
             Volumen Semanal
           </AppText>
           <WeeklyVolumeBarChart
             data={weeklyChartData}
-            xTickFormat={(t) => {
+            xTickFormat={(t: any) => {
               try {
                 return format(new Date(t), 'EE');
               } catch {
                 return String(t);
               }
             }}
-            yTickFormat={(x) => `${x / 1000}k`}
+            yTickFormat={(x: any) => `${(x as number) / 1000}k`}
           />
         </CardBase>
 
-        {/* Activity Grid */}
         <CardBase padding="$md">
           <ActivityGrid trainedDates={trainedDates} />
         </CardBase>
@@ -162,7 +151,6 @@ export default function StatsScreen() {
       </ContentReveal>
     </Screen>
 
-    {/* BottomSheet selector de ejercicio */}
     <BottomSheet
       ref={exerciseSheetRef}
       index={-1}
@@ -176,7 +164,7 @@ export default function StatsScreen() {
       </BottomSheetView>
       <BottomSheetFlatList
         data={exerciseList}
-        keyExtractor={(item: ExerciseDTO) => item.id}
+        keyExtractor={(item: Exercise) => item.id}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
         ItemSeparatorComponent={SheetItemSeparator}
         renderItem={renderExerciseItem}

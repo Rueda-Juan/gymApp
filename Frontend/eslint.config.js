@@ -1,12 +1,23 @@
-const { defineConfig } = require('eslint/config');
-const expoConfig = require('eslint-config-expo/flat');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
+const tsParser = require('@typescript-eslint/parser');
+const fsdPlugin = require('@conarti/eslint-plugin-feature-sliced');
 
-module.exports = defineConfig([
-  expoConfig,
-
+module.exports = [
   {
-    ignores: ['dist/*', '.expo/**'],
-
+    ignores: ['dist/*', '.expo/**', 'node_modules/**', '**/__tests__/**'],
+  },
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        project: './tsconfig.json',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+      'feature-sliced': fsdPlugin,
+    },
     settings: {
       'import/resolver': {
         typescript: {
@@ -14,67 +25,11 @@ module.exports = defineConfig([
         },
       },
     },
-  },
-
-  // 🔥 ENFORCEMENT DE ARQUITECTURA (VERSIÓN CORRECTA)
-  {
     rules: {
-      // ❗ obligatorio desactivar base rule
+      'feature-sliced/layers-slices': 'error',
+      'feature-sliced/absolute-relative': 'error',
+      'feature-sliced/public-api': 'error',
       'no-restricted-imports': 'off',
-
-      '@typescript-eslint/no-restricted-imports': [
-        'warn',
-        {
-          patterns: [
-            // 🚫 NO deep imports dentro de features
-            {
-              group: [
-                '@/features/**/components/*',
-                '@/features/**/hooks/*',
-                '@/features/**/utils/*',
-                '@/features/**/store/*',
-              ],
-              message: 'Importa solo desde el index del feature',
-            },
-
-            // 🚫 NO usar internals de otros features
-            {
-              group: ['@/features/*/*'],
-              message: 'Usa el public API del feature (index.ts)',
-            },
-
-            // 🚫 legacy utils (ya migrado a lib/domain)
-            {
-              group: ['@/utils/*'],
-              message: 'Usa lib/ o domain/',
-            },
-
-            // 🚫 legacy components
-            {
-              group: ['@/components/*'],
-              message: 'Usa ui/',
-            },
-
-            // 🚫 acceso directo a shared interno
-            {
-              group: ['@/../packages/shared/src/*'],
-              message: 'Importa solo desde @shared',
-            },
-
-            // 🚫 evitar saltarse barrels en lib
-            {
-              group: ['@/lib/**/!index'],
-              message: 'Importa desde el entrypoint de lib',
-            },
-
-            // 🚫 evitar saltarse barrels en domain
-            {
-              group: ['@/domain/**/!index'],
-              message: 'Importa desde el entrypoint de domain',
-            },
-          ],
-        },
-      ],
     },
   },
-]);
+];

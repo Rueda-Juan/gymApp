@@ -13,7 +13,7 @@ import { XStack, YStack, useTheme } from 'tamagui';
 import { AppText } from './AppText';
 import { RotateCcw } from 'lucide-react-native';
 import { AppIcon } from './AppIcon';
-import { motion } from '@/constants/motion';
+import { motion } from './theme/motion';
 
 interface UndoToastProps {
   visible: boolean;

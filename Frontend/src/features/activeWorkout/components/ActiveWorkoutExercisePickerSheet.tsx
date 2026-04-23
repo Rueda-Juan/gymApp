@@ -5,11 +5,11 @@ import { Search, X } from 'lucide-react-native';
 import { XStack, useTheme } from 'tamagui';
 import { AppText } from '@/shared/ui/AppText';
 import { AppIcon } from '@/shared/ui/AppIcon';
-import { EmptyState } from '@/shared/ui/EmptyState';
-import { getExerciseName } from '@/utils/exercise';
-import { useBottomSheetStyles } from '@/ui/hooks/useBottomSheetStyles';
-import { FONT_SCALE } from '@/tamagui.config';
-import type { ExerciseDTO } from '@shared';
+import { EmptyState } from '@/shared/ui/feedback/EmptyState';
+import { getExerciseName } from '@/entities/exercise';
+import { useBottomSheetStyles } from '@/shared/ui/hooks/useBottomSheetStyles';
+import { FONT_SCALE } from '@/shared/ui/theme/tamagui.config';
+import type { ExerciseDTO } from '@kernel';
 
 const SHEET_PADDING = 12;
 const SEARCH_INPUT_HEIGHT = 48;

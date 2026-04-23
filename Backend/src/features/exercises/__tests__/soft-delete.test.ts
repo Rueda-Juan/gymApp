@@ -1,6 +1,7 @@
 import { ExerciseService } from '../exercise.service';
 import type { ExerciseRepository } from '../exercise.repository';
 import type { Exercise } from '../exercise.entity';
+import type { WorkoutRepository } from '../../workouts/workout.repository';
 import { ValidationError, NotFoundError } from '../../../core/errors/errors';
 
 function buildExercise(overrides: Partial<Exercise> = {}): Exercise {
@@ -37,7 +38,7 @@ describe('ExerciseService — deleteExercise soft-delete behavior', () => {
       delete: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<ExerciseRepository>;
 
-    const mockWorkoutRepo = {} as any;
+    const mockWorkoutRepo = {} as unknown as jest.Mocked<WorkoutRepository>;
 
     service = new ExerciseService(mockRepo, mockWorkoutRepo);
   });

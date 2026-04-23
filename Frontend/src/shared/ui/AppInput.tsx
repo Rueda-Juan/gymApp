@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { Input, InputProps} from 'tamagui';
-import { FONT_SCALE } from '@/tamagui.config';
+import { FONT_SCALE } from './theme/tamagui.config';
 
 interface AppInputProps extends InputProps {
   variant?: 'default' | 'compact';

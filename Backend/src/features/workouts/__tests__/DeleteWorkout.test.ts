@@ -1,14 +1,17 @@
+import type * as SQLite from 'expo-sqlite';
 import { WorkoutService } from '../workout.service';
 import type { WorkoutRepository } from '../workout.repository';
 import type { StatsRepository } from '../../stats/stats.repository';
 import type { Workout } from '../workout.entity';
 import { NotFoundError } from '../../../core/errors/errors';
+import type { ExerciseLoadCacheRepository } from '../../exercises/exercise-load-cache.repository';
+import type { RoutineRepository } from '../../routines/routine.repository';
 
 const mockWithTransactionAsync = jest.fn(async (cb: () => Promise<void>) => cb());
 
 const mockDb = {
   withTransactionAsync: mockWithTransactionAsync,
-} as any;
+} as unknown as SQLite.SQLiteDatabase;
 
 function createWorkout(overrides: Partial<Workout> = {}): Workout {
   return {
@@ -42,7 +45,13 @@ describe('DeleteWorkoutUseCase', () => {
       recalculateDailyStats: jest.fn(),
     } as unknown as jest.Mocked<StatsRepository>;
 
-    useCase = new WorkoutService(mockWorkoutRepo, mockStatsRepo, null as any, null as any, mockDb);
+    useCase = new WorkoutService(
+      mockWorkoutRepo,
+      mockStatsRepo,
+      {} as unknown as ExerciseLoadCacheRepository,
+      {} as unknown as RoutineRepository,
+      mockDb
+    );
     mockWithTransactionAsync.mockClear();
   });
 

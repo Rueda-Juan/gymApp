@@ -1,0 +1,186 @@
+import React from 'react';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { router } from 'expo-router';
+import { Alert } from 'react-native';
+import { ActiveWorkoutController } from '../ActiveWorkoutController';
+import { useActiveWorkout, useRestTimer } from '@/entities/workout';
+import { useActiveWorkoutController } from '@/features/activeWorkout';
+
+// Mocks
+jest.mock('expo-router', () => ({
+  router: {
+    replace: jest.fn(),
+    push: jest.fn(),
+  },
+  useLocalSearchParams: jest.fn(() => ({})),
+}));
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0 }),
+}));
+
+
+
+jest.mock('@/shared/ui', () => {
+  const { View, Text } = require('react-native');
+  return {
+    Screen: ({ children }: any) => <View>{children}</View>,
+    AppText: ({ children }: any) => <Text>{children}</Text>,
+    AppIcon: () => null,
+  };
+});
+
+jest.mock('@/entities/workout', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    useActiveWorkout: jest.fn(),
+    useWorkoutTimer: jest.fn(() => ({ formattedTime: '00:05:00' })),
+    useRestTimer: jest.fn(),
+    PlateCalculatorSheet: React.forwardRef((_props: any, ref: any) => {
+      React.useImperativeHandle(ref, () => ({ dismiss: jest.fn() }));
+      return <View testID="plate-calculator" />;
+    }),
+    usePreviousSets: jest.fn(() => ({ resolvePreviousWeight: jest.fn() })),
+  };
+});
+
+jest.mock('@/features/activeWorkout', () => {
+  const { View } = require('react-native');
+  return {
+    useActiveWorkoutController: jest.fn(),
+    ActiveWorkoutOptionsSheet: () => <View testID="options-sheet" />,
+    ActiveWorkoutExercisePickerSheet: () => <View testID="picker-sheet" />,
+    WorkoutSessionNoteSheet: () => <View testID="note-sheet" />,
+    PRCelebrationOverlay: () => null,
+  };
+});
+
+describe('ActiveWorkoutController', () => {
+  const mockExercises = [
+    { exerciseId: '1', name: 'Press de Banca', sets: [] },
+    { exerciseId: '2', name: 'Sentadilla', sets: [] },
+  ];
+
+  const mockFinishWorkout = jest.fn();
+  const mockCancelWorkout = jest.fn();
+  const mockSetSessionNote = jest.fn();
+
+  const mockState = {
+    optionsSheetRef: { current: { expand: jest.fn(), close: jest.fn() } },
+    bottomSheetRef: { current: { expand: jest.fn(), close: jest.fn() } },
+    noteSheetRef: { current: { expand: jest.fn(), close: jest.fn() } },
+    plateCalcSheetRef: { current: { dismiss: jest.fn() } },
+    isFirst: true,
+    isLast: false,
+    weightSuggestion: null,
+    focusedSetId: null,
+  };
+
+  const mockActions = {
+    skipExercise: jest.fn(),
+    updateSetValues: jest.fn(),
+    onSetToggle: jest.fn(),
+    addSet: jest.fn(),
+    goToPrev: jest.fn(),
+    goToNext: jest.fn(),
+    handleOpenRestTimer: jest.fn(),
+    openPlateCalculator: jest.fn(),
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (useActiveWorkout as unknown as jest.Mock).mockImplementation((selector) => selector({
+      isActive: true,
+      routineName: 'Rutina Alpha',
+      exercises: mockExercises,
+      currentExerciseIndex: 0,
+      sessionNote: '',
+      setSessionNote: mockSetSessionNote,
+      finishWorkout: mockFinishWorkout,
+      cancelWorkout: mockCancelWorkout,
+    }));
+    (useRestTimer as unknown as jest.Mock).mockImplementation((selector) => selector({
+      isActive: false,
+      getRemainingSeconds: () => 0,
+    }));
+    (useActiveWorkoutController as unknown as jest.Mock).mockReturnValue({
+      actions: mockActions,
+      state: mockState,
+    });
+    jest.spyOn(Alert, 'alert');
+  });
+
+  it('no renderiza nada si no hay entrenamiento activo', () => {
+    (useActiveWorkout as unknown as jest.Mock).mockImplementation((selector) => selector({ 
+      isActive: false,
+      exercises: [],
+      currentExerciseIndex: 0
+    }));
+    const { toJSON } = render(<ActiveWorkoutController />);
+    expect(toJSON()).toBeNull();
+  });
+
+  it('renderiza el entrenamiento activo correctamente', () => {
+    const { getByText } = render(<ActiveWorkoutController />);
+    expect(getByText('Press de Banca')).toBeTruthy();
+  });
+
+  it('maneja la finalización del entrenamiento con confirmación', async () => {
+    const { getByText } = render(<ActiveWorkoutController />);
+    fireEvent.press(getByText('Finalizar'));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Finalizar entrenamiento',
+      expect.any(String),
+      expect.any(Array)
+    );
+
+    // Simular confirmación
+    const confirmFinish = (Alert.alert as unknown as jest.Mock).mock.calls[0][2][1].onPress;
+    confirmFinish();
+
+    expect(mockFinishWorkout).toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledWith('/summary');
+  });
+
+  it('maneja la cancelación del entrenamiento con confirmación', async () => {
+    const { getByText } = render(<ActiveWorkoutController />);
+    fireEvent.press(getByText('Cancelar'));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Cancelar entrenamiento',
+      expect.any(String),
+      expect.any(Array)
+    );
+
+    // Simular confirmación
+    const confirmCancel = (Alert.alert as unknown as jest.Mock).mock.calls[0][2][1].onPress;
+    confirmCancel();
+
+    expect(mockCancelWorkout).toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledWith('/(tabs)/');
+  });
+
+  it('abre el sheet de notas al presionar el botón de notas', () => {
+    const { getByText } = render(<ActiveWorkoutController />);
+    fireEvent.press(getByText('Notas'));
+    expect(mockState.noteSheetRef.current.expand).toHaveBeenCalled();
+  });
+
+  it('navega entre ejercicios usando los controles inferiores', () => {
+    const { getByText } = render(<ActiveWorkoutController />);
+    
+    fireEvent.press(getByText('Siguiente'));
+    expect(mockActions.goToNext).toHaveBeenCalled();
+
+    fireEvent.press(getByText('Anterior'));
+    expect(mockActions.goToPrev).toHaveBeenCalled();
+  });
+
+  it('abre el timer de descanso al presionar el botón correspondiente', () => {
+    const { getByLabelText } = render(<ActiveWorkoutController />);
+    fireEvent.press(getByLabelText('Abrir timer de descanso'));
+    expect(mockActions.handleOpenRestTimer).toHaveBeenCalled();
+  });
+});

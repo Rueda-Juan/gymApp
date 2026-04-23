@@ -1,0 +1,32 @@
+import { renderHook, act } from '@testing-library/react-native';
+import { usePreviousSets } from '../../api/usePreviousSets';
+
+// Mock dependencies
+jest.mock('@/entities/workout/model/useActiveWorkout', () => ({
+  useActiveWorkout: jest.fn(() => ({ workoutId: 'mockWorkoutId' }))
+}));
+jest.mock('@/shared/api/workout/useWorkoutApi', () => ({
+  useWorkout: () => ({
+    getPreviousSets: jest.fn(() => Promise.resolve([{ weight: 50 }, { weight: 60 }]))
+  })
+}));
+
+describe('usePreviousSets', () => {
+  it('should resolve previous weight from cache', async () => {
+    const { result } = renderHook(() => usePreviousSets('exercise1'));
+    // Simula la actualizaciÃƒÆ’Ã‚Â³n asincrÃƒÆ’Ã‚Â³nica
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const exercise = { exerciseId: 'exercise1', sets: [{ weight: 0 }, { weight: 0 }] };
+    expect(result.current.resolvePreviousWeight(exercise, 0)).toBe(50);
+    expect(result.current.resolvePreviousWeight(exercise, 1)).toBe(60);
+  });
+
+  it('should fallback to previous set weight if no history', () => {
+    const { result } = renderHook(() => usePreviousSets('exercise2'));
+    const exercise = { exerciseId: 'exercise2', sets: [{ weight: 10 }, { weight: 20 }] };
+    expect(result.current.resolvePreviousWeight(exercise, 1)).toBe(10);
+    expect(result.current.resolvePreviousWeight(exercise, 0)).toBe(0);
+  });
+});

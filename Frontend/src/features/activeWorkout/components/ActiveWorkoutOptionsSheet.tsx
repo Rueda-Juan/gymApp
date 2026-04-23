@@ -5,11 +5,11 @@ import { Minus, Plus, X, ChevronRight } from 'lucide-react-native';
 import { XStack, YStack } from 'tamagui';
 import { AppText } from '@/shared/ui/AppText';
 import { AppIcon } from '@/shared/ui/AppIcon';
-import { useBottomSheetStyles } from '@/ui/hooks/useBottomSheetStyles';
-import { BodyAnatomySvg } from '@/shared/ui/BodyAnatomySvg';
+import { useBottomSheetStyles } from '@/shared/ui/hooks/useBottomSheetStyles';
+import { BodyAnatomySvg } from '@/entities/anatomy';
 import { Collapsible } from '@/shared/ui/Collapsible';
-import type { MuscleGroup, ExerciseDTO } from '@shared';
-import type { WorkoutExerciseState } from '@/store/useActiveWorkout';
+import type { MuscleGroup, ExerciseDTO } from '@kernel';
+import type { WorkoutExerciseState } from '@/shared/types/workout';
 
 const SHEET_PADDING = 12;
 const REST_TIMER_STEP = 15;

@@ -5,8 +5,8 @@ import { X } from 'lucide-react-native';
 import { XStack } from 'tamagui';
 import { AppText } from '@/shared/ui/AppText';
 import { AppIcon } from '@/shared/ui/AppIcon';
-import { useBottomSheetStyles } from '@/ui/hooks/useBottomSheetStyles';
-import { FONT_SCALE } from '@/tamagui.config';
+import { useBottomSheetStyles } from '@/shared/ui/hooks/useBottomSheetStyles';
+import { FONT_SCALE } from '@/shared/ui/theme/tamagui.config';
 
 const SHEET_PADDING = 20;
 const INPUT_BORDER_RADIUS = 12;

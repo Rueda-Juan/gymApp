@@ -1,6 +1,6 @@
 import React from 'react';
 import { YStack, YStackProps } from 'tamagui';
-import { elevation } from '@/constants/elevation';
+import { elevation } from './theme/elevation';
 
 type CardVariant = 'default' | 'outlined' | 'ghost';
 

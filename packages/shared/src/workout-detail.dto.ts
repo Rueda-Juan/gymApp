@@ -1,6 +1,4 @@
-import type { ID, ISODate } from './exercise.dto';
-import type { ExerciseDTO } from './exercise.dto';
-import type { WorkoutSetDTO } from './workout.dto';
+import type { ID, ISODate, ExerciseDTO, WorkoutSetDTO } from './types';
 
 // DTO para iniciar un workout desde una rutina
 export interface StartableRoutineDTO {

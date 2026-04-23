@@ -1,6 +1,7 @@
 import { ExerciseService } from '../exercise.service';
 import type { ExerciseRepository } from '../exercise.repository';
 import type { Exercise } from '../exercise.entity';
+import type { WorkoutRepository } from '../../workouts/workout.repository';
 import { ValidationError } from '../../../core/errors/errors';
 
 function buildExerciseParams(overrides: Partial<Omit<Exercise, 'id'>> = {}): Omit<Exercise, 'id'> {
@@ -34,7 +35,7 @@ describe('ExerciseService — createExercise uniqueness constraint', () => {
       save: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<ExerciseRepository>;
 
-    const mockWorkoutRepo = {} as any;
+    const mockWorkoutRepo = {} as unknown as jest.Mocked<WorkoutRepository>;
 
     service = new ExerciseService(mockRepo, mockWorkoutRepo);
   });

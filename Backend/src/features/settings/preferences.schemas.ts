@@ -5,6 +5,7 @@ export const UserPreferencesSchema = z.object({
   weightUnit: z.enum(['kg', 'lbs']).default('kg'),
   theme: z.enum(['light', 'dark', 'system']).default('dark'),
   defaultRestSeconds: z.number().int().min(0).default(90),
+  hapticsEnabled: z.boolean().default(true),
 });
 
 export type UserPreferencesInput = z.infer<typeof UserPreferencesSchema>;

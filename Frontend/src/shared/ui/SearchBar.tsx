@@ -3,11 +3,11 @@ import { TextInput } from 'react-native';
 import { XStack, useTheme } from 'tamagui';
 import { Search } from 'lucide-react-native';
 
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { FONT_SCALE } from '@/tamagui.config';
+import { AppIcon } from './AppIcon';
+import { FONT_SCALE } from './theme/tamagui.config';
 
 const SEARCH_BAR_HEIGHT = 48;
-const FALLBACK_ACCESSIBILITY_LABEL = 'Campo de búsqueda';
+const FALLBACK_ACCESSIBILITY_LABEL = 'Campo de bÃƒÆ’Ã‚Âºsqueda';
 
 interface SearchBarProps {
   value: string;

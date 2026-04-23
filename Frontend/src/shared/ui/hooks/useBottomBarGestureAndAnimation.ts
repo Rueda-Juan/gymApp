@@ -2,9 +2,9 @@ import { useEffect, useCallback } from 'react';
 import { useTheme } from 'tamagui';
 import { useSharedValue, useAnimatedStyle, withSequence, withTiming, withSpring, runOnJS, Easing } from 'react-native-reanimated';
 import { Gesture } from 'react-native-gesture-handler';
-import { logEvent } from '@/utils/instrumentation';
-import { useMotion } from '@/ui/hooks/useMotion';
-import { motion } from '@/constants/motion';
+import { logEvent } from '../../lib/instrumentation';
+import { useMotion } from '../../lib/hooks/useMotion';
+import { motion } from '../theme/motion';
 import {
   BOUNCE_INTERVAL_MS,
   BOUNCE_OFFSET,
@@ -12,7 +12,7 @@ import {
   SWIPE_UP_THRESHOLD,
   GESTURE_ACTIVE_OFFSET_Y,
   GESTURE_FAIL_OFFSET_X,
-} from '@/constants/bottomBar';
+} from '../../config/bottomBar';
 
 interface UseBottomBarGestureAndAnimationProps {
   insetsBottom: number;

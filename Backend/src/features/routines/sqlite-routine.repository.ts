@@ -6,35 +6,9 @@ import { fromSQLiteDateTime, toSQLiteDateTime } from '../../core/utils/date';
 import { generateId } from '../../core/utils/generate-id';
 import { safeJsonParse } from '../../core/utils/safe-json';
 
-interface RoutineRow {
-  id: string;
-  name: string;
-  notes: string | null;
-  created_at: string;
-}
 
-interface RoutineExerciseRow {
-  id: string;
-  routine_id: string;
-  exercise_id: string;
-  order_index: number;
-  target_sets: number;
-  target_reps: number;
-  min_reps: number | null;
-  max_reps: number | null;
-  rest_seconds: number | null;
-  superset_group: number | null;
-}
 
-interface JoinedRoutineExerciseRow extends RoutineRow, RoutineExerciseRow {
-  r_id: string;
-  re_id: string | null;
-  ex_id: string | null;
-  ex_name: string | null;
-  ex_name_es: string | null;
-  ex_primary_muscles: string | null;
-  ex_equipment: string | null;
-}
+
 
 interface ExerciseDetails {
   id: string;
@@ -45,19 +19,6 @@ interface ExerciseDetails {
 }
 
 type RoutineExerciseWithDetails = RoutineExercise & { exercise: ExerciseDetails };
-
-function mapRowToRoutineExercise(row: RoutineExerciseRow): RoutineExercise {
-  return {
-    id: row.id,
-    exerciseId: row.exercise_id,
-    orderIndex: row.order_index,
-    targetSets: row.target_sets,
-    minReps: row.min_reps ?? row.target_reps,
-    maxReps: row.max_reps ?? row.target_reps + 4,
-    restSeconds: row.rest_seconds,
-    supersetGroup: row.superset_group,
-  };
-}
 
 function collectMuscles(exercises: RoutineExerciseWithDetails[], maxBadges = 3): string[] {
   const musclesSet = new Set<string>();
