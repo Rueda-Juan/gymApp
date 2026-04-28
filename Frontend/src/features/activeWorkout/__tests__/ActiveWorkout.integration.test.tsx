@@ -1,10 +1,95 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import ActiveWorkoutPage from '@/pages/activeWorkout/ActiveWorkoutPage';
 import { exerciseFactory, routineFactory } from '@/shared/lib/tests/factories';
-import { useActiveWorkout } from '@/entities/workout';
-
 import { Alert } from 'react-native';
+
+// 1. TAMAGUI MOCK (CRITICAL)
+jest.mock('tamagui', () => {
+  const React = require('react');
+  const { View, Text, TouchableOpacity } = require('react-native');
+  
+  const MockStack = React.forwardRef((props: any, ref: any) => {
+    const { children, style, ...rest } = props;
+    return <View ref={ref} style={style} {...rest}>{children}</View>;
+  });
+
+  const MockButton = React.forwardRef((props: any, ref: any) => {
+    const { children, style, ...rest } = props;
+    return <TouchableOpacity ref={ref} style={style} {...rest}>{children}</TouchableOpacity>;
+  });
+
+  return {
+    XStack: MockStack,
+    YStack: MockStack,
+    ZStack: MockStack,
+    View: MockStack,
+    Button: MockButton,
+    Text: (props: any) => <Text {...props} />,
+    useTheme: () => ({
+      primary: { val: '#E8762E' },
+      primarySubtle: { val: 'rgba(232, 118, 46, 0.1)' },
+      surfaceSecondary: { val: '#1E1B16' },
+      borderColor: { val: 'rgba(255, 255, 255, 0.1)' },
+      color: { val: '#FFFFFF' },
+      textSecondary: { val: '#A0A0A0' },
+      textTertiary: { val: '#606060' },
+      surface: { val: '#121212' },
+      danger: { val: '#FF4D4D' },
+      dangerSubtle: { val: 'rgba(255, 77, 77, 0.1)' },
+      success: { val: '#4ADE80' },
+      successSubtle: { val: 'rgba(74, 222, 128, 0.1)' },
+      warning: { val: '#FACC15' },
+    }),
+    createTamagui: jest.fn((config) => config),
+    createTokens: jest.fn((tokens) => tokens),
+    createFont: jest.fn((font) => font),
+    TamaguiProvider: ({ children }: any) => children,
+  };
+});
+
+// 2. REANIMATED MOCK
+jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+  const { View, Text, Image } = require('react-native');
+  const mock = jest.requireActual('react-native-reanimated/mock');
+  
+  const AnimatedMock = {
+    ...mock.default,
+    View: View,
+    Text: Text,
+    Image: Image,
+    createAnimatedComponent: (comp: any) => comp,
+  };
+
+  return {
+    __esModule: true,
+    ...mock,
+    default: AnimatedMock,
+    useSharedValue: (val: any) => ({ value: val }),
+    useAnimatedStyle: (cb: any) => cb(),
+    useAnimatedProps: (cb: any) => cb(),
+    withTiming: (val: any) => val,
+    withSpring: (val: any) => val,
+    createAnimatedComponent: (comp: any) => comp,
+    interpolate: (val: any, input: any, output: any) => output[0],
+    View: View,
+    Text: Text,
+    Image: Image,
+    FadeIn: { duration: () => ({ delay: () => {} }) },
+    FadeOut: { duration: () => ({ delay: () => {} }) },
+    FadeInDown: { duration: () => ({ delay: () => {} }) },
+    Layout: { springify: () => ({ damping: () => {} }) },
+    Easing: {
+      linear: (x: any) => x,
+      bezier: () => (x: any) => x,
+      in: (x: any) => x,
+      out: (x: any) => x,
+      inOut: (x: any) => x,
+      quad: (x: any) => x,
+      cubic: (x: any) => x,
+    },
+  };
+});
 
 // Mock simpler things that are outside our domain
 jest.mock('expo-router', () => ({
@@ -52,27 +137,192 @@ jest.mock('@gorhom/bottom-sheet', () => {
   };
 });
 
-
-
-// Mock Tamagui hooks that might fail in non-provider context
-jest.mock('tamagui', () => {
-  const actual = jest.requireActual('tamagui');
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  const { View } = require('react-native');
   return {
-    ...actual,
-    useTheme: () => ({
-      primary: { val: '#E8762E', get: () => '#E8762E' },
-      surfaceSecondary: { val: '#1E1B16', get: () => '#1E1B16' },
-      borderColor: { val: 'rgba(255, 255, 255, 0.1)', get: () => 'rgba(255, 255, 255, 0.1)' },
-      color: { val: '#FFFFFF', get: () => '#FFFFFF' },
-      textSecondary: { val: '#A0A0A0', get: () => '#A0A0A0' },
-      textTertiary: { val: '#606060', get: () => '#606060' },
-      surface: { val: '#121212', get: () => '#121212' },
-      danger: { val: '#FF4D4D', get: () => '#FF4D4D' },
-    }),
+    GestureDetector: ({ children }: any) => children,
+    Gesture: {
+      Pan: () => ({
+        activeCursor: jest.fn().mockReturnThis(),
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+        onFinalize: jest.fn().mockReturnThis(),
+        withTestId: jest.fn().mockReturnThis(),
+      }),
+    },
+    GestureHandlerRootView: ({ children }: any) => <View>{children}</View>,
   };
 });
 
+jest.mock('lucide-react-native', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockIcon = (props: any) => <View {...props} />;
+  return {
+    Check: MockIcon,
+    Flame: MockIcon,
+    Trash2: MockIcon,
+    ChevronDown: MockIcon,
+    ChevronUp: MockIcon,
+    X: MockIcon,
+    MoreVertical: MockIcon,
+    Plus: MockIcon,
+    SkipForward: MockIcon,
+    TrendingUp: MockIcon,
+    ChevronLeft: MockIcon,
+    ChevronRight: MockIcon,
+    History: MockIcon,
+    Search: MockIcon,
+    Timer: MockIcon,
+    Dumbbell: MockIcon,
+    User: MockIcon,
+    Settings: MockIcon,
+    Calendar: MockIcon,
+    BarChart2: MockIcon,
+    Play: MockIcon,
+    StopCircle: MockIcon,
+    ArrowLeft: MockIcon,
+    ArrowRight: MockIcon,
+    Copy: MockIcon,
+    Edit2: MockIcon,
+    Info: MockIcon,
+    Clock: MockIcon,
+  };
+});
+
+jest.mock('@/shared/ui/AppButton', () => {
+  const React = require('react');
+  const { TouchableOpacity, Text } = require('react-native');
+  return {
+    AppButton: (props: any) => (
+      <TouchableOpacity onPress={props.onPress} testID={props.testID}>
+        <Text>{props.label || props.children}</Text>
+      </TouchableOpacity>
+    ),
+    IconButton: (props: any) => (
+      <TouchableOpacity onPress={props.onPress} testID={props.testID}>
+        {props.icon}
+      </TouchableOpacity>
+    ),
+  };
+});
+
+
+
+jest.mock('@/shared/ui/Badge', () => {
+  const React = require('react');
+  const { View, Text } = require('react-native');
+  return {
+    Badge: ({ label }: any) => <View><Text>{label}</Text></View>,
+  };
+});
+
+
+
+
+
+
+
+
+
+jest.mock('@/entities/workout/ui/SetRow', () => {
+  const React = require('react');
+  const { View, Text } = require('react-native');
+  return {
+    SetRow: ({ index, set }: any) => (
+      <View testID="workout-set-row">
+        <Text>Set {index + 1}</Text>
+      </View>
+    ),
+  };
+});
+
+jest.mock('@/widgets/activeWorkout/ui/WorkoutHeader', () => {
+  const React = require('react');
+  const { View, Text, TouchableOpacity } = require('react-native');
+  return {
+    WorkoutHeader: ({ onCancel, onFinish }: any) => (
+      <View>
+        <TouchableOpacity onPress={onCancel}><Text>Cancelar</Text></TouchableOpacity>
+        <TouchableOpacity onPress={onFinish}><Text>Finalizar</Text></TouchableOpacity>
+      </View>
+    ),
+  };
+});
+
+jest.mock('@/widgets/activeWorkout/ui/ActiveWorkoutBottomBar', () => {
+  const React = require('react');
+  const { View, Text, TouchableOpacity } = require('react-native');
+  return {
+    ActiveWorkoutBottomBar: ({ onNext, onPrev }: any) => (
+      <View>
+        <TouchableOpacity onPress={onPrev}><Text>Anterior</Text></TouchableOpacity>
+        <TouchableOpacity onPress={onNext}><Text>Siguiente</Text></TouchableOpacity>
+      </View>
+    ),
+  };
+});
+
+jest.mock('@/entities/workout/ui/SetRowNumberInput', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    SetRowNumberInput: () => <View />,
+  };
+});
+
+jest.mock('@/entities/workout/ui/SetRowRirSelector', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    SetRowRirSelector: () => <View />,
+  };
+});
+
+
+
+jest.mock('@/features/activeWorkout', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockSheet = () => <View />;
+  return {
+    ...jest.requireActual('@/features/activeWorkout'),
+    useRestTimer: Object.assign(
+      jest.fn((selector) => selector({ isActive: false, getRemainingSeconds: () => 0 })),
+      { 
+        getState: () => ({ stopTimer: jest.fn() }),
+        subscribe: jest.fn(),
+      }
+    ),
+    ActiveWorkoutOptionsSheet: MockSheet,
+    ActiveWorkoutExercisePickerSheet: MockSheet,
+    WorkoutSessionNoteSheet: MockSheet,
+    PRCelebrationOverlay: MockSheet,
+    ActiveWorkoutRestTimerChip: MockSheet,
+    useWorkoutSummary: jest.fn(),
+    useStartWorkout: jest.fn(),
+    useSetCompletion: jest.fn(),
+    useSupersetFlow: jest.fn(),
+  };
+});
+
+jest.mock('@/entities/workout', () => {
+  const actual = jest.requireActual('@/entities/workout');
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    ...actual,
+    PlateCalculatorSheet: () => <View />,
+  };
+});
+
+
+
 import { DIProvider } from '@/shared/context/DIContext';
+import ActiveWorkoutPage from '@/pages/activeWorkout/ActiveWorkoutPage';
+import { useActiveWorkout } from '@/entities/workout';
 
 describe('ActiveWorkout Integration Flow', () => {
   const exercises = exerciseFactory.buildList(2);

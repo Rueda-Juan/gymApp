@@ -1,7 +1,7 @@
 import type * as SQLite from 'expo-sqlite';
 import type { UserPreferences } from './user-preferences.entity';
 import type { UserPreferencesRepository } from './user-preferences.repository';
-import { DatabaseError } from '../../core/errors/errors';
+import { DatabaseError } from '@core/errors/errors';
 
 export class SQLiteUserPreferencesRepository implements UserPreferencesRepository {
   constructor(private readonly db: SQLite.SQLiteDatabase) {}

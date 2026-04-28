@@ -1,4 +1,4 @@
-import { ExerciseStats } from '../exercise-stats.entity';
+import { ExerciseStats } from '@entities/stats';
 import { ExerciseStatsDTO } from '@shared';
 
 export function toExerciseStatsDTO(entity: ExerciseStats): ExerciseStatsDTO {

@@ -16,6 +16,7 @@ describe('ActiveWorkoutBottomBar', () => {
     onOpenNote: jest.fn(),
     onOpenRestTimer: jest.fn(),
     onNext: jest.fn(),
+    onFinish: jest.fn(),
     onOpenPlateCalculator: jest.fn(),
     nextExerciseName: 'Sentadilla',
   };

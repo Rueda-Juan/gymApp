@@ -1,11 +1,11 @@
 import type * as SQLite from 'expo-sqlite';
 import { WorkoutService } from '../workout.service';
-import type { WorkoutRepository } from '../workout.repository';
-import type { StatsRepository } from '../../stats/stats.repository';
-import type { Workout } from '../workout.entity';
-import { NotFoundError } from '../../../core/errors/errors';
-import type { ExerciseLoadCacheRepository } from '../../exercises/exercise-load-cache.repository';
-import type { RoutineRepository } from '../../routines/routine.repository';
+import type { WorkoutRepository } from '@entities/workout';
+import type { StatsRepository } from '@entities/stats';
+import type { Workout } from '@entities/workout';
+import { NotFoundError } from '@core/errors/errors';
+import type { ExerciseLoadCacheRepository } from '@entities/exercise';
+import type { RoutineRepository } from '@entities/routine';
 
 const mockWithTransactionAsync = jest.fn(async (cb: () => Promise<void>) => cb());
 

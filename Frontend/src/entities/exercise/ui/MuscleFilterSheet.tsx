@@ -38,21 +38,21 @@ export const MuscleFilterSheet = forwardRef<BottomSheetModal, MuscleFilterSheetP
           <YStack flex={1} paddingHorizontal="$lg" paddingBottom="$xl">
             {/* Header */}
             <XStack justifyContent="space-between" alignItems="center" marginBottom="$md" paddingVertical="$sm">
-              <AppText variant="titleSm">Filtrar por mÃƒÆ’Ã‚Âºsculo</AppText>
+              <AppText variant="titleSm">Filtrar por músculo</AppText>
               <IconButton 
                 icon={<AppIcon icon={X} size={24} color="color" />} 
                 onPress={onClose} 
-                accessibilityLabel="Cerrar filtro de mÃƒÆ’Ã‚Âºsculos"
+                accessibilityLabel="Cerrar filtro de músculos"
               />
             </XStack>
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <YStack gap="$md">
-                {/* OpciÃƒÆ’Ã‚Â³n "Todos los mÃƒÆ’Ã‚Âºsculos" */}
+                {/* Opción "Todos los músculos" */}
                 <XStack alignSelf="flex-start">
                   <ValueToggleChip
                     value=""
-                    label="Todos los mÃƒÆ’Ã‚Âºsculos"
+                    label="Todos los músculos"
                     isActive={selectedMuscle === ''}
                     onToggle={() => {
                       onSelect('');
@@ -93,7 +93,7 @@ export const MuscleFilterSheet = forwardRef<BottomSheetModal, MuscleFilterSheetP
                   return (
                     <Collapsible 
                       key={hm.category} 
-                      title={`${MUSCLE_LABELS[hm.category as keyof typeof MUSCLE_LABELS]}${isAnySubActive || isMainActive ? ' ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢' : ''}`}
+                      title={`${MUSCLE_LABELS[hm.category as keyof typeof MUSCLE_LABELS]}${isAnySubActive || isMainActive ? ' •' : ''}`}
                       defaultOpen={isAnySubActive}
                     >
                       <YStack gap="$sm" paddingVertical="$sm">

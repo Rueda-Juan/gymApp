@@ -1,8 +1,7 @@
 import { RoutineService } from '../routine.service';
-import type { RoutineRepository } from '../routine.repository';
-import type { Routine } from '../routine.entity';
-import type { Workout } from '../../workouts/workout.entity';
-import { ValidationError, NotFoundError } from '../../../core/errors/errors';
+import type { RoutineRepository, Routine } from '@entities/routine';
+import type { Workout } from '@entities/workout';
+import { ValidationError, NotFoundError } from '@core/errors/errors';
 
 describe('RoutineService', () => {
   let service: RoutineService;
@@ -21,11 +20,11 @@ describe('RoutineService', () => {
 
   describe('createRoutine', () => {
     it('crea una rutina válida', async () => {
-      const params: Omit<Routine, 'id' | 'createdAt'> = {
+      const params = {
         name: 'Rutina A',
         notes: 'Notas',
         exercises: [
-          { exerciseId: 'ex-1', orderIndex: 0, targetSets: 3, minReps: 8, maxReps: 12, restSeconds: 60, supersetGroup: null } as any
+          { exerciseId: 'ex-1', orderIndex: 0, targetSets: 3, minReps: 8, maxReps: 12, restSeconds: 60, supersetGroup: null }
         ]
       };
 
@@ -37,8 +36,9 @@ describe('RoutineService', () => {
     });
 
     it('lanza error si el nombre está vacío', async () => {
-      const params: any = { name: '', exercises: [] };
-      await expect(service.createRoutine(params)).rejects.toThrow(ValidationError);
+      const params = { name: '', exercises: [] };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(service.createRoutine(params as any)).rejects.toThrow(ValidationError);
     });
   });
 
@@ -62,7 +62,7 @@ describe('RoutineService', () => {
             skipped: false,
           }
         ]
-      } as any;
+      } as unknown as Workout;
 
       const result = await service.createRoutineFromWorkout(mockWorkout, 'Nueva Rutina');
 
@@ -79,7 +79,7 @@ describe('RoutineService', () => {
         id: 'w-1',
         date: new Date(),
         exercises: []
-      } as any;
+      } as unknown as Workout;
 
       // Debería crear una rutina vacía pero válida según la implementación actual, 
       // pero vamos a validar que al menos se intente guardar.
@@ -91,17 +91,19 @@ describe('RoutineService', () => {
 
   describe('Validaciones de Ejercicios', () => {
     it('lanza error si minReps > maxReps', async () => {
-      const params: any = {
+      const params = {
         name: 'Invalida',
-        exercises: [{ minReps: 15, maxReps: 10, targetSets: 3 }]
+        notes: null,
+        exercises: [{ exerciseId: 'ex-1', orderIndex: 0, minReps: 15, maxReps: 10, targetSets: 3, restSeconds: 60, supersetGroup: null }]
       };
       await expect(service.createRoutine(params)).rejects.toThrow(ValidationError);
     });
 
     it('lanza error si targetSets <= 0', async () => {
-      const params: any = {
+      const params = {
         name: 'Invalida',
-        exercises: [{ minReps: 8, maxReps: 12, targetSets: 0 }]
+        notes: null,
+        exercises: [{ exerciseId: 'ex-1', orderIndex: 0, minReps: 8, maxReps: 12, targetSets: 0, restSeconds: 60, supersetGroup: null }]
       };
       await expect(service.createRoutine(params)).rejects.toThrow(ValidationError);
     });
@@ -120,7 +122,8 @@ describe('RoutineService', () => {
 
     it('lanza NotFoundError si no existe', async () => {
       mockRepo.getById.mockResolvedValue(null);
-      await expect(service.updateRoutine('r-1', { name: 'X' })).rejects.toThrow(NotFoundError);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect((service.updateRoutine as any)('r-1', { name: 'X' })).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -129,7 +132,7 @@ describe('RoutineService', () => {
       const existing: Routine = { 
         id: 'r-1', 
         name: 'Original', 
-        exercises: [{ id: 're-1' } as any], 
+        exercises: [{ id: 're-1' } as unknown as Routine['exercises'][0]], 
         createdAt: new Date(), 
         notes: null 
       };
@@ -145,7 +148,7 @@ describe('RoutineService', () => {
 
   describe('deleteRoutine', () => {
     it('llama al repositorio para borrar', async () => {
-      mockRepo.getById.mockResolvedValue({ id: 'r-1' } as any);
+      mockRepo.getById.mockResolvedValue({ id: 'r-1' } as unknown as Routine);
       await service.deleteRoutine('r-1');
       expect(mockRepo.delete).toHaveBeenCalledWith('r-1');
     });

@@ -1,6 +1,6 @@
 import type * as SQLite from 'expo-sqlite';
 import type { BackupRepository } from './backup.repository';
-import { DatabaseError } from '../../core/errors/errors';
+import { DatabaseError } from '@core/errors/errors';
 
 const TABLES_IN_FK_ORDER = [
   'user_preferences',

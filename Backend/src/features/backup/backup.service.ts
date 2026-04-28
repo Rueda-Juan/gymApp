@@ -1,6 +1,6 @@
 import type { BackupRepository } from './backup.repository';
 import { validateBackupInput } from './backup.schemas';
-import { ValidationError } from '../../core/errors/errors';
+import { ValidationError } from '@core/errors/errors';
 
 // ---------------------------------------------------------------------------
 // Service

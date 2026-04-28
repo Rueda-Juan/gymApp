@@ -7,7 +7,7 @@ import { AppText } from '@/shared/ui/AppText';
 import { AppIcon } from '@/shared/ui/AppIcon';
 import { X } from 'lucide-react-native';
 
-// ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ FIX: importar correctamente (ajustÃƒÆ’Ã‚Â¡ segÃƒÆ’Ã‚Âºn tu estructura real)
+// … FIX: importar correctamente (ajustá según tu estructura real)
 import { useWeightEngine } from '../lib/useWeightEngine';
 
 export type CableStackSelectorSheetRef = BottomSheetModal;
@@ -101,7 +101,7 @@ CableStackSelectorSheet.displayName = 'CableStackSelectorSheet';
 interface CableStackBlockProps {
   index: number;
   selected: boolean;
-  currentValue: number; // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ FIX necesario
+  currentValue: number; // … FIX necesario
   onPress: () => void;
   unitWeight: number;
   maxStack: number;
@@ -113,7 +113,7 @@ const CableStackBlock: React.FC<CableStackBlockProps> = React.memo(
 
     React.useEffect(() => {
       anim.value = withTiming(selected ? 1 : 0, { duration: 120 });
-    }, [selected, anim]); // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ FIX dependency
+    }, [selected, anim]); // … FIX dependency
 
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [
@@ -132,7 +132,7 @@ const CableStackBlock: React.FC<CableStackBlockProps> = React.memo(
         }`}
         accessibilityState={{ selected }}
         style={{ alignItems: 'center' }}
-        // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ FIX real: solo podÃƒÆ’Ã‚Â©s seleccionar el siguiente bloque
+        // … FIX real: solo podés seleccionar el siguiente bloque
         disabled={index > currentValue}
       >
         <Animated.View

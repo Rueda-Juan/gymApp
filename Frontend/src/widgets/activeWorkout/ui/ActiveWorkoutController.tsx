@@ -8,12 +8,12 @@ import { useSharedValue, withRepeat, withTiming, useAnimatedStyle, cancelAnimati
 import { 
   useActiveWorkout, 
   useWorkoutTimer, 
-  useRestTimer, 
   PlateCalculatorSheet,
   usePreviousSets 
 } from '@/entities/workout';
 import { 
   useActiveWorkoutController,
+  useRestTimer,
   ActiveWorkoutOptionsSheet,
   ActiveWorkoutExercisePickerSheet,
   WorkoutSessionNoteSheet,
@@ -94,6 +94,7 @@ export function ActiveWorkoutController() {
         { 
           text: 'Finalizar', 
           onPress: () => {
+            useRestTimer.getState().stopTimer();
             finishWorkoutStore();
             router.replace(ROUTES.WORKOUT_SUMMARY);
           } 
@@ -112,6 +113,7 @@ export function ActiveWorkoutController() {
           text: 'Cancelar sesión', 
           style: 'destructive',
           onPress: () => {
+            useRestTimer.getState().stopTimer();
             cancelWorkoutStore();
             router.replace(ROUTES.TABS_HOME);
           } 
@@ -171,6 +173,7 @@ export function ActiveWorkoutController() {
           onOpenNote={() => state.noteSheetRef.current?.expand()}
           onOpenRestTimer={actions.handleOpenRestTimer}
           onNext={actions.goToNext}
+          onFinish={handleFinish}
           onOpenPlateCalculator={() => actions.openPlateCalculator(currentExercise?.sets || [])}
           nextExerciseName={state.isLast ? null : (exercises[currentExerciseIndex + 1]?.name || null)}
         />

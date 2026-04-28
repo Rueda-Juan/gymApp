@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
-import { useWorkout } from '../workout/useWorkoutApi';
+import { useWorkout } from '@/entities/workout';
 import { api } from '../base';
-import { DIProvider } from '../../context/DIContext';
+import { DIProvider } from '@/shared/context/DIContext';
 import React from 'react';
 
 // Mock Axios

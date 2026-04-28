@@ -1,7 +1,7 @@
 import { BodyWeightService } from '../body-weight.service';
 import type { BodyWeightRepository } from '../body-weight.repository';
 import type { BodyWeight } from '../body-weight.entity';
-import { ValidationError, NotFoundError } from '../../../core/errors/errors';
+import { ValidationError, NotFoundError } from '@core/errors/errors';
 
 describe('BodyWeightService', () => {
   let service: BodyWeightService;
@@ -66,7 +66,7 @@ describe('BodyWeightService', () => {
 
   describe('deleteBodyWeight', () => {
     it('borra el registro si existe', async () => {
-      mockRepo.getById.mockResolvedValue({ id: 'bw-1' } as any);
+      mockRepo.getById.mockResolvedValue({ id: 'bw-1' } as unknown as BodyWeight);
       await service.deleteBodyWeight('bw-1');
       expect(mockRepo.delete).toHaveBeenCalledWith('bw-1');
     });

@@ -11,7 +11,7 @@ import Animated, {
   SlideInUp,
 } from 'react-native-reanimated';
 
-import { useRestTimer } from '@/entities/workout';
+import { useRestTimer } from '@/features/activeWorkout';
 import { useSettings } from '@/entities/settings';
 import { AppText } from '@/shared/ui/AppText';
 import { AppIcon } from '@/shared/ui/AppIcon';
@@ -83,7 +83,7 @@ export default function RestTimerScreen() {
     const current = getRemainingSeconds();
     const next = current + delta;
     if (next < MIN_SECONDS) {
-      showToast(`El tiempo mÃƒÆ’Ã‚Â­nimo es ${MIN_SECONDS} segundos.`);
+      showToast(`El tiempo mínimo es ${MIN_SECONDS} segundos.`);
       return;
     }
     adjustTimer(delta);

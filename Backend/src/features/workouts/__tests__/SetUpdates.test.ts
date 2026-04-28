@@ -1,8 +1,10 @@
-import type { WorkoutRepository } from '../workout.repository';
-import type { StatsRepository } from '../../stats/stats.repository';
-import type { ExerciseLoadCacheRepository } from '../../exercises/exercise-load-cache.repository';
+import type { WorkoutRepository } from '@entities/workout';
+import type { StatsRepository } from '@entities/stats';
+import type { ExerciseLoadCacheRepository } from '@entities/exercise';
+import type { RoutineRepository } from '@entities/routine';
+import type * as SQLite from 'expo-sqlite';
 import { WorkoutService } from '../workout.service';
-import type { WorkoutSet } from '../workout-set.entity';
+import type { WorkoutSet } from '@entities/workout';
 
 describe('WorkoutService - Set Updates', () => {
   let service: WorkoutService;
@@ -29,8 +31,8 @@ describe('WorkoutService - Set Updates', () => {
       mockWorkoutRepo,
       mockStatsRepo,
       mockLoadCacheRepo,
-      {} as any,
-      {} as any
+      {} as unknown as RoutineRepository,
+      {} as unknown as SQLite.SQLiteDatabase
     );
   });
 

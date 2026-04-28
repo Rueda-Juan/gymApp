@@ -55,7 +55,7 @@ export function BodyWeightCard({ weightHistory, onAddWeight }: BodyWeightCardPro
         <AppText variant="bodyMd" color="textSecondary" marginLeft="$xs" marginTop="$sm">kg</AppText>
       </XStack>
 
-      <AppText variant="label" color="textTertiary" marginBottom="$md">ÃƒÆ’Ã…Â¡LTIMOS 30 DÃƒÆ’Ã‚ÂAS</AppText>
+      <AppText variant="label" color="textTertiary" marginBottom="$md">ÚLTIMOS 30 DÍAS</AppText>
       {weightHistory.length > 1 ? (
         <StatsLineChart
           data={chartData}
@@ -63,7 +63,7 @@ export function BodyWeightCard({ weightHistory, onAddWeight }: BodyWeightCardPro
         />
       ) : (
         <YStack alignItems="center" justifyContent="center" height={EMPTY_CHART_HEIGHT}>
-          <AppText variant="bodyMd" color="textTertiary">Registra mÃƒÆ’Ã‚Â¡s datos para ver el grÃƒÆ’Ã‚Â¡fico</AppText>
+          <AppText variant="bodyMd" color="textTertiary">Registra más datos para ver el gráfico</AppText>
         </YStack>
       )}
       </CardBase>

@@ -10,7 +10,7 @@ import Animated, {
 import { useMotion } from '../../lib/hooks/useMotion';
 import { motion } from '../theme/motion';
 import { AppIcon } from '../AppIcon';
-import { ThemeColorKey } from '../../config/types';
+import { ThemeColorKey } from '../../types/ui';
 import type { LucideIcon } from 'lucide-react-native';
 
 const FLOAT_DISTANCE = -2;

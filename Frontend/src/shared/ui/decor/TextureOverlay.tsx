@@ -16,7 +16,7 @@ export function TextureOverlay() {
         style={[StyleSheet.absoluteFillObject, { opacity: 0.08 }]}
         resizeMode="repeat"
       />
-      {/* Sutil viÃƒÆ’Ã‚Â±eta industrial para dar profundidad al "Acero" */}
+      {/* Sutil viñeta industrial para dar profundidad al "Acero" */}
       <View 
         style={[
           StyleSheet.absoluteFillObject, 

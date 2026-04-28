@@ -13,7 +13,7 @@ import { Screen } from '@/shared/ui/Screen';
 import { RoutineEditorList } from './RoutineEditorList';
 import { BodyAnatomySvg } from '@/entities/anatomy';
 import { EmptyStateIcon } from '@/shared/ui/feedback/EmptyStateIcon';
-import { useRoutineEditor } from '@/features/routineEditor';
+import { useRoutineEditor } from '@/features/editRoutine';
 import { useSettings } from '@/entities/settings';
 import { calculateEstimatedDurationMinutes } from '@/entities/routine';
 import { ROUTES } from '@/shared/constants/routes';
@@ -68,7 +68,7 @@ function RoutineFormHeader({ title, routineId, isSaving, onSave }: Pick<RoutineF
 function confirmDeleteRoutine(onDelete: () => void) {
   Alert.alert(
     'Eliminar rutina',
-    'Ãƒâ€šÃ‚Â¿EstÃƒÆ’Ã‚Â¡s seguro? Esta acciÃƒÆ’Ã‚Â³n no se puede deshacer.',
+    '¿Estás seguro? Esta acción no se puede deshacer.',
     [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Eliminar', style: 'destructive', onPress: onDelete },
@@ -106,7 +106,7 @@ function RoutineFormFooter({ onDelete, exerciseCount }: Pick<RoutineFormTemplate
         <YStack padding="$3xl" alignItems="center" gap="$md">
           <EmptyStateIcon icon={Dumbbell} size={48} color="textTertiary" />
           <AppText variant="bodyMd" color="textSecondary" textAlign="center">
-            AgregÃƒÆ’Ã‚Â¡ ejercicios para armar tu rutina
+            Agregá ejercicios para armar tu rutina
           </AppText>
         </YStack>
       )}

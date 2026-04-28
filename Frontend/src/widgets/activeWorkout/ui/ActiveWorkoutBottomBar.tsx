@@ -35,6 +35,7 @@ interface ActiveWorkoutBottomBarProps {
   onOpenNote: () => void;
   onOpenRestTimer: () => void;
   onNext: () => void;
+  onFinish: () => void;
   onOpenPlateCalculator: () => void;
   nextExerciseName?: string | null;
 }
@@ -52,6 +53,7 @@ export function ActiveWorkoutBottomBar({
   onOpenNote,
   onOpenRestTimer,
   onNext,
+  onFinish,
   onOpenPlateCalculator,
   nextExerciseName,
 }: ActiveWorkoutBottomBarProps) {
@@ -83,7 +85,7 @@ export function ActiveWorkoutBottomBar({
         setBottomBarHeight(Math.round(measured));
       }}
     >
-      {/* Forge Handle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tap or swipe up to open plate calculator */}
+      {/* Forge Handle — tap or swipe up to open plate calculator */}
       <GestureDetector gesture={swipeUpGesture}>
         <Pressable
           onPress={onOpenPlateCalculator}
@@ -135,7 +137,7 @@ export function ActiveWorkoutBottomBar({
             triggerSelectionHaptic();
             onOpenNote();
           }} 
-          accessibilityLabel="Nota de sesiÃƒÆ’Ã‚Â³n"
+          accessibilityLabel="Nota de sesión"
         >
           <YStack
             width={ACTION_BUTTON_SIZE}
@@ -200,30 +202,9 @@ export function ActiveWorkoutBottomBar({
           maxWidth={320}
           appVariant={isFinishing ? 'ghost' : 'primary'}
           borderRadius="$lg"
-          onPress={async () => {
+          onPress={() => {
             if (isLast && !isFinishing) {
-              // Guardar y cerrar sesiÃƒÆ’Ã‚Â³n, navegar a summary
-              try {
-                if (typeof onNext === 'function') await onNext();
-                // Navegar a summary con el id de la sesiÃƒÆ’Ã‚Â³n
-                // Se asume que el id estÃƒÆ’Ã‚Â¡ en la URL o en el store global
-                // window.location o router.push
-                // Usar router de expo-router
-                const { useActiveWorkout } = await import('@/entities/workout');
-                const workoutId = useActiveWorkout.getState().workoutId;
-                if (workoutId) {
-                  const { router } = await import('expo-router');
-                  router.replace({ pathname: '/summary', params: { id: workoutId } });
-                } else {
-                  // fallback: ir al home
-                  const { router } = await import('expo-router');
-                  router.replace('/');
-                }
-              } catch (e) {
-                // fallback: ir al home
-                const { router } = await import('expo-router');
-                router.replace('/');
-              }
+              onFinish();
             } else {
               onNext();
             }
@@ -253,7 +234,7 @@ export function ActiveWorkoutBottomBar({
               {...elevation.flat}
             >
               <AppText variant="label" color="textTertiary" fontSize={FONT_SCALE.sizes.micro} fontWeight="700">
-                PRÃƒÆ’Ã¢â‚¬Å“XIMO: <AppText variant="label" color="textSecondary">{nextExerciseName.toUpperCase()}</AppText>
+                PRÓXIMO: <AppText variant="label" color="textSecondary">{nextExerciseName.toUpperCase()}</AppText>
               </AppText>
             </XStack>
           </Animated.View>

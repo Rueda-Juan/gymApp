@@ -1,4 +1,4 @@
-import { Routine, RoutineExercise } from '../routine.entity';
+import { Routine, RoutineExercise } from '@entities/routine';
 import { RoutineDTO, RoutineExerciseDTO, MuscleGroup } from '@shared';
 
 function toRoutineExerciseDTO(ex: RoutineExercise): RoutineExerciseDTO {

@@ -45,6 +45,8 @@ jest.mock('react-native-reanimated', () => {
     useAnimatedStyle: jest.fn((fn) => fn()),
     withTiming: jest.fn((v) => v),
     withSpring: jest.fn((v) => v),
+    withRepeat: jest.fn((v) => v),
+    withSequence: jest.fn((...args) => args[0]),
     useAnimatedProps: jest.fn((fn) => fn()),
     interpolate: jest.fn((v, i, o) => o[0]),
     interpolateColor: jest.fn((v, i, o) => o[0]),
@@ -58,6 +60,8 @@ jest.mock('react-native-reanimated', () => {
     default: {
       Easing,
       createAnimatedComponent: jest.fn((cb) => cb),
+      addWhitelistedUIProps: jest.fn(),
+      addWhitelistedNativeProps: jest.fn(),
     },
   };
 

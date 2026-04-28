@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import RoutineCreatePage from '../RoutineCreatePage';
-import { useRoutineEditor } from '@/features/routineEditor';
+import { useRoutineEditor } from '@/features/editRoutine';
 import { useRoutineApi } from '@/entities/routine';
 
 // Mocks
@@ -17,7 +17,7 @@ jest.mock('react-native-toast-message', () => ({
   show: jest.fn(),
 }));
 
-jest.mock('@/features/routineEditor', () => ({
+jest.mock('@/features/editRoutine', () => ({
   useRoutineEditor: jest.fn(),
 }));
 

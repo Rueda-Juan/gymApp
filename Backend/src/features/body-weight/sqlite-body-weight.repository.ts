@@ -1,8 +1,8 @@
 import type * as SQLite from 'expo-sqlite';
 import type { BodyWeight } from './body-weight.entity';
 import type { BodyWeightRepository } from './body-weight.repository';
-import { DatabaseError } from '../../core/errors/errors';
-import { fromSQLiteDateTime, toSQLiteDateTime } from '../../core/utils/date';
+import { DatabaseError } from '@core/errors/errors';
+import { fromSQLiteDateTime, toSQLiteDateTime } from '@core/utils/date';
 
 interface BodyWeightRow {
   id: string;

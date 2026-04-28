@@ -4,6 +4,19 @@ import { router } from 'expo-router';
 import RoutinesPage from '../RoutinesPage';
 
 // Mocks
+const mockRoutines = [
+  { id: '1', name: 'Rutina A', muscles: ['Pecho', 'Tríceps'] },
+  { id: '2', name: 'Rutina B', muscles: ['Espalda', 'Bíceps'] },
+];
+
+const mockRoutineService = {
+  getRoutines: jest.fn().mockResolvedValue(mockRoutines),
+};
+
+const mockWorkoutService = {
+  getHistory: jest.fn().mockResolvedValue([]),
+};
+
 jest.mock('expo-router', () => ({
   router: {
     push: jest.fn(),
@@ -12,19 +25,22 @@ jest.mock('expo-router', () => ({
 
 jest.mock('@react-navigation/native', () => ({
   useFocusEffect: jest.fn((callback) => {
-    require('react').useEffect(() => {
-      callback();
-    }, [callback]);
+    return require('react').useEffect(() => callback(), [callback]);
   }),
 }));
 
 jest.mock('@shopify/flash-list', () => {
   const { View } = require('react-native');
+  const React = require('react');
   return {
     FlashList: ({ data, renderItem, ListEmptyComponent }: any) => (
       <View>
         {data && data.length > 0 
-          ? data.map((item: any, index: number) => renderItem({ item, index }))
+          ? data.map((item: any, index: number) => (
+              <React.Fragment key={item.id ?? index}>
+                {renderItem({ item, index })}
+              </React.Fragment>
+            ))
           : ListEmptyComponent && (typeof ListEmptyComponent === 'function' ? ListEmptyComponent() : ListEmptyComponent)
         }
       </View>
@@ -36,25 +52,16 @@ jest.mock('react-native-toast-message', () => ({
   show: jest.fn(),
 }));
 
-const mockRoutines = [
-  { id: '1', name: 'Rutina A', muscles: ['Pecho', 'Tríceps'] },
-  { id: '2', name: 'Rutina B', muscles: ['Espalda', 'Bíceps'] },
-];
-
 jest.mock('@/entities/routine', () => ({
-  useRoutineApi: jest.fn(() => ({
-    getRoutines: jest.fn().mockResolvedValue(mockRoutines),
-  })),
+  useRoutineApi: jest.fn(() => mockRoutineService),
   RoutineCard: ({ routine, onOpen }: any) => {
     const { Button } = require('react-native');
     return <Button title={routine.name} onPress={onOpen} />;
   },
 }));
 
-jest.mock('@/shared/api/workout/useWorkoutApi', () => ({
-  useWorkout: jest.fn(() => ({
-    getHistory: jest.fn().mockResolvedValue([]),
-  })),
+jest.mock('@/entities/workout', () => ({
+  useWorkout: jest.fn(() => mockWorkoutService),
 }));
 
 jest.mock('@/features/activeWorkout', () => ({

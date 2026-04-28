@@ -18,7 +18,7 @@ import {
   EmptyStateIcon 
 } from '@/shared/ui';
 import { HistoryWorkoutCard } from '@/entities/workout';
-import { useWorkout } from '@/shared/api/workout/useWorkoutApi';
+import { useWorkout } from '@/entities/workout';
 import { groupWorkoutsByPeriod } from '@/entities/stats';
 import { HistoryCardSkeleton } from '@/shared/ui/layout/Loaders';
 import { motion } from '@/shared/ui/theme/motion';

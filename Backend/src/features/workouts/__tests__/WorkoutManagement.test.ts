@@ -1,12 +1,12 @@
 import type * as SQLite from 'expo-sqlite';
 import { WorkoutService } from '../workout.service';
-import type { WorkoutRepository } from '../workout.repository';
-import type { StatsRepository } from '../../stats/stats.repository';
-import type { RoutineRepository } from '../../routines/routine.repository';
-import type { ExerciseLoadCacheRepository } from '../../exercises/exercise-load-cache.repository';
-import type { Workout } from '../workout.entity';
-import type { Routine } from '../../routines/routine.entity';
-import { NotFoundError, ValidationError } from '../../../core/errors/errors';
+import type { WorkoutRepository } from '@entities/workout';
+import type { StatsRepository } from '@entities/stats';
+import type { RoutineRepository } from '@entities/routine';
+import type { ExerciseLoadCacheRepository } from '@entities/exercise';
+import type { Workout } from '@entities/workout';
+import type { Routine } from '@entities/routine';
+import { NotFoundError, ValidationError } from '@core/errors/errors';
 
 const mockDb = {
   withTransactionAsync: jest.fn(async (cb: () => Promise<void>) => cb()),
@@ -116,14 +116,14 @@ describe('WorkoutService - Management', () => {
 
   describe('reorderWorkoutExercises', () => {
     it('llama al repositorio para reordenar', async () => {
-      mockWorkoutRepo.getById.mockResolvedValue({ id: 'w-1', exercises: [{ id: 'we-1' }, { id: 'we-2' }] } as any);
+      mockWorkoutRepo.getById.mockResolvedValue({ id: 'w-1', exercises: [{ id: 'we-1' }, { id: 'we-2' }] } as unknown as Workout);
       const newOrder = ['we-2', 'we-1'];
       await service.reorderWorkoutExercises('w-1', newOrder);
       expect(mockWorkoutRepo.reorderExercises).toHaveBeenCalledWith('w-1', newOrder);
     });
 
     it('lanza ValidationError si la lista de IDs no coincide con los ejercicios actuales', async () => {
-      mockWorkoutRepo.getById.mockResolvedValue({ id: 'w-1', exercises: [{ id: 'we-1' }] } as any);
+      mockWorkoutRepo.getById.mockResolvedValue({ id: 'w-1', exercises: [{ id: 'we-1' }] } as unknown as Workout);
       const invalidOrder = ['we-99'];
       await expect(service.reorderWorkoutExercises('w-1', invalidOrder)).rejects.toThrow(ValidationError);
     });
@@ -137,7 +137,7 @@ describe('WorkoutService - Management', () => {
         exercises: [
           { id: 'we-1', exerciseId: 'ex-1', orderIndex: 0, skipped: false, notes: null, supersetGroup: null, sets: [] },
         ],
-      } as any;
+      } as unknown as Workout;
       mockWorkoutRepo.getById.mockResolvedValue(mockWorkout);
 
       await service.deleteWorkoutExercise('w-1', 'we-1');
@@ -148,7 +148,7 @@ describe('WorkoutService - Management', () => {
     });
 
     it('lanza NotFoundError si el ejercicio no está en el workout', async () => {
-      mockWorkoutRepo.getById.mockResolvedValue({ id: 'w-1', exercises: [] } as any);
+      mockWorkoutRepo.getById.mockResolvedValue({ id: 'w-1', exercises: [] } as unknown as Workout);
       await expect(service.deleteWorkoutExercise('w-1', 'we-99')).rejects.toThrow(NotFoundError);
     });
   });

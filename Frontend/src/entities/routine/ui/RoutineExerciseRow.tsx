@@ -239,7 +239,7 @@ export const RoutineExerciseRow: React.FC<RoutineExerciseRowProps> = React.memo(
               </Pressable>
             ) : null}
 
-            {/* Delete row ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â textTertiary at rest (never $danger) */}
+            {/* Delete row — textTertiary at rest (never $danger) */}
             <Pressable
               onPress={onRemove}
               accessibilityRole="button"

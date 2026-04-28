@@ -1,10 +1,10 @@
-import type { ExerciseRepository } from './exercise.repository';
-import type { WorkoutRepository } from '../workouts/workout.repository';
-import type { Exercise } from './exercise.entity';
-import type { WorkoutSet } from '../workouts/workout-set.entity';
-import { generateId } from '../../core/utils/generate-id';
+import type { ExerciseRepository } from '@entities/exercise';
+import type { WorkoutRepository } from '@entities/workout';
+import type { Exercise } from '@entities/exercise';
+import type { WorkoutSet } from '@entities/workout';
+import { generateId } from '@core/utils/generate-id';
 import { validateCustomExerciseInput } from './exercise.schemas';
-import { ValidationError, NotFoundError } from '../../core/errors/errors';
+import { ValidationError, NotFoundError } from '@core/errors/errors';
 
 // ---------------------------------------------------------------------------
 // Helper

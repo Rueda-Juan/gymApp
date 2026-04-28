@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native';
-import { useSetCompletion } from '../model/hooks/useSetCompletion';
+import { useSetCompletion } from '../hooks/useSetCompletion';
 
 const mockToggleSetComplete = jest.fn();
 const mockUpdateSetValues = jest.fn();
@@ -13,7 +13,7 @@ jest.mock('@/entities/workout/model/useActiveWorkout', () => ({
   }),
 }));
 
-jest.mock('@/entities/workout/model/useRestTimer', () => ({
+jest.mock('@/features/activeWorkout/model/useRestTimer', () => ({
   useRestTimer: () => ({
     startTimer: mockStartTimer,
   }),

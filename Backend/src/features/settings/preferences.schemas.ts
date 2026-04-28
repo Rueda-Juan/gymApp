@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ValidationError } from '../../core/errors/errors';
+import { ValidationError } from '@core/errors/errors';
 
 export const UserPreferencesSchema = z.object({
   weightUnit: z.enum(['kg', 'lbs']).default('kg'),

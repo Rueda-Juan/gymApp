@@ -118,7 +118,7 @@ export function SetRowNumberInput({
           delayLongPress={LONG_PRESS_DELAY_MS}
           style={{ flex: 1, backgroundColor, borderRadius: INPUT_BORDER_RADIUS }}
           accessibilityRole="button"
-          accessibilityLabel="Mantener presionado para acciÃƒÆ’Ã‚Â³n especial"
+          accessibilityLabel="Mantener presionado para acción especial"
         >
           {input}
         </Pressable>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from 'tamagui';
 import { LucideIcon } from 'lucide-react-native';
-import { ThemeColorKey } from '../config/types';
+import { ThemeColorKey } from '../types/ui';
 
 type AppIconVariant = 'mono' | 'duotone';
 

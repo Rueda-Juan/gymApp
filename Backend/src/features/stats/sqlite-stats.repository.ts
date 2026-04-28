@@ -1,11 +1,11 @@
 import type * as SQLite from 'expo-sqlite';
-import type { ExerciseStats } from './exercise-stats.entity';
-import type { DailyStats } from './daily-stats.entity';
-import type { PersonalRecord } from './personal-record.entity';
-import type { RecordType } from './personal-record.entity';
-import type { StatsRepository } from './stats.repository';
-import { DatabaseError } from '../../core/errors/errors';
-import { fromSQLiteDateTime, toSQLiteDateTime } from '../../core/utils/date';
+import type { ExerciseStats } from '@entities/stats';
+import type { DailyStats } from '@entities/stats';
+import type { PersonalRecord } from '@entities/stats';
+import type { RecordType } from '@entities/stats';
+import type { StatsRepository } from '@entities/stats';
+import { DatabaseError } from '@core/errors/errors';
+import { fromSQLiteDateTime, toSQLiteDateTime } from '@core/utils/date';
 
 // --- Row types ---
 

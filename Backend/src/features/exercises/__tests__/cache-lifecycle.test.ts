@@ -1,13 +1,14 @@
 import type * as SQLite from 'expo-sqlite';
 import { SuggestWeightUseCase } from '../services/suggest-weight';
-import { WorkoutService } from '../../workouts/workout.service';
-import type { WorkoutRepository } from '../../workouts/workout.repository';
-import type { StatsRepository } from '../../stats/stats.repository';
-import type { ExerciseRepository } from '../exercise.repository';
-import type { ExerciseLoadCacheRepository, CachedWeightSuggestion } from '../exercise-load-cache.repository';
-import type { Exercise } from '../exercise.entity';
-import type { RoutineRepository } from '../../routines/routine.repository';
-import type { Workout } from '../../workouts/workout.entity';
+// eslint-disable-next-line feature-sliced/layers-slices
+import { WorkoutService } from '@features/workouts';
+import type { WorkoutRepository } from '@entities/workout';
+import type { StatsRepository } from '@entities/stats';
+import type { ExerciseRepository } from '@entities/exercise';
+import type { ExerciseLoadCacheRepository, CachedWeightSuggestion } from '@entities/exercise';
+import type { Exercise } from '@entities/exercise';
+import type { RoutineRepository } from '@entities/routine';
+import type { Workout } from '@entities/workout';
 import { PlateRounder } from '../utils/plate-rounder';
 
 const EXERCISE_ID = 'ex-cache-1';

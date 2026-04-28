@@ -1,9 +1,7 @@
 import React from 'react';
 import { Text as TamaguiText, TextProps as TamaguiTextProps } from 'tamagui';
-import { ThemeColorKey } from '../config/types';
+import { ThemeColorKey, AppTextVariant } from '../types/ui';
 import { FONT_SCALE } from './theme/tamagui.config';
-
-export type AppTextVariant = 'titleLg' | 'titleMd' | 'titleSm' | 'subtitle' | 'bodyLg' | 'bodyMd' | 'bodySm' | 'label';
 
 interface AppTextProps extends Omit<TamaguiTextProps, 'color'> {
   variant?: AppTextVariant;
@@ -25,6 +23,7 @@ const variantMapping: Record<AppTextVariant, {
   bodyMd:  { fontSize: FONT_SCALE.sizes[3], fontWeight: FONT_SCALE.weights.regular },
   bodySm:  { fontSize: FONT_SCALE.sizes[2], fontWeight: FONT_SCALE.weights.regular },
   label:   { fontSize: FONT_SCALE.sizes[1], fontWeight: FONT_SCALE.weights.bold, letterSpacing: 0.5 },
+  caption: { fontSize: FONT_SCALE.sizes[1], fontWeight: FONT_SCALE.weights.regular },
 };
 
 export function AppText({

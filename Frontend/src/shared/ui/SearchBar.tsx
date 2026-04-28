@@ -7,7 +7,7 @@ import { AppIcon } from './AppIcon';
 import { FONT_SCALE } from './theme/tamagui.config';
 
 const SEARCH_BAR_HEIGHT = 48;
-const FALLBACK_ACCESSIBILITY_LABEL = 'Campo de bÃƒÆ’Ã‚Âºsqueda';
+const FALLBACK_ACCESSIBILITY_LABEL = 'Campo de búsqueda';
 
 interface SearchBarProps {
   value: string;

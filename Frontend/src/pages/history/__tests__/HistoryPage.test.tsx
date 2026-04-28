@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import Toast from 'react-native-toast-message';
 import HistoryPage from '../HistoryPage';
-import { useWorkout } from '@/shared/api';
+import { useWorkout } from '@/entities/workout';
 
 // Mocks
 jest.mock('@react-navigation/native', () => {
@@ -29,22 +29,17 @@ jest.mock('react-native-toast-message', () => ({
 }));
 
 
-
-jest.mock('@/shared/api', () => ({
-  ...jest.requireActual('@/shared/api'),
-  useWorkout: jest.fn(),
-}));
-
 jest.mock('@/entities/workout', () => ({
-  HistoryWorkoutCard: ({ item, onDelete }: any) => {
-    const { Button, Text, View } = require('react-native');
-    return (
-      <View>
-        <Text>{`Entrenamiento ${item.id}`}</Text>
-        <Button title="Eliminar" onPress={() => onDelete(item.id, 'Hoy')} />
-      </View>
-    );
-  },
+    HistoryWorkoutCard: ({ item, onDelete }: any) => {
+      const { Button, Text, View } = require('react-native');
+      return (
+        <View>
+          <Text>{`Entrenamiento ${item.id}`}</Text>
+          <Button title="Eliminar" onPress={() => onDelete(item.id, 'Hoy')} />
+        </View>
+      );
+    },
+    useWorkout: jest.fn(),
 }));
 
 jest.mock('@/entities/stats', () => ({

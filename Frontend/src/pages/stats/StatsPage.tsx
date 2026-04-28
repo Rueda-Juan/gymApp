@@ -14,7 +14,7 @@ import {
   CardBase, 
   ContentReveal 
 } from '@/shared/ui';
-import { useExerciseApi } from '@/shared/api';
+import { useExerciseApi } from '@/entities/exercise';
 import { BodyWeightCard, StrengthProgressCard, StatsSummaryGrid } from '@/entities/stats';
 import { useStatsData } from './useStatsData';
 import { getExerciseName } from '@/entities/exercise';

@@ -13,15 +13,15 @@ interface VolumeOptions {
   completedOnly?: boolean;
   /**
    * Fallback value when `isCompleted` is undefined.
-   * - true  Ãƒâ€ÃƒÂ¥Ãƒâ€  treat unknown-completion sets as done (e.g. finished workouts in summary)
-   * - false Ãƒâ€ÃƒÂ¥Ãƒâ€  treat unknown-completion sets as skipped (e.g. aggregate stats)
+   * - true  → treat unknown-completion sets as done (e.g. finished workouts in summary)
+   * - false → treat unknown-completion sets as skipped (e.g. aggregate stats)
    * Default: true
    */
   defaultCompleted?: boolean;
 }
 
 /**
- * Sums weight Ã¢â€Å“ÃƒÂ¹ reps across all exercises.
+ * Sums weight × reps across all exercises.
  * Use `completedOnly` to restrict to completed sets only.
  */
 export function calculateExercisesVolume(
@@ -46,7 +46,7 @@ export function sumWorkoutDurationSeconds(workouts: { durationSeconds?: number }
 const EPLEY_DIVISOR = 30;
 
 /**
- * Estimates 1-rep max using the Epley formula: weight Ã¢â€Å“ÃƒÂ¹ (1 + reps / 30).
+ * Estimates 1-rep max using the Epley formula: weight × (1 + reps / 30).
  * Returns 0 when inputs are non-positive.
  */
 export function calculateEpley1RM(weight: number, reps: number): number {

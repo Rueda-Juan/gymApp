@@ -4,11 +4,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from 'tamagui';
 import config from '@/shared/ui/theme/tamagui.config';
 import { MiniPlayer } from '../MiniPlayer';
-import { useActiveWorkout } from '@/entities/workout/model/useActiveWorkout';
-import { useRestTimer } from '@/entities/workout/model/useRestTimer';
+import { useActiveWorkout } from '@/entities/workout';
+import { useRestTimer } from '@/features/activeWorkout';
 
-jest.mock('@/entities/workout/model/useActiveWorkout');
-jest.mock('@/entities/workout/model/useRestTimer');
+jest.mock('@/entities/workout', () => ({
+  useActiveWorkout: jest.fn(),
+}));
+jest.mock('@/features/activeWorkout', () => ({
+  useRestTimer: jest.fn(),
+}));
 jest.mock('@/shared/lib/hooks/useMotion', () => ({
   useMotion: () => ({
     isReduced: false,

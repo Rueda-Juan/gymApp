@@ -81,15 +81,14 @@ export function WorkoutHeader({
         paddingHorizontal="$xl"
         paddingVertical="$sm"
       >
-        {/* BotÃƒÆ’Ã‚Â³n cancelar a la izquierda */}
+        {/* Botón cancelar a la izquierda */}
         <IconButton
           icon={<AppIcon icon={X} color="color" size={24} />}
           onPress={() => {
             triggerLightHaptic();
             onCancel();
           }}
-          accessibilityLabel="Cancelar entrenamiento"
-        />
+          accessibilityLabel="Cancelar entrenamiento"          testID="Cancelar entrenamiento"        />
 
         {/* Centro: nombre, tiempo y cantidad de ejercicios */}
         <YStack flex={1} alignItems="center" justifyContent="center">
@@ -104,7 +103,7 @@ export function WorkoutHeader({
           </AppText>
         </YStack>
 
-        {/* BotÃƒÆ’Ã‚Â³n editar/nota a la derecha */}
+        {/* Botón editar/nota a la derecha */}
         {onNotePress && !isFocusMode && (
           <IconButton
             icon={<AppIcon icon={PenLine} color={sessionNote ? 'primary' : 'textTertiary'} size={20} />}
@@ -113,7 +112,7 @@ export function WorkoutHeader({
               triggerSelectionHaptic();
               onNotePress();
             }}
-            accessibilityLabel="Nota de sesiÃƒÆ’Ã‚Â³n"
+            accessibilityLabel="Nota de sesión"
           />
         )}
       </XStack>

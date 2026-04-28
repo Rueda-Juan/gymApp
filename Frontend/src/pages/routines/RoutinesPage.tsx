@@ -11,7 +11,7 @@ import Toast from 'react-native-toast-message';
 
 import { Screen, AppText, AppIcon, AppButton, IconButton, ToggleChip, SearchBar } from '@/shared/ui';
 import { RoutineCard, useRoutineApi, type RoutineWithLastPerformed } from '@/entities/routine';
-import { useWorkout } from '@/shared/api/workout/useWorkoutApi';
+import { useWorkout } from '@/entities/workout';
 import { ROUTES } from '@/shared/constants/routes';
 import { RoutineCardSkeleton } from '@/shared/ui/layout/Loaders';
 import { ContentReveal, EmptyStateIcon } from '@/shared/ui/feedback';

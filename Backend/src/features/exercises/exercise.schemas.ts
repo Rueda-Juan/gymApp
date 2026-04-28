@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { MUSCLE_GROUPS, EQUIPMENT } from '@shared';
-import { ValidationError } from '../../core/errors/errors';
+import { ValidationError } from '@core/errors/errors';
 
 // --- Load Type ---
 

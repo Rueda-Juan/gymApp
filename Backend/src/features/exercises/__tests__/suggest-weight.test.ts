@@ -1,10 +1,10 @@
 import { SuggestWeightUseCase } from '../services/suggest-weight';
-import type { WorkoutRepository } from '../../workouts/workout.repository';
-import type { StatsRepository } from '../../stats/stats.repository';
-import type { ExerciseRepository } from '../exercise.repository';
-import type { ExerciseLoadCacheRepository } from '../exercise-load-cache.repository';
-import type { Workout } from '../../workouts/workout.entity';
-import type { Exercise } from '../exercise.entity';
+import type { WorkoutRepository } from '@entities/workout';
+import type { StatsRepository } from '@entities/stats';
+import type { ExerciseRepository } from '@entities/exercise';
+import type { ExerciseLoadCacheRepository } from '@entities/exercise';
+import type { Workout } from '@entities/workout';
+import type { Exercise } from '@entities/exercise';
 import { PlateRounder } from '../utils/plate-rounder';
 
 

@@ -1,6 +1,6 @@
 import { BackupService } from '../backup.service';
 import type { BackupRepository } from '../backup.repository';
-import { ValidationError } from '../../../core/errors/errors';
+import { ValidationError } from '@core/errors/errors';
 
 const VALID_BACKUP = {
   version: 1,

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useActiveWorkout } from '@/entities/workout';
-import { useRestTimer } from '@/entities/workout';
+import { useRestTimer } from '@/features/activeWorkout';
 import { router } from 'expo-router';
 import { getExerciseName } from '@/entities/exercise';
 import { triggerLightHaptic } from '@/shared/lib/haptics';
@@ -37,7 +37,7 @@ export function useMiniPlayerState() {
   const handleRetomar = useCallback(() => {
     triggerLightHaptic();
     if (workoutId) {
-      // Expo Router typed routes workaround ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â dynamic segment not inferable at compile time
+      // Expo Router typed routes workaround — dynamic segment not inferable at compile time
       router.push({ pathname: '/(workouts)/[active]', params: { active: workoutId } } as any);
     }
   }, [workoutId]);

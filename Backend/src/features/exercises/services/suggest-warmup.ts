@@ -1,6 +1,6 @@
-import type { ExerciseRepository } from '../exercise.repository';
-import type { SessionContext, ActivationLevel } from '../../../core/types/session-context';
-import { createLogger } from '../../../core/logger/Logger';
+import type { ExerciseRepository } from '@entities/exercise';
+import type { SessionContext, ActivationLevel } from '@core/types/session-context';
+import { createLogger } from '@core/logger/Logger';
 import { SuggestWeightUseCase } from './suggest-weight';
 
 const log = createLogger('SuggestWarmup');

@@ -1,10 +1,10 @@
 import type * as SQLite from 'expo-sqlite';
-import type { Routine, RoutineExercise } from './routine.entity';
-import type { RoutineRepository } from './routine.repository';
-import { DatabaseError } from '../../core/errors/errors';
-import { fromSQLiteDateTime, toSQLiteDateTime } from '../../core/utils/date';
-import { generateId } from '../../core/utils/generate-id';
-import { safeJsonParse } from '../../core/utils/safe-json';
+import type { Routine, RoutineExercise } from '@entities/routine';
+import type { RoutineRepository } from '@entities/routine';
+import { DatabaseError } from '@core/errors/errors';
+import { fromSQLiteDateTime, toSQLiteDateTime } from '@core/utils/date';
+import { generateId } from '@core/utils/generate-id';
+import { safeJsonParse } from '@core/utils/safe-json';
 
 
 

@@ -2,10 +2,8 @@ import { useState, useCallback, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { subDays } from 'date-fns';
 import Toast from 'react-native-toast-message';
-import { useStats } from '@/entities/stats';
-import { useBodyWeight, usePersonalRecords } from '@/entities/stats';
-import { calculateExercisesVolume } from '@/entities/workout';
-import { useWorkout } from '@/shared/api';
+import { useStats, useBodyWeight, usePersonalRecords } from '@/entities/stats';
+import { calculateExercisesVolume, useWorkout } from '@/entities/workout';
 import type { BodyWeightDTO, WorkoutSet } from '@kernel';
 
 const RECENT_DAYS_WINDOW = 30;
@@ -82,7 +80,7 @@ export function useStatsData() {
       setStats({ weeklyStats, frequency });
     } catch (error) {
       console.error('[useStatsData] failed to load stats:', error);
-      Toast.show({ type: 'error', text1: 'Error al cargar estadÃƒÆ’Ã‚Â­sticas', position: 'top' });
+      Toast.show({ type: 'error', text1: 'Error al cargar estadísticas', position: 'top' });
     } finally {
       setLoading(false);
     }

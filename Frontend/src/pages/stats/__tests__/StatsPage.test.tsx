@@ -58,14 +58,18 @@ jest.mock('@/shared/ui/layout/Loaders', () => ({
   StatsPageSkeleton: () => null,
 }));
 
-jest.mock('@/entities/stats', () => ({
+jest.mock('../useStatsData', () => ({
   useStatsData: jest.fn(() => ({
     loading: false,
     stats: { weeklyStats: [] },
     weightHistory: [],
-    summaries: [],
-    trainedDates: [],
+    summaries: { workouts: 0, volume: 0, time: 0, prs: 0 },
+    trainedDates: new Set(),
   })),
+}));
+
+jest.mock('@/entities/stats', () => ({
+  useStats: jest.fn(),
   useBodyWeight: jest.fn(() => ({
     logBodyWeight: jest.fn(),
   })),
@@ -79,19 +83,17 @@ jest.mock('@/entities/stats', () => ({
 
 jest.mock('@/entities/exercise', () => ({
   getExerciseName: jest.fn((ex: any) => ex?.name || 'Unknown'),
+  useExerciseApi: jest.fn(() => ({
+    getAll: jest.fn().mockResolvedValue([{ id: 'ex-1', name: 'Bench Press' }]),
+    getExerciseHistory: jest.fn().mockResolvedValue([]),
+  })),
 }));
 
 jest.mock('@/entities/workout', () => ({
   calculateEpley1RM: jest.fn(() => 100),
 }));
 
-jest.mock('@/shared/api', () => ({
-  ...jest.requireActual('@/shared/api'),
-  useExerciseApi: jest.fn(() => ({
-    getAll: jest.fn().mockResolvedValue([{ id: 'ex-1', name: 'Bench Press' }]),
-    getExerciseHistory: jest.fn().mockResolvedValue([]),
-  })),
-}));
+
 
 describe('StatsPage', () => {
   beforeEach(() => {

@@ -56,7 +56,7 @@ export const useRoutineStore = create<RoutineState>((set) => ({
   addExercise: (exercise) => set((state) => {
     // Prevenir duplicados por id
     if (state.exercises.some(e => e.id === exercise.id)) {
-      // AquÃƒÆ’Ã‚Â­ podrÃƒÆ’Ã‚Â­as disparar un toast o feedback si lo deseas
+      // Aquí podrías disparar un toast o feedback si lo deseas
       return {};
     }
     return {

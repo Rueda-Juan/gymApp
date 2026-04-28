@@ -17,8 +17,8 @@ export const EQUIPMENT: Equipment[] = [
 export const LoadTypeSchema = z.enum(['weighted', 'bodyweight', 'assisted', 'timed']);
 
 export const CreateCustomExerciseSchema = z.object({
-  name: z.string().trim().min(2, 'MÃƒÆ’Ã‚Â­nimo 2 caracteres').max(60, 'MÃƒÆ’Ã‚Â¡ximo 60 caracteres'),
-  primaryMuscles: z.array(z.enum(MUSCLE_GROUPS as [string, ...string[]])).min(1, 'Al menos un mÃƒÆ’Ã‚Âºsculo primario'),
+  name: z.string().trim().min(2, 'Mínimo 2 caracteres').max(60, 'Máximo 60 caracteres'),
+  primaryMuscles: z.array(z.enum(MUSCLE_GROUPS as [string, ...string[]])).min(1, 'Al menos un músculo primario'),
   secondaryMuscles: z.array(z.enum(MUSCLE_GROUPS as [string, ...string[]])).default([]),
   equipment: z.enum(EQUIPMENT as [string, ...string[]]),
   exerciseType: z.enum(['compound', 'isolation']).default('isolation'),

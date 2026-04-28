@@ -28,8 +28,8 @@ type MusclePath = {
  * Paths del SVG separados por grupo muscular.
  * Cada entrada usa el `id` correspondiente al `MuscleKey` de muscleMetadata.
  *
- * TODO: Reemplazar cada `d` con el path real del SVG anatÃƒÆ’Ã‚Â³mico segmentado.
- *       El viewBox actual es 0 0 600 800 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ajustar si el SVG final difiere.
+ * TODO: Reemplazar cada `d` con el path real del SVG anatómico segmentado.
+ *       El viewBox actual es 0 0 600 800 — ajustar si el SVG final difiere.
  */
 const MUSCLE_PATHS: MusclePath[] = [
   { id: 'chest', d: '' },

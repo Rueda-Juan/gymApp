@@ -12,7 +12,7 @@ import {
   SWIPE_UP_THRESHOLD,
   GESTURE_ACTIVE_OFFSET_Y,
   GESTURE_FAIL_OFFSET_X,
-} from '../../config/bottomBar';
+} from '../../constants/bottomBar';
 
 interface UseBottomBarGestureAndAnimationProps {
   insetsBottom: number;

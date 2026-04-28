@@ -1,14 +1,14 @@
 export * from './api/usePreviousSets';
+export * from './api/useWorkoutApi';
+export * from './api/useWorkoutDetail';
+export * from './api/useWorkoutStats';
+export * from './api/useWorkoutSummaryData';
 export * from './lib/plateMath';
 export * from './lib/workout';
 export * from './model/helpers';
 export * from './model/types';
 export * from './model/useActiveWorkout';
-
-export * from './model/useWorkoutSummary';
 export * from './model/workoutStore';
-export * from './ui/CableStackSelectorSheet';
-export * from './ui/ExampleSheetIntegration';
 export * from './ui/HistoryWorkoutCard';
 export * from './ui/PlateCalculatorSheet';
 export * from './ui/SetRow';
@@ -17,5 +17,4 @@ export * from './ui/SetRowRirSelector';
 export * from './ui/useLastPerformedLabel';
 export * from './ui/WeightInputModal';
 export * from './ui/WorkoutSetRow';
-export * from './model/useRestTimer';
 export * from './lib/useWorkoutTimer';

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ValidationError } from '../../core/errors/errors';
+import { ValidationError } from '@core/errors/errors';
 
 export const BodyWeightEntrySchema = z.object({
   weight: z.number().positive('El peso debe ser positivo'),

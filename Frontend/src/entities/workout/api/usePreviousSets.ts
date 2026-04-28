@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useActiveWorkout } from '../model/useActiveWorkout';
-import { useWorkout } from '@/shared/api/workout/useWorkoutApi';
+import { useWorkout } from './useWorkoutApi';
 import type { WorkoutSet } from '@kernel';
 
 type ExerciseWithSets = {
@@ -41,7 +41,7 @@ export function usePreviousSets(activeExerciseId: string | undefined) {
   const resolvePreviousWeight = useCallback(
     (exercise: ExerciseWithSets, setIndex: number): number => {
       const cachedSets = previousSetsCache.current.get(exercise.exerciseId);
-      const historicalWeight = cachedSets?.[setIndex]?.weight ?? 0;
+      const historicalWeight = cachedSets?.[setIndex]?.weight;
       const fallback = setIndex > 0 ? exercise.sets[setIndex - 1].weight : 0;
       return historicalWeight ?? fallback;
     },

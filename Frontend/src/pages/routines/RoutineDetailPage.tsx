@@ -3,7 +3,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 
 import { RoutineFormTemplate } from '@/widgets/routineEditor';
-import { useRoutineEditor } from '@/features/routineEditor';
+import { useRoutineEditor } from '@/features/editRoutine';
 import { useRoutineApi } from '@/entities/routine';
 import { LoadingSkeleton } from '@/shared/ui';
 

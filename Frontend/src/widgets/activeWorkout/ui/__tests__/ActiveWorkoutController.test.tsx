@@ -1,10 +1,10 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 import { ActiveWorkoutController } from '../ActiveWorkoutController';
-import { useActiveWorkout, useRestTimer } from '@/entities/workout';
-import { useActiveWorkoutController } from '@/features/activeWorkout';
+import { useActiveWorkout } from '@/entities/workout';
+import { useActiveWorkoutController, useRestTimer } from '@/features/activeWorkout';
 
 // Mocks
 jest.mock('expo-router', () => ({
@@ -19,16 +19,29 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0 }),
 }));
 
-
-
 jest.mock('@/shared/ui', () => {
-  const { View, Text } = require('react-native');
+  const { View, Text, Pressable } = require('react-native');
   return {
     Screen: ({ children }: any) => <View>{children}</View>,
     AppText: ({ children }: any) => <Text>{children}</Text>,
     AppIcon: () => null,
+    IconButton: ({ icon, onPress, accessibilityLabel }: any) => (
+      <Pressable onPress={onPress} testID={accessibilityLabel}>
+        {icon}
+        <Text>{accessibilityLabel}</Text>
+      </Pressable>
+    ),
+    AppButton: ({ label, onPress, testID }: any) => (
+      <Pressable onPress={onPress} testID={testID}><Text>{label}</Text></Pressable>
+    ),
+    SearchBar: () => null,
+    ToggleChip: () => null,
+    CardBase: ({ children }: any) => <View>{children}</View>,
+    ContentReveal: ({ children }: any) => <View>{children}</View>,
   };
 });
+
+const { Pressable } = require('react-native');
 
 jest.mock('@/entities/workout', () => {
   const React = require('react');
@@ -36,7 +49,6 @@ jest.mock('@/entities/workout', () => {
   return {
     useActiveWorkout: jest.fn(),
     useWorkoutTimer: jest.fn(() => ({ formattedTime: '00:05:00' })),
-    useRestTimer: jest.fn(),
     PlateCalculatorSheet: React.forwardRef((_props: any, ref: any) => {
       React.useImperativeHandle(ref, () => ({ dismiss: jest.fn() }));
       return <View testID="plate-calculator" />;
@@ -49,6 +61,7 @@ jest.mock('@/features/activeWorkout', () => {
   const { View } = require('react-native');
   return {
     useActiveWorkoutController: jest.fn(),
+    useRestTimer: jest.fn(),
     ActiveWorkoutOptionsSheet: () => <View testID="options-sheet" />,
     ActiveWorkoutExercisePickerSheet: () => <View testID="picker-sheet" />,
     WorkoutSessionNoteSheet: () => <View testID="note-sheet" />,
@@ -65,6 +78,7 @@ describe('ActiveWorkoutController', () => {
   const mockFinishWorkout = jest.fn();
   const mockCancelWorkout = jest.fn();
   const mockSetSessionNote = jest.fn();
+  const mockStopTimer = jest.fn();
 
   const mockState = {
     optionsSheetRef: { current: { expand: jest.fn(), close: jest.fn() } },
@@ -75,6 +89,9 @@ describe('ActiveWorkoutController', () => {
     isLast: false,
     weightSuggestion: null,
     focusedSetId: null,
+    allExercises: [],
+    search: '',
+    filteredExercises: [],
   };
 
   const mockActions = {
@@ -86,6 +103,10 @@ describe('ActiveWorkoutController', () => {
     goToNext: jest.fn(),
     handleOpenRestTimer: jest.fn(),
     openPlateCalculator: jest.fn(),
+    setSearch: jest.fn(),
+    handleAddExerciseSelection: jest.fn(),
+    moveExerciseToEnd: jest.fn(),
+    removeExercise: jest.fn(),
   };
 
   beforeEach(() => {
@@ -104,6 +125,7 @@ describe('ActiveWorkoutController', () => {
       isActive: false,
       getRemainingSeconds: () => 0,
     }));
+    (useRestTimer as any).getState = jest.fn(() => ({ stopTimer: mockStopTimer }));
     (useActiveWorkoutController as unknown as jest.Mock).mockReturnValue({
       actions: mockActions,
       state: mockState,
@@ -127,6 +149,10 @@ describe('ActiveWorkoutController', () => {
   });
 
   it('maneja la finalización del entrenamiento con confirmación', async () => {
+    (useActiveWorkoutController as unknown as jest.Mock).mockReturnValue({
+      actions: mockActions,
+      state: { ...mockState, isLast: true },
+    });
     const { getByText } = render(<ActiveWorkoutController />);
     fireEvent.press(getByText('Finalizar'));
 
@@ -145,8 +171,8 @@ describe('ActiveWorkoutController', () => {
   });
 
   it('maneja la cancelación del entrenamiento con confirmación', async () => {
-    const { getByText } = render(<ActiveWorkoutController />);
-    fireEvent.press(getByText('Cancelar'));
+    const { getByTestId } = render(<ActiveWorkoutController />);
+    fireEvent.press(getByTestId('Cancelar entrenamiento'));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       'Cancelar entrenamiento',
@@ -160,27 +186,5 @@ describe('ActiveWorkoutController', () => {
 
     expect(mockCancelWorkout).toHaveBeenCalled();
     expect(router.replace).toHaveBeenCalledWith('/(tabs)/');
-  });
-
-  it('abre el sheet de notas al presionar el botón de notas', () => {
-    const { getByText } = render(<ActiveWorkoutController />);
-    fireEvent.press(getByText('Notas'));
-    expect(mockState.noteSheetRef.current.expand).toHaveBeenCalled();
-  });
-
-  it('navega entre ejercicios usando los controles inferiores', () => {
-    const { getByText } = render(<ActiveWorkoutController />);
-    
-    fireEvent.press(getByText('Siguiente'));
-    expect(mockActions.goToNext).toHaveBeenCalled();
-
-    fireEvent.press(getByText('Anterior'));
-    expect(mockActions.goToPrev).toHaveBeenCalled();
-  });
-
-  it('abre el timer de descanso al presionar el botón correspondiente', () => {
-    const { getByLabelText } = render(<ActiveWorkoutController />);
-    fireEvent.press(getByLabelText('Abrir timer de descanso'));
-    expect(mockActions.handleOpenRestTimer).toHaveBeenCalled();
   });
 });

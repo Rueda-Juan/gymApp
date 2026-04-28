@@ -67,10 +67,10 @@ export function RoutineEditorList({
     <YStack padding="$4xl" alignItems="center" gap="$md">
       <EmptyStateIcon icon={Dumbbell} size={40} color="textTertiary" />
       <AppText variant="bodyMd" color="textSecondary" textAlign="center">
-        AÃƒÆ’Ã‚Âºn no has agregado ejercicios a esta rutina.
+        Aún no has agregado ejercicios a esta rutina.
       </AppText>
       <AppText variant="bodySm" color="textTertiary" textAlign="center">
-        TocÃƒÆ’Ã‚Â¡ &quot;Agregar ejercicio&quot; para empezar.
+        Tocá &quot;Agregar ejercicio&quot; para empezar.
       </AppText>
     </YStack>
   ), []);

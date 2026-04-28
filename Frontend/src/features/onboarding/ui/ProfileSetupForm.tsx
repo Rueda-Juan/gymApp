@@ -35,7 +35,7 @@ export function ProfileSetupForm({ onComplete }: ProfileSetupFormProps) {
   const [age, setAge] = useState('');
 
   // Solo letras, espacios y acentos
-  const nameRegex = /^[A-Za-zÃƒÆ’Ã‚ÂÃƒÆ’Ã¢â‚¬Â°ÃƒÆ’Ã‚ÂÃƒÆ’Ã¢â‚¬Å“ÃƒÆ’Ã…Â¡ÃƒÆ’Ã‚Â¡ÃƒÆ’Ã‚Â©ÃƒÆ’Ã‚Â­ÃƒÆ’Ã‚Â³ÃƒÆ’Ã‚ÂºÃƒÆ’Ã¢â‚¬ËœÃƒÆ’Ã‚Â±ÃƒÆ’Ã…â€œÃƒÆ’Ã‚Â¼\s]+$/;
+  const nameRegex = /^[A-Za-zÀÈÎÓÚáéíóúññÜ\s]+$/;
 
   const handleSubmit = () => {
     const trimmedName = name.trim();
@@ -44,16 +44,16 @@ export function ProfileSetupForm({ onComplete }: ProfileSetupFormProps) {
       return;
     }
     if (!nameRegex.test(trimmedName)) {
-      Alert.alert('Nombre invÃƒÆ’Ã‚Â¡lido', 'El nombre solo puede contener letras, espacios y acentos.');
+      Alert.alert('Nombre inválido', 'El nombre solo puede contener letras, espacios y acentos.');
       return;
     }
     const parsedAge = parseInt(age, 10);
     if (!age.trim() || isNaN(parsedAge)) {
-      Alert.alert('Edad invÃƒÆ’Ã‚Â¡lida', 'Por favor, ingresa tu edad.');
+      Alert.alert('Edad inválida', 'Por favor, ingresa tu edad.');
       return;
     }
     if (parsedAge < 1 || parsedAge > 120) {
-      Alert.alert('Edad invÃƒÆ’Ã‚Â¡lida', 'La edad debe estar entre 1 y 120 aÃƒÆ’Ã‚Â±os.');
+      Alert.alert('Edad inválida', 'La edad debe estar entre 1 y 120 años.');
       return;
     }
     onComplete({
@@ -75,7 +75,7 @@ export function ProfileSetupForm({ onComplete }: ProfileSetupFormProps) {
 
           <AppInput placeholder="Nombre" value={name} onChangeText={setName} autoFocus />
 
-          <AppText variant="label" color="textSecondary">Sexo / GÃƒÆ’Ã‚Â©nero</AppText>
+          <AppText variant="label" color="textSecondary">Sexo / Género</AppText>
           <XStack gap="$sm">
             {GENDER_OPTIONS.map(({ value, label }) => {
               const isSelected = gender === value;

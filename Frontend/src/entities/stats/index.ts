@@ -1,4 +1,4 @@
-export * from '@/shared/api/stats/useStatsApi';
+export * from './api/useStatsApi';
 export * from './lib/historyGrouping';
 export * from './lib/trainingWeek';
 export * from './lib/useAchievementEvaluator';

@@ -183,7 +183,7 @@ export const HistoryWorkoutCard = React.memo(function HistoryWorkoutCard({ item,
 
             {maxVolumeExName && (
               <AppText variant="label" color="textTertiary" numberOfLines={1}>
-                Mayor volumen: {maxVolumeExName} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â {maxVolumeKg.toLocaleString('es')} kg
+                Mayor volumen: {maxVolumeExName} — {maxVolumeKg.toLocaleString('es')} kg
               </AppText>
             )}
           </CardBase>

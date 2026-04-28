@@ -3,9 +3,9 @@ import {
   calculateSetVolume,
   computeUpdatedExerciseStats,
   detectBrokenRecords,
-} from '../utils/stats-calculator';
-import type { WorkoutSet } from '../../workouts/workout-set.entity';
-import type { ExerciseStats } from '../exercise-stats.entity';
+} from '@entities/stats';
+import type { WorkoutSet } from '@entities/workout';
+import type { ExerciseStats } from '@entities/stats';
 
 function createSet(overrides: Partial<WorkoutSet> = {}): WorkoutSet {
   return {

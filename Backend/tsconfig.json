@@ -18,9 +18,9 @@
     "outDir": "../dist/Backend",
     "rootDir": "../",
     "paths": {
-      "@domain/*": ["./src/domain/*"],
-      "@application/*": ["./src/application/*"],
-      "@infrastructure/*": ["./src/infrastructure/*"],
+      "@entities/*": ["./src/entities/*"],
+      "@features/*": ["./src/features/*"],
+      "@core/*": ["./src/core/*"],
       "@shared": ["../packages/shared/src/index.ts"],
       "@shared/*": ["../packages/shared/src/*", "../packages/shared/types/*"]
     }

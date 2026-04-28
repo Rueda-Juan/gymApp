@@ -3,9 +3,12 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import ExerciseCreatePage from '../ExerciseCreatePage';
-import { useExerciseApi } from '@/shared/api';
+import { useExerciseApi } from '@/entities/exercise';
 
 // Mocks
+jest.mock('@/entities/exercise', () => ({
+  useExerciseApi: jest.fn(),
+}));
 jest.mock('expo-router', () => ({
   router: {
     back: jest.fn(),
@@ -19,7 +22,6 @@ jest.mock('react-native-toast-message', () => ({
 jest.mock('@/features/exercise', () => {
   const { View, Text, Button, TextInput } = require('react-native');
   return {
-    useExerciseApi: jest.fn(),
     CreateExerciseHeader: ({ onSave, onClose, isSaving }: any) => (
       <View>
         <Button title="Guardar" onPress={onSave} disabled={isSaving} />

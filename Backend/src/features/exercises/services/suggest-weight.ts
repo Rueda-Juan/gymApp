@@ -1,10 +1,10 @@
-import type { WorkoutRepository } from '../../workouts/workout.repository';
-import type { StatsRepository } from '../../stats/stats.repository';
-import type { ExerciseRepository } from '../exercise.repository';
-import type { ExerciseLoadCacheRepository } from '../exercise-load-cache.repository';
+import type { WorkoutRepository } from '@entities/workout';
+import type { StatsRepository } from '@entities/stats';
+import type { ExerciseRepository } from '@entities/exercise';
+import type { ExerciseLoadCacheRepository } from '@entities/exercise';
 import type { PlateRounder } from '../utils/plate-rounder';
-import { createLogger } from '../../../core/logger/Logger';
-import { filterOutliers } from '../../../core/utils/math';
+import { createLogger } from '@core/logger/Logger';
+import { filterOutliers } from '@core/utils/math';
 
 const log = createLogger('SuggestWeight');
 

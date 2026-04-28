@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable } from 'react-native';
 import { YStack } from 'tamagui';
 import { AppText } from './AppText';
+import { ThemeColorKey } from '../types/ui';
 
 type ChipVariant = 'subtle' | 'solid' | 'secondary';
 
@@ -37,8 +38,8 @@ const CHIP_STYLES = {
 
 export function ToggleChip({ label, isActive, onPress, accessibilityLabel, variant = 'subtle', disabled }: ToggleChipProps) {
   const styles = CHIP_STYLES[variant];
-  const activeTextColor = variant === 'subtle' ? 'primary' : 'background';
-  const inactiveTextColor = variant === 'solid' ? 'color' : 'textSecondary';
+  const activeTextColor: ThemeColorKey = variant === 'subtle' ? 'primary' : 'background';
+  const inactiveTextColor: ThemeColorKey = variant === 'solid' ? 'color' : 'textSecondary';
   const inactiveFontWeight = variant === 'secondary' ? '600' : '500';
 
   return (

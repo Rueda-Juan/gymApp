@@ -1,7 +1,7 @@
 import type { UserPreferencesRepository } from './user-preferences.repository';
 import type { UserPreferences } from './user-preferences.entity';
 import { UserPreferencesSchema } from './preferences.schemas';
-import { ValidationError } from '../../core/errors/errors';
+import { ValidationError } from '@core/errors/errors';
 
 // ---------------------------------------------------------------------------
 // Service

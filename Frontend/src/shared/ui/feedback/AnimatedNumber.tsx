@@ -8,8 +8,7 @@ import Animated, {
 import { useTheme } from 'tamagui';
 import { motion } from '../theme/motion';
 import { useMotion } from '../../lib/hooks/useMotion';
-import { AppTextVariant } from '../../config/types';
-import { ThemeColorKey } from '../../config/types';
+import { AppTextVariant, ThemeColorKey } from '../../types/ui';
 
 const ANIMATED_NUMBER_DURATION = 600;
 const PLACEHOLDER_TEXT = '--';
@@ -25,7 +24,8 @@ const VARIANT_STYLES: Record<AppTextVariant, TextStyle> = {
   bodyMd: { fontSize: 14, fontWeight: '400' },
   bodySm: { fontSize: 12, fontWeight: '400' },
   label: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
-  caption: { fontSize: 12, fontWeight: '400', color: '$textTertiary' },
+  subtitle: { fontSize: 16, fontWeight: '600' },
+  caption: { fontSize: 12, fontWeight: '400' },
 };
 
 interface AnimatedNumberProps {

@@ -45,6 +45,7 @@ export interface SetRowProps {
   feedback?: SetRowFeedback;
 }
 
+console.log('DEBUG: XStack type:', typeof XStack);
 const AnimatedXStack = Animated.createAnimatedComponent(XStack);
 
 export const SetRow = React.memo(function SetRow({

@@ -6,7 +6,7 @@ describe('calculatePlates', () => {
 
   it('calculates the correct plates for 100kg with a 20kg bar', () => {
     const result = calculatePlates(100, 20, standardPlates);
-    // (100 - 20) / 2 = 40kg per side ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 25 + 15
+    // (100 - 20) / 2 = 40kg per side └─ 25 + 15
     expect(result.plates).toEqual([
       { weight: 25, count: 1 },
       { weight: 15, count: 1 },
@@ -24,7 +24,7 @@ describe('calculatePlates', () => {
 
   it('calculates remainders if weight is not perfectly reachable', () => {
     const result = calculatePlates(101, 20, standardPlates);
-    // (101 - 20) / 2 = 40.5kg per side ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 25 + 15 = 40 per side, remainder 1kg total
+    // (101 - 20) / 2 = 40.5kg per side └─ 25 + 15 = 40 per side, remainder 1kg total
     expect(result.remainder).toBe(1);
     expect(result.actualTotalWeight).toBe(100);
   });
@@ -74,11 +74,11 @@ describe('calculatePlates', () => {
     expect(result.actualTotalWeight).toBe(65);
   });
 
-  it('respects finite plate inventory ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â does not exceed available count per side', () => {
+  it('respects finite plate inventory — does not exceed available count per side', () => {
     // Only one 25kg plate available per side; need 50kg per side for 120kg total
     const limitedPlates = [25, 20, 10, 5]; // 1 of each
     const result = calculatePlates(120, 20, limitedPlates);
-    // 50 per side ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 25 + 20 + 5 = 50 ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ (only 1 of each, so this works)
+    // 50 per side └─ 25 + 20 + 5 = 50 … (only 1 of each, so this works)
     expect(result.plates).toEqual([
       { weight: 25, count: 1 },
       { weight: 20, count: 1 },
@@ -91,7 +91,7 @@ describe('calculatePlates', () => {
     // targetWeight needs 4x25 per side, but only 1x25 available
     const limitedPlates = [25, 10]; // 1 of each
     const result = calculatePlates(120, 20, limitedPlates);
-    // 50 per side ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ can use 1x25, then 2x10 (but only 1x10), so 25 + 10 = 35, remainder 15*2=30
+    // 50 per side └─ can use 1x25, then 2x10 (but only 1x10), so 25 + 10 = 35, remainder 15*2=30
     const plateMap = Object.fromEntries(result.plates.map((p: any) => [p.weight, p.count]));
     expect(plateMap[25]).toBeLessThanOrEqual(1);
     expect(plateMap[10]).toBeLessThanOrEqual(1);

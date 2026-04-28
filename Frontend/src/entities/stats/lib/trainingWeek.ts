@@ -1,4 +1,4 @@
-/** Returns a 7-element boolean array (MonÃƒâ€Ãƒâ€¡ÃƒÂ´Sun) indicating which days of the current week had a workout. */
+/** Returns a 7-element boolean array (Mon→Sun) indicating which days of the current week had a workout. */
 export function getWeeklyTrainingDays(history: { date: string | Date }[]): boolean[] {
   const now = new Date();
   const dayOfWeek = now.getDay();

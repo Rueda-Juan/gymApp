@@ -4,15 +4,18 @@
   "version": "1.0.0",
   "scripts": {
     "start": "cd Frontend && npx expo start",
-    "typecheck": "cd Backend && npx tsc --noEmit && cd ../Frontend && npx tsc --noEmit",
+    "typecheck": "npm run typecheck:back && npm run typecheck:front",
     "typecheck:back": "cd Backend && npx tsc --noEmit",
     "typecheck:front": "cd Frontend && npx tsc --noEmit",
-    "test": "cd Backend && npx jest && cd ../Frontend && npx jest",
+    "test": "npm run test:back && npm run test:front",
     "test:back": "cd Backend && npx jest",
     "test:front": "cd Frontend && npx jest",
     "testing": "npx tsc -b --watch",
     "install": "cd Backend && npm install && cd ../Frontend && npm install",
-    "tree": "node tree.js"
+    "tree": "node tree.js",
+    "lint:back": "cd Backend && npm run lint",
+    "lint:front": "cd Frontend && npm run lint",
+    "lint": "npm run lint:back && npm run lint:front"
   },
   "devDependencies": {
     "@testing-library/react-hooks": "^8.0.1",

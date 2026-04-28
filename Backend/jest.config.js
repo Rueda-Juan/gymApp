@@ -19,9 +19,9 @@ module.exports = {
     },
   },
   moduleNameMapper: {
-    '^@domain/(.*)$': '<rootDir>/src/domain/$1',
-    '^@application/(.*)$': '<rootDir>/src/application/$1',
-    '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
+    '^@entities/(.*)$': '<rootDir>/src/entities/$1',
+    '^@features/(.*)$': '<rootDir>/src/features/$1',
+    '^@core/(.*)$': '<rootDir>/src/core/$1',
     '^@shared$': '<rootDir>/../packages/shared/src/index.ts',
     '^@shared/(.*)$': '<rootDir>/../packages/shared/src/$1',
     '^expo-file-system/legacy$': '<rootDir>/src/__mocks__/expo-file-system-legacy.ts',

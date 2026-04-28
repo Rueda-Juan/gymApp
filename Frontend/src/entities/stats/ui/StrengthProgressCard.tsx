@@ -66,9 +66,9 @@ export function StrengthProgressCard({
         <YStack gap="$sm">
           <XStack alignItems="baseline" gap="$xs">
             <AppText fontSize={FONT_SCALE.sizes.display} fontWeight={FONT_SCALE.weights.bold} letterSpacing={-0.5}>{current1RM.toFixed(1)}</AppText>
-            <AppText variant="bodyMd" color="textSecondary">kg Ãƒâ€šÃ‚Â· 1RM est.</AppText>
+            <AppText variant="bodyMd" color="textSecondary">kg · 1RM est.</AppText>
           </XStack>
-          <AppText variant="label" color="textTertiary" marginBottom="$sm">PROGRESIÃƒÆ’Ã¢â‚¬Å“N 1RM ESTIMADO</AppText>
+          <AppText variant="label" color="textTertiary" marginBottom="$sm">PROGRESIÓN 1RM ESTIMADO</AppText>
           <StatsLineChart
             data={strengthHistory}
             height={CHART_HEIGHT}

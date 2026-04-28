@@ -5,7 +5,7 @@ import { usePreviousSets } from '../../api/usePreviousSets';
 jest.mock('@/entities/workout/model/useActiveWorkout', () => ({
   useActiveWorkout: jest.fn(() => ({ workoutId: 'mockWorkoutId' }))
 }));
-jest.mock('@/shared/api/workout/useWorkoutApi', () => ({
+jest.mock('@/entities/workout/api/useWorkoutApi', () => ({
   useWorkout: () => ({
     getPreviousSets: jest.fn(() => Promise.resolve([{ weight: 50 }, { weight: 60 }]))
   })
@@ -14,7 +14,7 @@ jest.mock('@/shared/api/workout/useWorkoutApi', () => ({
 describe('usePreviousSets', () => {
   it('should resolve previous weight from cache', async () => {
     const { result } = renderHook(() => usePreviousSets('exercise1'));
-    // Simula la actualizaciÃƒÆ’Ã‚Â³n asincrÃƒÆ’Ã‚Â³nica
+    // Simula la actualización asincrónica
     await act(async () => {
       await Promise.resolve();
     });

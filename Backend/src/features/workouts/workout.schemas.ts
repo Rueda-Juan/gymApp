@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ValidationError } from '../../core/errors/errors';
+import { ValidationError } from '@core/errors/errors';
 import { SET_TYPES } from '@shared';
 
 // --- Set Schema ---

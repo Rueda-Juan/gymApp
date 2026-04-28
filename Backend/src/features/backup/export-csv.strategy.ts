@@ -1,5 +1,5 @@
-import type { Workout } from '../workouts/workout.entity';
-import type { IExportStrategy, ExportOptions } from '../../core/contracts/export-strategy.interface';
+import type { Workout } from '@entities/workout';
+import type { IExportStrategy, ExportOptions } from '@core/contracts/export-strategy.interface';
 
 /**
  * Strategy for exporting a workout to a CSV format.

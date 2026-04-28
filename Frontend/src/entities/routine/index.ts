@@ -1,4 +1,4 @@
-export * from '@/shared/api/routine/useRoutines';
+export * from './api/useRoutines';
 export * from './lib/routine';
 export * from './model/helpers';
 export * from './model/routineStore';

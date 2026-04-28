@@ -1,14 +1,14 @@
 import type * as SQLite from 'expo-sqlite';
-import type { Workout } from './workout.entity';
-import type { WorkoutExercise } from './workout-exercise.entity';
-import type { WorkoutSet } from './workout-set.entity';
+import type { Workout } from '@entities/workout';
+import type { WorkoutExercise } from '@entities/workout';
+import type { WorkoutSet } from '@entities/workout';
 import type { SetType } from '@shared';
-import type { WorkoutRepository } from './workout.repository';
-import { DatabaseError } from '../../core/errors/errors';
-import { fromSQLiteDateTime, toSQLiteDateTime } from '../../core/utils/date';
-import { generateId } from '../../core/utils/generate-id';
-import { safeJsonParse } from '../../core/utils/safe-json';
-import { createLogger } from '../../core/logger/Logger';
+import type { WorkoutRepository } from '@entities/workout';
+import { DatabaseError } from '@core/errors/errors';
+import { fromSQLiteDateTime, toSQLiteDateTime } from '@core/utils/date';
+import { generateId } from '@core/utils/generate-id';
+import { safeJsonParse } from '@core/utils/safe-json';
+import { createLogger } from '@core/logger/Logger';
 
 const log = createLogger('WorkoutRepo');
 

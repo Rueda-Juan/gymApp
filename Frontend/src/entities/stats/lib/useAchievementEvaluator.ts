@@ -14,7 +14,7 @@ export function useAchievementEvaluator() {
         const brokenRecords = await evaluateSetPR.execute(exerciseId, set);
         return brokenRecords;
       } catch (error) {
-        // En caso de error de lectura, retornar array vacÃƒÆ’Ã‚Â­o para no bloquear la app
+        // En caso de error de lectura, retornar array vacío para no bloquear la app
          
         console.warn('Error al evaluar PR:', error);
         return [];

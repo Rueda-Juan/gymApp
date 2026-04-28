@@ -1,4 +1,4 @@
-import { Workout } from '../workout.entity';
+import { Workout } from '@entities/workout';
 import { WorkoutDTO } from '@shared';
 import { toWorkoutExerciseDTO } from './workout-exercise.map';
 

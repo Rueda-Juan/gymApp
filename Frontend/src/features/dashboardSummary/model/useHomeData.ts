@@ -4,8 +4,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Toast from 'react-native-toast-message';
 import type { WorkoutDTO, Routine } from '@kernel';
-import { useWorkout } from '@/shared/api';
-import { useRoutineApi } from '@/shared/api';
+import { useWorkout } from '@/entities/workout';
+import { useRoutineApi } from '@/entities/routine';
 import { calculateWeeklyStreak } from '@/entities/stats';
 import { getExerciseName } from '@/entities/exercise';
 

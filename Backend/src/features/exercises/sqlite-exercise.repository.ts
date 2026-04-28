@@ -1,9 +1,9 @@
 import type * as SQLite from 'expo-sqlite';
-import type { Exercise, ExerciseType, LoadType } from './exercise.entity';
-import type { ExerciseRepository } from './exercise.repository';
+import type { Exercise, ExerciseType, LoadType } from '@entities/exercise';
+import type { ExerciseRepository } from '@entities/exercise';
 import type { MuscleGroup, Equipment } from '@shared';
-import { DatabaseError } from '../../core/errors/errors';
-import { safeJsonParse } from '../../core/utils/safe-json';
+import { DatabaseError } from '@core/errors/errors';
+import { safeJsonParse } from '@core/utils/safe-json';
 
 interface ExerciseRow {
   id: string;

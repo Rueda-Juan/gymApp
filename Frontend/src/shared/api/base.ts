@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import Constants from 'expo-constants';
 import { clearAuthStorage, getAccessToken } from '../lib/auth';
 
-// En Expo, localhost no funciona en Android real; usamos la IP local de la mÃ¡quina
+// En Expo, localhost no funciona en Android real; usamos la IP local de la máquina
 const BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000';
 
 export const api: AxiosInstance = axios.create({

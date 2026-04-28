@@ -1,8 +1,8 @@
 import { ExerciseService } from '../exercise.service';
-import type { ExerciseRepository } from '../exercise.repository';
-import type { Exercise } from '../exercise.entity';
-import type { WorkoutRepository } from '../../workouts/workout.repository';
-import { ValidationError } from '../../../core/errors/errors';
+import type { ExerciseRepository } from '@entities/exercise';
+import type { Exercise } from '@entities/exercise';
+import type { WorkoutRepository } from '@entities/workout';
+import { ValidationError } from '@core/errors/errors';
 
 function buildExerciseParams(overrides: Partial<Omit<Exercise, 'id'>> = {}): Omit<Exercise, 'id'> {
   return {

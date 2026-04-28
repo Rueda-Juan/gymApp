@@ -1,7 +1,7 @@
 import { SettingsService } from '../settings.service';
 import type { UserPreferencesRepository } from '../user-preferences.repository';
 import type { UserPreferences } from '../user-preferences.entity';
-import { ValidationError } from '../../../core/errors/errors';
+import { ValidationError } from '@core/errors/errors';
 
 describe('SettingsService', () => {
   let service: SettingsService;
@@ -53,11 +53,13 @@ describe('SettingsService', () => {
     });
 
     it('lanza ValidationError para una unidad de peso inexistente', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect((service.updatePreference as any)('weightUnit', 'grams'))
         .rejects.toThrow(ValidationError);
     });
 
     it('lanza ValidationError para un tema inexistente', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect((service.updatePreference as any)('theme', 'blue'))
         .rejects.toThrow(ValidationError);
     });

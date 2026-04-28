@@ -1,8 +1,8 @@
-import type { RoutineRepository } from './routine.repository';
-import type { Routine, RoutineExercise } from './routine.entity';
-import type { Workout } from '../workouts/workout.entity';
-import { generateId } from '../../core/utils/generate-id';
-import { ValidationError, NotFoundError } from '../../core/errors/errors';
+import type { RoutineRepository } from '@entities/routine';
+import type { Routine, RoutineExercise } from '@entities/routine';
+import type { Workout } from '@entities/workout';
+import { generateId } from '@core/utils/generate-id';
+import { ValidationError, NotFoundError } from '@core/errors/errors';
 
 // ---------------------------------------------------------------------------
 // Service
@@ -13,7 +13,7 @@ export class RoutineService {
 
   // ── Create ────────────────────────────────────────────────────────────────
 
-  async createRoutine(params: Omit<Routine, 'id' | 'createdAt'>): Promise<Routine> {
+  async createRoutine(params: Omit<Routine, 'id' | 'createdAt' | 'exercises'> & { exercises: Array<Omit<RoutineExercise, 'id'> & { id?: string }> }): Promise<Routine> {
     if (!params.name || params.name.trim() === '') {
       throw new ValidationError('El nombre de la rutina es requerido', {
         name: ['El nombre de la rutina es requerido'],
@@ -122,7 +122,7 @@ export class RoutineService {
 
   async updateRoutine(
     id: string,
-    params: Partial<Omit<Routine, 'id' | 'createdAt'>>,
+    params: Partial<Omit<Routine, 'id' | 'createdAt' | 'exercises'>> & { exercises?: Array<Omit<RoutineExercise, 'id'> & { id?: string }> },
   ): Promise<Routine> {
     const existing = await this.routineRepository.getById(id);
     if (!existing) {

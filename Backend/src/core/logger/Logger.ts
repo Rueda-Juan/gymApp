@@ -77,7 +77,7 @@ export class Logger {
 
   debug(message: string, ...args: unknown[]): void {
     if (process.env.NODE_ENV === 'test') return;
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       console.debug(`[${this.namespace}]`, message, ...args);
       queueLog('debug', this.namespace, message, args);
     }

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import ExerciseListPage from '../ExerciseListPage';
-import { useExerciseApi } from '@/shared/api';
+import { useExerciseApi } from '@/entities/exercise';
 import { useExerciseFiltering } from '@/shared/ui/hooks/useExerciseFiltering';
 import { ROUTES } from '@/shared/constants/routes';
 
@@ -55,13 +55,11 @@ jest.mock('@/entities/exercise', () => {
         </View>
       );
     }),
+    useExerciseApi: jest.fn(),
   };
 });
 
-jest.mock('@/shared/api', () => ({
-  ...jest.requireActual('@/shared/api'),
-  useExerciseApi: jest.fn(),
-}));
+// useExerciseApi is mocked inside @/entities/exercise below
 
 jest.mock('@/shared/ui/hooks/useExerciseFiltering', () => ({
   useExerciseFiltering: jest.fn((exercises) => ({ filteredExercises: exercises })),

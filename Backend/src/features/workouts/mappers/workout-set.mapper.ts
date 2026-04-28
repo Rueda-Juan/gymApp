@@ -1,4 +1,4 @@
-import { WorkoutSet } from '../workout-set.entity';
+import { WorkoutSet } from '@entities/workout';
 import { WorkoutSetDTO } from '@shared';
 
 export function toWorkoutSetDTO(entity: WorkoutSet): WorkoutSetDTO {

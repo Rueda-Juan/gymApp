@@ -1,5 +1,5 @@
 import { WorkoutExerciseDTO } from "@shared";
-import { WorkoutExercise } from "../workout-exercise.entity";
+import { WorkoutExercise } from '@entities/workout';
 import { toWorkoutSetDTO } from "./workout-set.mapper";
 
 export function toWorkoutExerciseDTO(ex: WorkoutExercise): WorkoutExerciseDTO {

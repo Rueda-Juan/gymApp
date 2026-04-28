@@ -136,7 +136,7 @@ export function WorkoutExerciseSummaryList({ exercises, newRecords }: WorkoutExe
 
                     {sessionSets.length === 0 ? (
                       <AppText variant="bodySm" color="textSecondary">
-                        No se registraron repeticiones en esta sesiÃƒÆ’Ã‚Â³n.
+                        No se registraron repeticiones en esta sesión.
                       </AppText>
                     ) : (
                       <YStack gap="$sm">

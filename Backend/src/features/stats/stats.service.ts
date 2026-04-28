@@ -1,9 +1,9 @@
-import { ValidationError } from '../../core/errors/errors';
-import type { WorkoutSet } from '../workouts/workout-set.entity';
-import type { StatsRepository } from './stats.repository';
-import type { PersonalRecord, RecordType } from './personal-record.entity';
-import type { DailyStats } from './daily-stats.entity';
-import { detectBrokenRecords } from './utils/stats-calculator';
+import { ValidationError } from '@core/errors/errors';
+import type { WorkoutSet } from '@entities/workout';
+import type { StatsRepository } from '@entities/stats';
+import type { PersonalRecord, RecordType } from '@entities/stats';
+import type { DailyStats } from '@entities/stats';
+import { detectBrokenRecords } from '@entities/stats';
 
 // ---------------------------------------------------------------------------
 // Types

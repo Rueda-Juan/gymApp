@@ -22,7 +22,7 @@ export function LastWorkoutCard({ lastWorkout, onViewAll, onViewLast }: Props) {
   return (
     <YStack gap="$md" marginBottom="$xl" paddingHorizontal="$xl" marginTop="$xl">
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$md">
-        <AppText variant="titleSm">ÃƒÆ’Ã…Â¡ltimo Entrenamiento</AppText>
+        <AppText variant="titleSm">Último Entrenamiento</AppText>
         <YStack
           onPress={onViewAll}
           accessibilityRole="button"
@@ -34,11 +34,11 @@ export function LastWorkoutCard({ lastWorkout, onViewAll, onViewLast }: Props) {
         </YStack>
       </XStack>
 
-      <PressableCard onPress={onViewLast} accessibilityLabel="Ver ÃƒÆ’Ã‚Âºltimo entrenamiento">
+      <PressableCard onPress={onViewLast} accessibilityLabel="Ver último entrenamiento">
         <Card padding="$none">
           <XStack justifyContent="space-between" alignItems="center" padding="$md" borderBottomWidth={1} borderBottomColor="$borderColor">
             <YStack>
-              <AppText variant="subtitle">SesiÃƒÆ’Ã‚Â³n de Entrenamiento</AppText>
+              <AppText variant="subtitle">Sesión de Entrenamiento</AppText>
               <AppText variant="bodySm" color="textTertiary" marginTop="$xs">
                 {formatDistanceToNow(new Date(lastWorkout.date), { addSuffix: true, locale: es })}
               </AppText>

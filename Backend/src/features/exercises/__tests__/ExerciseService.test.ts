@@ -1,8 +1,8 @@
 import { ExerciseService } from '../exercise.service';
-import type { ExerciseRepository } from '../exercise.repository';
-import type { WorkoutRepository } from '../../workouts/workout.repository';
-import type { Exercise } from '../exercise.entity';
-import { ValidationError, NotFoundError } from '../../../core/errors/errors';
+import type { ExerciseRepository } from '@entities/exercise';
+import type { WorkoutRepository } from '@entities/workout';
+import type { Exercise } from '@entities/exercise';
+import { ValidationError, NotFoundError } from '@core/errors/errors';
 
 describe('ExerciseService', () => {
   let service: ExerciseService;
@@ -38,7 +38,7 @@ describe('ExerciseService', () => {
       equipment: 'barbell',
       exerciseType: 'compound',
       loadType: 'weighted',
-    } as any;
+    } as unknown as Exercise;
 
     it('actualiza el nombre y recalcula el key', async () => {
       mockExerciseRepo.getById.mockResolvedValue(existing);
@@ -53,7 +53,7 @@ describe('ExerciseService', () => {
 
     it('lanza error si el nuevo nombre colisiona con otro ejercicio', async () => {
       mockExerciseRepo.getById.mockResolvedValue(existing);
-      mockExerciseRepo.getByKey.mockResolvedValue({ id: 'other-id' } as any);
+      mockExerciseRepo.getByKey.mockResolvedValue({ id: 'other-id' } as unknown as Exercise);
 
       await expect(service.updateExercise('ex-1', { name: 'Collision' }))
         .rejects.toThrow(ValidationError);

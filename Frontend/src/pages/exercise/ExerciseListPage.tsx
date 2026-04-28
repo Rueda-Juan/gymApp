@@ -12,8 +12,7 @@ import {
   SearchBar,
   Screen
 } from '@/shared/ui';
-import { ExerciseList, MuscleFilterSheet } from '@/entities/exercise';
-import { useExerciseApi } from '@/shared/api';
+import { ExerciseList, MuscleFilterSheet, useExerciseApi } from '@/entities/exercise';
 import { useExerciseFiltering } from '@/shared/ui/hooks/useExerciseFiltering';
 import { ROUTES } from '@/shared/constants/routes';
 import type { Exercise } from '@kernel';

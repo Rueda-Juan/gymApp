@@ -1,11 +1,11 @@
 import type * as SQLite from 'expo-sqlite';
 import { WorkoutService } from '../workout.service';
-import type { WorkoutRepository } from '../workout.repository';
-import type { ExerciseLoadCacheRepository } from '../../exercises/exercise-load-cache.repository';
-import type { StatsRepository } from '../../stats/stats.repository';
-import type { RoutineRepository } from '../../routines/routine.repository';
-import type { Workout } from '../workout.entity';
-import { NotFoundError } from '../../../core/errors/errors';
+import type { WorkoutRepository } from '@entities/workout';
+import type { ExerciseLoadCacheRepository } from '@entities/exercise';
+import type { StatsRepository } from '@entities/stats';
+import type { RoutineRepository } from '@entities/routine';
+import type { Workout } from '@entities/workout';
+import { NotFoundError } from '@core/errors/errors';
 
 function createWorkout(overrides: Partial<Workout> = {}): Workout {
   return {

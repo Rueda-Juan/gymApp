@@ -1,4 +1,4 @@
-import type { Workout } from '../../features/workouts/workout.entity';
+import type { Workout } from '@entities/workout';
 
 export interface ExportOptions {
   routineName?: string;

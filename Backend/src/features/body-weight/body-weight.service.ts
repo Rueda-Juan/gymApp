@@ -1,7 +1,7 @@
 import type { BodyWeightRepository } from './body-weight.repository';
 import type { BodyWeight } from './body-weight.entity';
-import { NotFoundError, ValidationError } from '../../core/errors/errors';
-import { generateId } from '../../core/utils/generate-id';
+import { NotFoundError, ValidationError } from '@core/errors/errors';
+import { generateId } from '@core/utils/generate-id';
 import { validateBodyWeightInput } from './body-weight.schemas';
 
 // ---------------------------------------------------------------------------

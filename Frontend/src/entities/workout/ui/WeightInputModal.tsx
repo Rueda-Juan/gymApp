@@ -10,7 +10,7 @@ export interface WeightInputModalProps {
   value: number;
   onChange: (value: number) => void;
   onClose: () => void;
-  // ConfiguraciÃƒÆ’Ã‚Â³n mÃƒÆ’Ã‚Â­nima para los sheets
+  // Configuración mínima para los sheets
   sets?: any[]; // para barbell/dumbbell
   selectedSetIndex?: number;
   onSelectSet?: (index: number) => void;

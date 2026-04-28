@@ -2,8 +2,8 @@ import type * as SQLite from 'expo-sqlite';
 import type {
   CachedWeightSuggestion,
   ExerciseLoadCacheRepository,
-} from './exercise-load-cache.repository';
-import { DatabaseError } from '../../core/errors/errors';
+} from '@entities/exercise';
+import { DatabaseError } from '@core/errors/errors';
 
 const CACHE_TTL_HOURS = 24;
 

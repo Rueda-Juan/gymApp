@@ -2,8 +2,7 @@ import { create, StateCreator } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClientId } from '@/shared/lib/clientId';
-import { useRestTimer } from './useRestTimer';
-import { featureFlags } from '@/shared/config/featureFlags';
+import { featureFlags } from '@/shared/constants/featureFlags';
 
 import { WorkoutSetState, WorkoutExerciseState, PendingDeletion } from '@/shared/types/workout';
 
@@ -87,11 +86,9 @@ const baseStore: StateCreator<ActiveWorkoutStore> = (set, get) => ({
       pendingDeletionsByExercise: {},
     }),
   finishWorkout: () => {
-    useRestTimer.getState().stopTimer();
     set(createInactiveWorkoutState('finished'));
   },
   cancelWorkout: () => {
-    useRestTimer.getState().stopTimer();
     set(createInactiveWorkoutState('cancelled'));
   },
   setSessionNote: (note) => set({ sessionNote: note }),

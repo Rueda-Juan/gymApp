@@ -1,8 +1,7 @@
 import { StatsService } from '../stats.service';
-import type { StatsRepository } from '../stats.repository';
-import type { DailyStats } from '../daily-stats.entity';
-import type { WorkoutSet } from '../../workouts/workout-set.entity';
-import { ValidationError } from '../../../core/errors/errors';
+import type { StatsRepository, DailyStats } from '@entities/stats';
+import type { WorkoutSet } from '@entities/workout';
+import { ValidationError } from '@core/errors/errors';
 
 describe('StatsService', () => {
   let service: StatsService;
@@ -42,8 +41,8 @@ describe('StatsService', () => {
   describe('getTrainingFrequency', () => {
     it('calcula correctamente la frecuencia y el total', async () => {
       const mockStats: DailyStats[] = [
-        { date: '2026-03-24', workoutCount: 1 } as any,
-        { date: '2026-03-25', workoutCount: 2 } as any,
+        { date: '2026-03-24', workoutCount: 1 } as unknown as DailyStats,
+        { date: '2026-03-25', workoutCount: 2 } as unknown as DailyStats,
       ];
       mockStatsRepo.getWeeklyStats.mockResolvedValue(mockStats);
 
@@ -107,7 +106,7 @@ describe('StatsService', () => {
         weight: 60, // Rompe peso
         reps: 12,   // Rompe reps
         completed: true,
-      } as any;
+      } as unknown as WorkoutSet;
 
       const result = await service.evaluateSetPR('ex-1', mockSet);
 
@@ -123,7 +122,7 @@ describe('StatsService', () => {
         weight: 10,
         reps: 10,
         completed: true,
-      } as any;
+      } as unknown as WorkoutSet;
 
       const result = await service.evaluateSetPR('ex-1', mockSet);
 
