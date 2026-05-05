@@ -1,0 +1,1 @@
+ALTER TABLE `exercises` ADD `type` text DEFAULT 'compound' NOT NULL;
