@@ -4,7 +4,7 @@ import { ActiveWorkoutController } from '@/features/activeWorkout';
 
 export default function ActiveWorkoutPage() {
   return (
-    <Screen safeAreaEdges={['top', 'left', 'right', 'bottom']}>
+    <Screen safeAreaEdges={['top', 'bottom', 'left', 'right']}>
       <ActiveWorkoutController />
     </Screen>
   );

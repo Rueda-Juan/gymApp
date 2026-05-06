@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { exerciseFactory, routineFactory } from '@/shared/lib/tests/factories';
 import { Alert } from 'react-native';
 
@@ -80,6 +80,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
       return <View testID={props.testID}>{props.children}</View>;
     }),
     BottomSheetView: ({ children }: any) => <View>{children}</View>,
+    BottomSheetScrollView: ({ children }: any) => <View>{children}</View>,
+    BottomSheetFlatList: ({ children }: any) => <View>{children}</View>,
+    BottomSheetBackdrop: () => null,
     BottomSheetModal: React.forwardRef((props: any, ref: any) => {
       React.useImperativeHandle(ref, () => ({
         present: jest.fn(),
@@ -100,6 +103,8 @@ jest.mock('react-native-gesture-handler', () => {
     Gesture: {
       Pan: () => ({
         activeCursor: jest.fn().mockReturnThis(),
+        activeOffsetY: jest.fn().mockReturnThis(),
+        failOffsetX: jest.fn().mockReturnThis(),
         onStart: jest.fn().mockReturnThis(),
         onUpdate: jest.fn().mockReturnThis(),
         onEnd: jest.fn().mockReturnThis(),
@@ -144,6 +149,12 @@ jest.mock('lucide-react-native', () => {
     Edit2: MockIcon,
     Info: MockIcon,
     Clock: MockIcon,
+    Hourglass: MockIcon,
+    PenLine: MockIcon,
+    Star: MockIcon,
+    Link2: MockIcon,
+    Minus: MockIcon,
+    Trophy: MockIcon,
   };
 });
 
@@ -194,31 +205,20 @@ jest.mock('@/entities/workout/ui/SetRow', () => {
   };
 });
 
-jest.mock('@/features/activeWorkout/components/WorkoutHeader', () => {
-  const React = require('react');
-  const { View, Text, TouchableOpacity } = require('react-native');
-  return {
-    WorkoutHeader: ({ onCancel, onFinish }: any) => (
-      <View>
-        <TouchableOpacity onPress={onCancel}><Text>Cancelar</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onFinish}><Text>Finalizar</Text></TouchableOpacity>
-      </View>
-    ),
-  };
-});
+jest.mock('@/entities/stats', () => ({
+  useStatsProcessor: () => ({
+    processWorkoutStats: jest.fn().mockResolvedValue(undefined),
+  }),
+  useBodyWeight: () => ({
+    weightHistory: [],
+    addWeight: jest.fn(),
+  }),
+  useAchievementEvaluator: () => ({
+    evaluateSet: jest.fn().mockResolvedValue(null),
+  }),
+}));
 
-jest.mock('@/features/activeWorkout/components/ActiveWorkoutBottomBar', () => {
-  const React = require('react');
-  const { View, Text, TouchableOpacity } = require('react-native');
-  return {
-    ActiveWorkoutBottomBar: ({ onNext, onPrev }: any) => (
-      <View>
-        <TouchableOpacity onPress={onPrev}><Text>Anterior</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onNext}><Text>Siguiente</Text></TouchableOpacity>
-      </View>
-    ),
-  };
-});
+// Removed redundant mocks to use real components in integration tests
 
 jest.mock('@/entities/workout/ui/SetRowNumberInput', () => {
   const React = require('react');
@@ -263,6 +263,14 @@ jest.mock('@/features/activeWorkout', () => {
   };
 });
 
+jest.mock('@/entities/workout/lib/useWorkoutTimer', () => ({
+  useWorkoutTimer: () => ({
+    elapsedSeconds: 0,
+    formattedTime: '00:00',
+    formatTime: jest.fn(),
+  }),
+}));
+
 jest.mock('@/entities/workout', () => {
   const actual = jest.requireActual('@/entities/workout');
   const React = require('react');
@@ -281,6 +289,17 @@ jest.mock('@/entities/workout', () => {
   };
 });
 
+jest.mock('@/entities/workout/db/useWorkoutDb', () => ({
+  useWorkoutDb: () => ({
+    recordAllSets: jest.fn().mockResolvedValue(undefined),
+    finishWorkout: jest.fn().mockResolvedValue(undefined),
+    startWorkout: jest.fn().mockResolvedValue({ id: 'test-id' }),
+    getHistory: jest.fn().mockResolvedValue([]),
+    suggestWeight: jest.fn().mockResolvedValue(null),
+    getPreviousSets: jest.fn().mockResolvedValue([]),
+  }),
+}));
+
 
 
 import ActiveWorkoutPage from '@/app/(workouts)/[workoutId]';
@@ -290,21 +309,37 @@ describe('ActiveWorkout Integration Flow', () => {
   const exercises = exerciseFactory.buildList(2);
   const routine = routineFactory.build({ exercises: exercises.map((e, i) => ({ exerciseId: e.id, order: i })) } as any);
 
+  let consoleSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+
     // Reset Zustand store state before each test
     const { startWorkout } = useActiveWorkout.getState();
-    startWorkout('test-workout-id', routine.id, routine.name, exercises.map(e => ({
-      ...e,
-      exerciseId: e.id,
-      sets: [
-        { id: 'set-1', reps: 10, weight: 60, isCompleted: false, type: 'normal' }
-      ]
-    })));
+    act(() => {
+      startWorkout('test-workout-id', routine.id, routine.name, exercises.map(e => ({
+        ...e,
+        exerciseId: e.id,
+        sets: [
+          { id: 's1', weight: 0, reps: 0, type: 'normal' as const, isCompleted: false },
+        ],
+      })));
+    });
+  });
+
+  afterEach(async () => {
+    // Flush any pending promises to catch leaked state updates while spy is still active
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    consoleSpy.mockRestore();
+    (console.warn as jest.Mock).mockRestore();
   });
 
   it('completes a full workout flow: mark sets -> navigate -> finish', async () => {
-    const { getByText, getAllByTestId, queryByText } = render(
+    const { getByText, getAllByTestId, queryByText, getByTestId } = render(
       <ActiveWorkoutPage />
     );
 
@@ -322,13 +357,13 @@ describe('ActiveWorkout Integration Flow', () => {
     fireEvent.press(setRows[0]); // Toggle completion
 
     // 3. Navigate to next exercise
-    fireEvent.press(getByText('Siguiente'));
+    fireEvent.press(getByTestId('next-exercise-button'));
     await waitFor(() => {
       expect(getByText(exercises[1].name)).toBeTruthy();
     });
 
     // 4. Finish workout
-    fireEvent.press(getByText('Finalizar'));
+    fireEvent.press(getByTestId('finish-workout-button'));
     
     // Verify alert was shown
     expect(Alert.alert).toHaveBeenCalledWith(
@@ -349,7 +384,7 @@ describe('ActiveWorkout Integration Flow', () => {
   });
 
   it('allows canceling a workout session', async () => {
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText, getByTestId } = render(
       <ActiveWorkoutPage />
     );
 
@@ -357,7 +392,7 @@ describe('ActiveWorkout Integration Flow', () => {
       expect(queryByText('Cargando dependencias...')).toBeNull();
     });
 
-    fireEvent.press(getByText('Cancelar'));
+    fireEvent.press(getByTestId('cancel-workout-button'));
 
 
     expect(Alert.alert).toHaveBeenCalledWith(

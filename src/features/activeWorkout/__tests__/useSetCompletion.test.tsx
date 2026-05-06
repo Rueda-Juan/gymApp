@@ -41,8 +41,15 @@ jest.mock('react-native-toast-message', () => ({
 }));
 
 describe('useSetCompletion', () => {
+  let warnSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
   });
 
   it('should complete set and start rest timer', async () => {

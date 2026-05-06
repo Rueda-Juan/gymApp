@@ -27,7 +27,11 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     BottomSheetFlatList: ({ data, renderItem }: any) => (
       <View testID="bottom-sheet-list">
-        {data.map((item: any, index: number) => renderItem({ item, index }))}
+        {data.map((item: any, index: number) => (
+          <View key={item.id || index}>
+            {renderItem({ item, index })}
+          </View>
+        ))}
       </View>
     ),
     BottomSheetView: ({ children }: any) => <View>{children}</View>,
@@ -58,7 +62,7 @@ jest.mock('@/shared/ui/layout/Loaders', () => ({
   StatsPageSkeleton: () => null,
 }));
 
-jest.mock('../useStatsData', () => ({
+jest.mock('@/entities/stats/model/useStatsData', () => ({
   useStatsData: jest.fn(() => ({
     loading: false,
     stats: { weeklyStats: [] },
@@ -96,8 +100,15 @@ jest.mock('@/entities/workout', () => ({
 
 
 describe('StatsPage', () => {
+  let consoleSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   it('renderiza el título correctamente', () => {

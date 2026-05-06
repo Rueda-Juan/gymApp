@@ -60,8 +60,11 @@ describe('RoutineDetailPage', () => {
   const mockUpdateRoutine = jest.fn();
   const mockDeleteRoutine = jest.fn();
 
+  let consoleSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     (useLocalSearchParams as unknown as jest.Mock).mockReturnValue({ id: mockId });
     
     (useRoutineEditor as unknown as jest.Mock).mockReturnValue({
@@ -79,6 +82,10 @@ describe('RoutineDetailPage', () => {
     });
 
     mockGetRoutineById.mockResolvedValue(mockRoutine);
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   it('renderiza LoadingSkeleton inicialmente y carga los datos', async () => {
@@ -144,10 +151,10 @@ describe('RoutineDetailPage', () => {
         notes: mockRoutine.notes,
         exercises: mockRoutine.exercises.map((ex, index) => ({
           exerciseId: ex.id,
-          order: index + 1,
+          orderIndex: index,
           targetSets: ex.sets,
-          maxReps: ex.reps,
-          supersetGroup: undefined,
+          targetReps: ex.reps,
+          supersetGroup: null,
         })),
       });
       expect(Toast.show).toHaveBeenCalledWith({

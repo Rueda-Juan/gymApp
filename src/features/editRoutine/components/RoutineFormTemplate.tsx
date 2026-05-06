@@ -14,7 +14,7 @@ import { Screen } from '@/shared/ui/Screen';
 import { RoutineEditorList } from './RoutineEditorList';
 import { BodyAnatomySvg } from '@/entities/anatomy';
 import { EmptyStateIcon } from '@/shared/ui/feedback/EmptyStateIcon';
-import { useRoutineEditor } from '@/features/editRoutine';
+import { useRoutineEditor } from '../hooks/useRoutineEditor';
 import { useSettings, SettingsState } from '@/entities/settings';
 import { RoutineEditorExercise } from '@/entities/routine';
 import { calculateEstimatedDurationMinutes } from '@/entities/routine';

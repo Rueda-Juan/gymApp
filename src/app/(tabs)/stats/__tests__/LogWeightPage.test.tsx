@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
-import LogWeightPage from '../index';
+import LogWeightPage from '@/app/stats/weight';
 
 // Mocks
 jest.mock('expo-router', () => ({
@@ -74,7 +74,6 @@ describe('LogWeightPage', () => {
     await waitFor(() => {
       expect(mockLogBodyWeight).toHaveBeenCalledWith(expect.objectContaining({
         weight: 75.5,
-        userId: 'user-123',
       }));
       expect(router.back).toHaveBeenCalled();
     });

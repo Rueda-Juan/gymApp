@@ -6,6 +6,7 @@ export interface SQLiteDatabase {
   getFirstAsync(sql: string, ...params: SQLiteValue[]): Promise<Record<string, SQLiteValue> | null>;
   runAsync(sql: string, ...params: SQLiteValue[]): Promise<{ changes: number; lastInsertRowId: number }>;
   execAsync(sql: string): Promise<void>;
+  execSync(sql: string): void;
 }
 
 export function openDatabaseSync(_name: string): SQLiteDatabase {
@@ -15,5 +16,6 @@ export function openDatabaseSync(_name: string): SQLiteDatabase {
     async getFirstAsync() { return null; },
     async runAsync() { return { changes: 0, lastInsertRowId: 0 }; },
     async execAsync() {},
+    execSync() {},
   };
 }

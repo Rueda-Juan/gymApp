@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
-import RoutineCreatePage from '../index';
+import RoutineCreatePage from '@/app/routine/create';
 import { useRoutineEditor } from '@/features/editRoutine';
 import { useRoutineDb } from '@/entities/routine';
 
@@ -46,8 +46,11 @@ describe('RoutineCreatePage', () => {
     ],
   };
 
+  let consoleSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     
     (useRoutineEditor as unknown as jest.Mock).mockReturnValue({
       ...mockEditorData,
@@ -57,6 +60,10 @@ describe('RoutineCreatePage', () => {
     (useRoutineDb as unknown as jest.Mock).mockReturnValue({
       createRoutine: mockCreateRoutine,
     });
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   it('llama a reset al montar el componente', () => {
@@ -77,9 +84,9 @@ describe('RoutineCreatePage', () => {
         exercises: [
           {
             exerciseId: 'ex1',
-            order: 1,
+            orderIndex: 0,
             targetSets: 3,
-            maxReps: 10,
+            targetReps: 10,
             supersetGroup: null,
           },
         ],

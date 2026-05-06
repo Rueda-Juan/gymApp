@@ -14,7 +14,7 @@ const mockRoutineService = {
 };
 
 const mockWorkoutService = {
-  getWorkouts: jest.fn().mockResolvedValue([]),
+  getHistory: jest.fn().mockResolvedValue([]),
 };
 
 jest.mock('expo-router', () => ({
@@ -110,8 +110,15 @@ jest.mock('@/shared/ui/layout/Loaders', () => ({
 }));
 
 describe('RoutinesPage', () => {
+  let consoleSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   it('renderiza el título y carga las rutinas', async () => {

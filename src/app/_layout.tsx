@@ -3,7 +3,7 @@ import { TamaguiProvider } from 'tamagui';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -15,20 +15,26 @@ import { DbProvider } from '@/db/DbProvider';
 import config from '@/shared/ui/theme/tamagui.config';
 
 import { TextureOverlay } from '@/shared/ui/decor/TextureOverlay';
-import { Screen } from '@/shared/ui/Screen';
 import { MotionProvider } from '@/shared/ui/context/MotionContext';
 
 import StorybookUIRoot from '../.rnstorybook';
+import { useEffect } from "react";
 
 const SHOW_STORYBOOK = process.env.EXPO_PUBLIC_STORYBOOK_ENABLED === 'true';
 
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  initialRouteName: '(tabs)',
 };
 
 export default function GlobalLayout() {
+  useEffect(() => {
+    if (__DEV__) {
+      LogBox.ignoreAllLogs();
+    }
+  }, []);
+
   if (SHOW_STORYBOOK) {
     return <StorybookUIRoot />;
   }
@@ -39,7 +45,6 @@ export default function GlobalLayout() {
   const effectiveScheme = themeMode === 'system' ? systemColorScheme : themeMode;
   const tamaguiTheme = effectiveScheme === 'dark' ? 'dark' : 'light';
 
-
   return (
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaProvider>
@@ -49,18 +54,16 @@ export default function GlobalLayout() {
               <MotionProvider preference={motionPreference}>
                 <ThemeProvider value={effectiveScheme === 'dark' ? DarkTheme : DefaultTheme}>
                   
-                  <Screen safeAreaEdges={['top', 'left', 'right', 'bottom']}>
-                    <Stack screenOptions={{ headerShown: false }}>
-                      <Stack.Screen name="(tabs)" />
-                      <Stack.Screen name="(workouts)" />
-                      <Stack.Screen name="exercise/create" />
-                      <Stack.Screen name="routine/create" />
-                      <Stack.Screen name="routine/[id]" />
-                      <Stack.Screen name="history/index" />
-                      <Stack.Screen name="stats/weight" />
-                      <Stack.Screen name="summary/index" />
-                    </Stack>
-                  </Screen>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="(workouts)" />
+                    <Stack.Screen name="exercise/create" />
+                    <Stack.Screen name="routine/create" />
+                    <Stack.Screen name="routine/[id]" />
+                    <Stack.Screen name="history/index" />
+                    <Stack.Screen name="stats/weight" />
+                    <Stack.Screen name="summary/index" />
+                  </Stack>
   
                   <TextureOverlay />
                   <StatusBar style="auto" translucent />

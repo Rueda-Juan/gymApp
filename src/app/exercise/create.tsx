@@ -57,7 +57,7 @@ export default function ExerciseCreatePage() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
         <CreateExerciseHeader 
           isSaving={isSaving} 
           onSave={handleSave} 

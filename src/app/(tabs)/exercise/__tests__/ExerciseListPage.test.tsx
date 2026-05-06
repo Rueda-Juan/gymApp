@@ -80,6 +80,9 @@ jest.mock('@/shared/ui', () => {
     SearchBar: ({ value, onChangeText, placeholder }: any) => (
       <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} />
     ),
+    IconButton: ({ onPress, accessibilityLabel }: any) => (
+      <TouchableOpacity onPress={onPress} testID={accessibilityLabel} />
+    ),
   };
 });
 
@@ -90,13 +93,19 @@ describe('ExerciseListPage', () => {
   ];
 
   const mockGetExercises = jest.fn();
+  let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     (useExerciseDb as unknown as jest.Mock).mockReturnValue({
       getExercises: mockGetExercises,
     });
     mockGetExercises.mockResolvedValue(mockExercises);
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   it('carga y renderiza la lista de ejercicios', async () => {
@@ -113,7 +122,7 @@ describe('ExerciseListPage', () => {
 
   it('navega a creación al presionar el botón de agregar', () => {
     const { getByTestId } = render(<ExerciseListPage />);
-    const addButton = getByTestId('button-icon');
+    const addButton = getByTestId('Crear ejercicio');
     
     fireEvent.press(addButton);
     

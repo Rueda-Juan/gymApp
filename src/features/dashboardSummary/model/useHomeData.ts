@@ -79,16 +79,16 @@ export function formatRoutineExercises(routine: RoutineWithLastPerformed): strin
 }
 
 export function useHomeData() {
-  const workoutService = useWorkoutDb();
-  const routineService = useRoutineDb();
+  const { getHistory } = useWorkoutDb();
+  const { getRoutines } = useRoutineDb();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<HomeData>(INITIAL_DATA);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const history = await workoutService.getHistory(HISTORY_DAYS_WINDOW) as WorkoutWithExercises[];
-      const routines = await routineService.getRoutines();
+      const history = await getHistory(HISTORY_DAYS_WINDOW) as WorkoutWithExercises[];
+      const routines = await getRoutines();
 
       const routinesWithLastPerformed: RoutineWithLastPerformed[] = routines.map((r) => attachLastPerformed(r, history));
 
@@ -106,7 +106,7 @@ export function useHomeData() {
     } finally {
       setLoading(false);
     }
-  }, [workoutService, routineService]);
+  }, [getHistory, getRoutines]);
 
   useFocusEffect(
     useCallback(() => {

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "3806f8a7-2afc-4e2c-993e-fd84ec7c3849",
+  "id": "e1a8c8a9-ffaa-43aa-8260-7aa72ea1f908",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "body_weight_log": {
@@ -365,6 +365,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'weighted'"
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'compound'"
         },
         "is_archived": {
           "name": "is_archived",

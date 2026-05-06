@@ -67,7 +67,7 @@ export default function DashboardPage() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <HomeHeader userName={user?.name} onEditProfile={() => router.push(ROUTES.SETTINGS_PROFILE)} />
 
@@ -199,7 +199,7 @@ export default function DashboardPage() {
                             exercises: (routine.exercises ?? []).map(re => ({
                               exercise: re.exercise,
                               targetSets: re.targetSets ?? 3,
-                              maxReps: re.targetReps ?? 10,
+                              targetReps: re.targetReps ?? 10,
                               supersetGroup: re.supersetGroup ? Number(re.supersetGroup) : null
                             }))
                           })}

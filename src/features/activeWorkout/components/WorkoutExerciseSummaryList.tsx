@@ -4,10 +4,8 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { AnimatedViewShared } from '@/shared/ui/AnimatedViewShared';
 import { Star, Link2 } from 'lucide-react-native';
 
-import { CardBase } from '@/shared/ui/Card';
+import { CardBase, AppText, AppIcon } from '@/shared/ui';
 import { animatedCardShadow, elevation } from '@/shared/ui/theme/elevation';
-import { AppText } from '@/shared/ui/AppText';
-import { AppIcon } from '@/shared/ui/AppIcon';
 import { getExerciseName } from '@/entities/exercise';
 import { FONT_SCALE } from '@/shared/ui/theme/tamagui.config';
 

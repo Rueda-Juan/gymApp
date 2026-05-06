@@ -10,7 +10,8 @@ import {
   AppButton, 
   AppIcon, 
   SearchBar,
-  Screen
+  Screen,
+  IconButton
 } from '@/shared/ui';
 import { ExerciseList, MuscleFilterSheet, useExerciseDb } from '@/entities/exercise';
 import { useExerciseFiltering } from '@/shared/ui/hooks/useExerciseFiltering';
@@ -18,7 +19,7 @@ import { ROUTES } from '@/shared/constants/routes';
 import type { Exercise } from '@kernel';
 
 export default function ExerciseListPage() {
-  const exerciseService = useExerciseDb();
+  const { getExercises } = useExerciseDb();
   const muscleSheetRef = useRef<BottomSheetModal>(null);
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -29,14 +30,14 @@ export default function ExerciseListPage() {
   const loadExercises = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await exerciseService.getExercises();
+      const data = await getExercises();
       setExercises(data ?? []);
     } catch (error) {
       console.error('[ExerciseListPage] Failed to load exercises:', error);
     } finally {
       setLoading(false);
     }
-  }, [exerciseService]);
+  }, [getExercises]);
 
   useFocusEffect(
     useCallback(() => {
@@ -56,25 +57,27 @@ export default function ExerciseListPage() {
   };
 
   return (
-    <Screen safeAreaEdges={['top']}>
+    <Screen safeAreaEdges={['top','bottom','left','right']}>
       <YStack flex={1}>
-        <YStack paddingHorizontal="$xl" paddingTop="$md" gap="$md" paddingBottom="$md">
-          <XStack justifyContent="space-between" alignItems="center">
-            <AppText variant="titleMd">Ejercicios</AppText>
-            <AppButton
-              variant="outlined"
-              icon={<AppIcon icon={Plus} size={20} color="primary" />}
-              onPress={() => router.push(ROUTES.EXERCISE_CREATE)}
-            />
-          </XStack>
+        <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$lg" paddingTop="$lg" paddingBottom="$md">
+          <AppText variant="titleLg">Ejercicios</AppText>
+          <IconButton
+            icon={<AppIcon icon={Plus} color="color" size={24} />}
+            size={44}
+            backgroundColor="$primary"
+            onPress={() => router.push(ROUTES.EXERCISE_CREATE)}
+            accessibilityLabel="Crear ejercicio"
+          />
+        </XStack>
 
+        <YStack paddingHorizontal="$lg" gap="$sm" paddingBottom="$md">
           <SearchBar
             placeholder="Buscar ejercicio..."
             value={search}
             onChangeText={setSearch}
           />
 
-          <XStack gap="$sm">
+          <XStack>
              <AppButton
                label={selectedMuscle ? selectedMuscle.toUpperCase() : 'Todos los músculos'}
                variant="outlined"

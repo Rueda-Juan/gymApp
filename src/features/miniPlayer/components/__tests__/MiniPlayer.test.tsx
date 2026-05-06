@@ -13,6 +13,38 @@ jest.mock('@/entities/workout', () => ({
 jest.mock('@/features/activeWorkout', () => ({
   useRestTimer: jest.fn(),
 }));
+jest.mock('react-native-reanimated', () => {
+  const Reanimated = jest.requireActual('react-native-reanimated/mock');
+  return {
+    ...Reanimated,
+    FadeInDown: {
+      duration: jest.fn(() => ({ duration: jest.fn() })),
+    },
+    FadeOutDown: {
+      duration: jest.fn(() => ({ duration: jest.fn() })),
+    },
+  };
+});
+
+jest.mock('@/shared/constants/motion', () => ({
+  __esModule: true,
+  motion: {
+    duration: {
+      instant: 80,
+      fast: 150,
+      normal: 220,
+      slow: 320,
+      hero: 520,
+    },
+    spring: {
+      snappy: { damping: 20, stiffness: 260, mass: 1.2 },
+    },
+    scale: {
+      press: 0.95,
+    },
+  },
+}));
+
 jest.mock('@/shared/lib/hooks/useMotion', () => ({
   useMotion: () => ({
     isReduced: false,
@@ -116,8 +148,8 @@ describe('MiniPlayer', () => {
     fireEvent.press(getByText('Retomar'));
 
     expect(router.push).toHaveBeenCalledWith({
-      pathname: '/(workouts)/[active]',
-      params: { active: 'workout-1' },
+      pathname: '/(workouts)/[workoutId]',
+      params: { workoutId: 'workout-1' },
     });
   });
 });

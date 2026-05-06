@@ -1,11 +1,13 @@
 import React from 'react';
 import { YStack, XStack, ScrollView } from 'tamagui';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { CheckCircle2, Clock, Trophy } from 'lucide-react-native';
 
 import { Screen, AppText, AppButton, AppIcon, Card } from '@/shared/ui';
 import { ROUTES } from '@/shared/constants/routes';
+
 export default function SummaryPage() {
+  useLocalSearchParams<{ id: string }>();
   // In a real scenario, we would fetch the finished workout by ID
   // But since we just finished it, we might still have some state or we can mock it
   
@@ -13,7 +15,7 @@ export default function SummaryPage() {
   // If we had a "lastFinishedWorkout" in store, we would use it here
   
   return (
-    <Screen safeAreaEdges={['top', 'bottom']}>
+    <Screen safeAreaEdges={['top', 'bottom', 'left', 'right']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack padding="$xl" gap="$2xl">
           <YStack alignItems="center" gap="$md" marginTop="$xl">

@@ -29,12 +29,12 @@ const ROUTINE = {
     {
       exercise: { id: "ex-1", name: "Bench Press", nameEs: "Press de Banca" },
       targetSets: 3,
-      maxReps: "12",
+      targetReps: "12",
     },
     {
       exercise: { id: "ex-2", name: "OHP", nameEs: null },
       targetSets: 2,
-      maxReps: 10,
+      targetReps: 10,
     },
   ],
 };
@@ -67,9 +67,16 @@ function renderHook(navigationMode: "push" | "replace" = "push") {
 }
 
 describe("useStartWorkout", () => {
+  let consoleSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
     setupMocks();
+    consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
@@ -107,7 +114,7 @@ describe("useStartWorkout", () => {
 
     // MOVED: Este test fue migrado a features/workout/__tests__/useStartWorkout.test.ts
 
-    it("parsea maxReps string a número", async () => {
+    it("parsea targetReps string a número", async () => {
       const { getStart } = renderHook();
 
       await act(async () => {
@@ -118,7 +125,7 @@ describe("useStartWorkout", () => {
       expect(exercises[0].sets[0].reps).toBe(12);
     });
 
-    it("parsea maxReps numérico correctamente", async () => {
+    it("parsea targetReps numérico correctamente", async () => {
       const { getStart } = renderHook();
 
       await act(async () => {
@@ -141,7 +148,7 @@ describe("useStartWorkout", () => {
         ...ROUTINE,
         exercises: [
           ...ROUTINE.exercises,
-          { exercise: undefined, targetSets: 3, maxReps: "10" },
+          { exercise: undefined, targetSets: 3, targetReps: "10" },
         ],
       };
 
@@ -168,7 +175,7 @@ describe("useStartWorkout", () => {
       expect(firstSet.type).toBe("normal");
     });
 
-    it("maxReps no numérico fallback a 0", async () => {
+    it("targetReps no numérico fallback a 0", async () => {
       // Previene: NaN propagado como reps
       const routineWithBadReps = {
         ...ROUTINE,
@@ -176,7 +183,7 @@ describe("useStartWorkout", () => {
           {
             exercise: { id: "ex-1", name: "Test", nameEs: null },
             targetSets: 1,
-            maxReps: "abc" as unknown as number,
+            targetReps: "abc" as unknown as number,
           },
         ],
       };

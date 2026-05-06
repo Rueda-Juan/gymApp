@@ -5,18 +5,27 @@ const ErrorSchema = z.object({
   fieldErrors: z.record(z.string(), z.unknown()).optional(),
 }).catchall(z.unknown());
 
-export function getErrorMessage(error: unknown): string {
-  const defaultMsg = 'No se pudo crear el ejercicio';
-  if (error == null) return defaultMsg;
+export function getErrorMessage(error: unknown, fallback = 'Ocurrió un error inesperado'): string {
+  if (error == null) return fallback;
+
+  // Handle SQLite/DB specific errors if possible (based on message patterns)
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes('database is locked')) return 'La base de datos está ocupada. Reintenta en un momento.';
+    if (msg.includes('disk full') || msg.includes('no space left')) return 'Espacio en disco insuficiente para guardar.';
+    if (msg.includes('unique constraint')) return 'Ya existe un registro con estos datos.';
+    return error.message;
+  }
 
   try {
     const parsed = ErrorSchema.safeParse(error);
     if (parsed.success) {
       const data = parsed.data;
       if (data.fieldErrors) {
-        const nameErrors = data.fieldErrors.name;
-        if (Array.isArray(nameErrors) && nameErrors.length > 0) {
-          return String(nameErrors[0]);
+        // Try to find the first field error
+        const firstField = Object.values(data.fieldErrors)[0];
+        if (Array.isArray(firstField) && firstField.length > 0) {
+          return String(firstField[0]);
         }
       }
       if (typeof data.message === 'string' && data.message.trim()) {
@@ -27,5 +36,5 @@ export function getErrorMessage(error: unknown): string {
   } catch {
     // ignore
   }
-  return defaultMsg;
+  return fallback;
 }

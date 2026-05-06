@@ -11,7 +11,7 @@ type NavigationMode = 'push' | 'replace';
 interface RoutineExerciseForWorkout {
   exercise?: { id: string; name: string; nameEs?: string | null };
   targetSets: number;
-  maxReps: string | number;
+  targetReps: string | number;
   supersetGroup?: number | null;
 }
 
@@ -24,20 +24,23 @@ export interface StartableRoutine {
 function buildInitialExercises(routineExercises: RoutineExerciseForWorkout[]) {
   return (routineExercises || [])
     .filter((re) => !!re.exercise)
-    .map((re) => ({
-      id: createClientId(),
-      exerciseId: re.exercise!.id,
-      name: re.exercise!.name,
-      nameEs: re.exercise!.nameEs,
-      supersetGroup: re.supersetGroup ?? null,
-      sets: Array.from({ length: re.targetSets || 3 }).map(() => ({
+    .map((re) => {
+      const reps = parseInt(String(re.targetReps)) || 0;
+      return {
         id: createClientId(),
-        weight: 0,
-        reps: 10, // Default to 10 if not specified
-        isCompleted: false,
-        type: 'normal' as const,
-      })),
-    }));
+        exerciseId: re.exercise!.id,
+        name: re.exercise!.name,
+        nameEs: re.exercise!.nameEs,
+        supersetGroup: re.supersetGroup ?? null,
+        sets: Array.from({ length: re.targetSets || 3 }).map(() => ({
+          id: createClientId(),
+          weight: 0,
+          reps,
+          isCompleted: false,
+          type: 'normal' as const,
+        })),
+      };
+    });
 }
 
 /**

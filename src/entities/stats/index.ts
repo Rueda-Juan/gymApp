@@ -10,3 +10,4 @@ export * from './ui/BodyWeightCard';
 export * from './ui/StatsSummaryGrid';
 export * from './ui/StrengthProgressCard';
 export * from './db/useStatsDb';
+export * from './db/useStatsProcessor';

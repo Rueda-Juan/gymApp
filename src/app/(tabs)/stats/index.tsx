@@ -17,7 +17,7 @@ import {
 import { WorkoutSet } from '@kernel';
 import { useExerciseDb } from '@/entities/exercise';
 import { BodyWeightCard, StrengthProgressCard, StatsSummaryGrid } from '@/entities/stats';
-import { useStatsData } from './useStatsData';
+import { useStatsData } from '@/entities/stats/model/useStatsData';
 import { getExerciseName } from '@/entities/exercise';
 import { calculateEpley1RM } from '@/entities/workout';
 import { WeeklyVolumeBarChart, ActivityGrid } from '@/shared/ui/charts/PlaceholderCharts';

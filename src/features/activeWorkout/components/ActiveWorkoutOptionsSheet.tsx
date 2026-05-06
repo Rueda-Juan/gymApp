@@ -3,11 +3,8 @@ import { Alert, Pressable } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Minus, Plus, X, ChevronRight } from 'lucide-react-native';
 import { XStack, YStack } from 'tamagui';
-import { AppText } from '@/shared/ui/AppText';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { useBottomSheetStyles } from '@/shared/ui/hooks/useBottomSheetStyles';
+import { AppText, AppIcon, Collapsible, useBottomSheetStyles } from '@/shared/ui';
 import { BodyAnatomySvg } from '@/entities/anatomy';
-import { Collapsible } from '@/shared/ui/Collapsible';
 import type { MuscleGroup, Exercise } from '@kernel';
 import type { WorkoutExerciseState } from '@/shared/types/workout';
 

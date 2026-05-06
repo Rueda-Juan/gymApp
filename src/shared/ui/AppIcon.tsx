@@ -36,6 +36,7 @@ export function AppIcon({
   variant = 'duotone',
 }: AppIconProps) {
   const theme = useTheme();
+  if (!Icon) return null;
 
   const resolvedColor = theme[color]?.val ?? theme.color?.val;
 

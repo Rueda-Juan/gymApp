@@ -13,7 +13,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/app/(.*)$': '<rootDir>/src/app/$1',
     '^@/features/(.*)$': '<rootDir>/src/features/$1',
-    '^@/entities(/.*)?$': '<rootDir>/src/shared/entities$1',
+    '^@/entities(/.*)?$': '<rootDir>/src/entities$1',
     '^@/shared/(.*)$': '<rootDir>/src/shared/$1',
     '^@/tamagui\\.config$': '<rootDir>/src/shared/config/tamagui.config.ts',
     '^@/(.*)$': '<rootDir>/src/$1',

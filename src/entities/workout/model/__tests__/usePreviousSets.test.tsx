@@ -2,14 +2,26 @@ import { renderHook, act } from '@testing-library/react-native';
 import { usePreviousSets } from '../../db/usePreviousSets';
 
 // Mock dependencies
-jest.mock('@/entities/workout', () => ({
-  useActiveWorkout: jest.fn(() => ({ workoutId: 'mockWorkoutId' })),
+jest.mock('@/entities/workout/model/useActiveWorkout', () => ({
+  useActiveWorkout: jest.fn((selector) => selector({ workoutId: 'mockWorkoutId' })),
+}));
+
+jest.mock('@/entities/workout/db/useWorkoutDb', () => ({
   useWorkoutDb: jest.fn(() => ({
     getPreviousSets: jest.fn(() => Promise.resolve([{ weight: 50 }, { weight: 60 }]))
   }))
 }));
 
 describe('usePreviousSets', () => {
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+  });
   it('should resolve previous weight from cache', async () => {
     const { result } = renderHook(() => usePreviousSets('exercise1'));
     // Simula la actualización asincrónica

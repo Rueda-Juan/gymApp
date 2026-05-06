@@ -12,14 +12,13 @@ import {
   usePreviousSets,
   useWorkoutDb,
 } from '@/entities/workout';
-import { 
-  useActiveWorkoutController,
-  useRestTimer,
-  ActiveWorkoutOptionsSheet,
-  ActiveWorkoutExercisePickerSheet,
-  WorkoutSessionNoteSheet,
-  PRCelebrationOverlay
-} from '@/features/activeWorkout';
+import { useStatsProcessor } from '@/entities/stats';
+import { useActiveWorkoutController } from '../hooks/useActiveWorkoutController';
+import { useRestTimer } from '../model/useRestTimer';
+import { ActiveWorkoutOptionsSheet } from './ActiveWorkoutOptionsSheet';
+import { ActiveWorkoutExercisePickerSheet } from './ActiveWorkoutExercisePickerSheet';
+import { WorkoutSessionNoteSheet } from './WorkoutSessionNoteSheet';
+import { PRCelebrationOverlay } from './PRCelebrationOverlay';
 import { WorkoutHeader } from './WorkoutHeader';
 import { ActiveWorkoutBottomBar } from './ActiveWorkoutBottomBar';
 import { ActiveWorkoutExerciseDetail } from './ActiveWorkoutExerciseDetail';
@@ -32,6 +31,7 @@ export function ActiveWorkoutController() {
   const workoutId = useActiveWorkout(s => s.workoutId);
   const routineId = useActiveWorkout(s => s.routineId);
   const routineName = useActiveWorkout(s => s.routineName);
+  const startTime = useActiveWorkout(s => s.startTime);
   const exercises = useActiveWorkout(s => s.exercises);
   const currentExerciseIndex = useActiveWorkout(s => s.currentExerciseIndex);
   const sessionNote = useActiveWorkout(s => s.sessionNote || '');
@@ -40,6 +40,7 @@ export function ActiveWorkoutController() {
   const cancelWorkoutStore = useActiveWorkout(s => s.cancelWorkout);
   
   const { recordAllSets, finishWorkout } = useWorkoutDb();
+  const { processWorkoutStats } = useStatsProcessor();
 
   const restTimerIsActive = useRestTimer(s => s.isActive);
   const getRemainingSeconds = useRestTimer(s => s.getRemainingSeconds);
@@ -108,8 +109,12 @@ export function ActiveWorkoutController() {
               
               // 2. Finalizar el entrenamiento (marcar hora fin en la BD y guardar notas)
               await finishWorkout(workoutId, sessionNote);
+
+              // 3. Procesar estadísticas (PRs, Volumen Diario, Caché de Carga)
+              const durationSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+              await processWorkoutStats(workoutId, exercises, durationSeconds);
               
-              // 3. Limpiar store y navegar
+              // 4. Limpiar store y navegar
               finishWorkoutStore();
               router.replace(ROUTES.WORKOUT_SUMMARY);
             } catch (error) {

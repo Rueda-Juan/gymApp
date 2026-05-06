@@ -11,8 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { YStack, XStack } from 'tamagui';
 import { Trophy } from 'lucide-react-native';
-import { AppText } from '@/shared/ui/AppText';
-import { AppIcon } from '@/shared/ui/AppIcon';
+import { AppText, AppIcon } from '@/shared/ui';
 import * as Haptics from 'expo-haptics';
 
 const PARTICLE_COUNT = 30;
