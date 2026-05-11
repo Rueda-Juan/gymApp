@@ -4,14 +4,17 @@ const path = require('path');
 
 const ROOT_DIR = process.argv[2] || process.cwd();
 
-const VALID_EXT = new Set(['.js', '.jsx', '.ts', '.tsx']);
+const VALID_EXT = new Set(['.js', '.jsx', '.ts', '.tsx', '.json', '.md', '.html', '.css', '.scss', '.sql', '.env', '.yaml', '.yml']);
 
 // Carpetas ignoradas (puedes agregar más)
 const IGNORE_DIRS = new Set([
   'node_modules',
-  '__tests__',
-  '__mocks__',
+  /*'__tests__',
+  '__mocks__',*/
+  '.github',
   'Docs',
+  'android',
+  '.vscode',
   '.git',
   'dist',
   'build',
@@ -111,31 +114,8 @@ function printTree(dir, prefix = '') {
 }
 
 // Ejecutar
-let entries = [];
-try {
-  entries = fs.readdirSync(ROOT_DIR, { withFileTypes: true });
-} catch {
-  entries = [];
-}
-
-// Filtrar solo carpetas válidas de primer nivel (ignorar archivos en la raíz)
-entries = entries.filter(entry => {
-  if (!entry.isDirectory()) return false;
-  if (shouldIgnore(entry.name)) return false;
-  const fullPath = path.join(ROOT_DIR, entry.name);
-  return hasValidFiles(fullPath);
-});
-
-// Ordenar carpetas alfabéticamente
-entries.sort((a, b) => a.name.localeCompare(b.name));
-
-// Imprimir cada carpeta de primer nivel
-entries.forEach((entry, index) => {
-  const isLast = index === entries.length - 1;
-  const connector = isLast ? '└── ' : '├── ';
-  const nextPrefix = isLast ? '    ' : '│   ';
-  outputLines.push(connector + entry.name);
-  printTree(path.join(ROOT_DIR, entry.name), nextPrefix);
-});
+outputLines.push(path.basename(ROOT_DIR) + '/');
+printTree(ROOT_DIR);
 
 fs.writeFileSync('tree.txt', outputLines.join('\n'), 'utf8');
+console.log('Tree generated in tree.txt');

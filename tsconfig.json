@@ -1,7 +1,42 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./Frontend" },
-    { "path": "./Backend" }
+  "extends": "expo/tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@/app/*": [
+        "./src/app/*"
+      ],
+      "@/pages/*": [
+        "./src/pages/*"
+      ],
+      "@/features/*": [
+        "./src/features/*"
+      ],
+      "@/entities/*": [
+        "./src/entities/*"
+      ],
+      "@/shared/*": [
+        "./src/shared/*"
+      ],
+      "@/tamagui.config": [
+        "./src/shared/config/tamagui.config.ts"
+      ],
+      "@kernel": [
+        "./src/shared/types/kernel.ts"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "packages"
   ]
 }

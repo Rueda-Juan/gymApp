@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "newArchEnabled": true,
+    "scheme": "temper",
+    "android": {
+      "package": "com.anonymous.temper"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "packagingOptions": {
+              "pickFirst": [
+                "lib/**/libfbjni.so",
+                "lib/**/libc++_shared.so",
+                "lib/**/libreanimated.so"
+              ]
+            }
+          }
+        }
+      ]
+    ]
+  }
+}

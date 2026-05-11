@@ -1,175 +1,75 @@
-Temper — Master Views & Navigation (Clean Spec)
-1. Sistema de Design Tokens
-Tipografía
-titleLg
-titleMd
-titleSm
-subtitle
-bodyLg
-bodyMd
-bodySm
-label
-Colores del Tema
-$background
-$surface
-$surfaceSecondary
-$color
-$textSecondary
-$textTertiary
-$primary
-$primarySubtle
-$gold
-$goldSubtle
-$info
-$infoSubtle
-$success
-$successSubtle
-$danger
-$dangerSubtle
-$warning
-$borderColor
-Espaciado
-$xs
-$sm
-$md
-$lg
-$xl
-$2xl
-$3xl
-$4xl
-Border Radius
-$sm
-$md
-$lg
-$xl
-$2xl
-$full
-Alturas Estándar
-buttonHeight
-iconButton
-inputHeight
-setRowHeight
-miniPlayerHeight
-2. Reglas Globales de Layout
-Grid System
-base 8pt
-subgrid 4pt
-padding horizontal estándar: $lg
-separación vertical entre secciones: $xl
-spacing entre componentes relacionados: $md
-Touch Targets
-mínimo 44x44
-separación mínima 8
-3. Motion System
-Microinteracciones
-feedback táctil: 100ms
-hover/press: 80–120ms
-Transiciones
-navegación: 250–300ms
-modales / sheets: 300–350ms
-Easing
-entrada: ease-out
-salida: ease-in
-Accessibility
-soporte reduce motion
-4. Navegación Maestra
-Tabs principales
-Home
-Workout
-Library
-Analytics
-Profile
-Stacks secundarios
-Exercise Flow
-Session Flow
-Settings Flow
-5. Diccionario de Vistas
-Home
+# PANTALLAS
 
-Objetivo:
-estado general del usuario, acceso rápido a sesión y progreso.
+## Pantalla inicial(botón del navbar)
 
-Componentes:
+- Botón para iniciar una sesión vacía
+- la racha
+  - ultimo entrenamiento
+- ultimas 3 rutinas utilizadas
 
-hero stats
-quick start
-recent workout
-streak card
-CTA principal
-Create Exercise
+## Pantalla de rutinas(botón del navbar)
 
-Objetivo:
-crear ejercicio personalizado.
+- boton de crear nueva rutina
+- Buscador
+- selector de rutinas creadas o historial de entrenamientos
+- lista de rutinas o lista de entrenamientos hechos
 
-Componentes:
+## Pantalla de estadísticas (botón del navbar)
 
-selector de músculos por categoría
-músculo primario
-músculo secundario
-SVG interactivo
-tipo de ejercicio
-tipo de carga
-descripción
-Workout Session
+- peso corporal
+- progreso en un ejercicio
+- heatmap mensual de entrenamientos
+- heatmap anual de entrenamientos
 
-Objetivo:
-registro activo de sets y progreso.
+## Pantalla de ejercicios (botón del navbar)
 
-Componentes:
+- boton de crear un ejercicio
+- filtro con drop-down de los grupos grandes de musculos
+- lista de ejercicios creados
 
-header de ejercicio
-rows de sets
-timer descanso
-CTA siguiente ejercicio
-mini player persistente
-Exercise Library
+## Pantalla de ajustes(botón del navbar)
 
-Objetivo:
-búsqueda, filtrado y exploración.
+- ajustes varios
 
-Componentes:
+## Pantalla de crear rutina
 
-search
-filtros
-categorías
-cards de ejercicios
-Analytics
+- boton de guardar
+- campo de nombre
+- campo de descripción
+- boton de agregar un ejercicio
+- lista de ejercicios (con la opción de poner un rango de repeticiones o realizar un superset)
 
-Objetivo:
-progreso, volumen y tendencias.
+## Pantalla de crear un ejercicio
 
-Componentes:
+- boton de guardar
+- campo de nombre
+- svg de músculos
+- selector de tipo (barra, mancuernas, máquina, tiempo, etc)
+- campo de descripción
 
-charts
-KPIs
-historial
-PR tracking
-6. Estados Globales UX
+## Pantalla de entrenamiento activo
 
-Cada pantalla debe incluir:
+- nombre
+- cant de ejercicios hechos/cant de ejercicios totales
+- boton de finalizar el entrenamiento(se pregunta si se quiere guardar el entrenamiento o no)
+- barra de progreso
+- ejercicio activo/superset activo
+  - nombre del ejercicio
+  - boton de opciónes de ejercicio
+  - lista de sets con campos condicionales, si es por tiempo habrá un temporizador, si es con peso, habrá un campo de peso, si es con reps habrá un rango de reps, y el botón para completar el set
+  - esta la opción de tener un botón de repeticiones parciales, lo que abre un set por debajo del actual como un drop-down y dejara poner las repes parciales que se hicieron y ponerlas como completadas
+- boton del modal de selector de peso interactivo (no está en el navbar, ni tampoco como bottomsheet)
 
-loading
-empty
-success
-error
-offline
-skeleton state
+### En el navbar de esta pantalla
 
-Esto es una práctica crítica para evitar documentación incompleta.
+- boton para ir al ejercicio anterior(aparece del ejercicio 2 en adelante)
+- boton para agregar un ejercicio
+- boton del timer(abre un modal de timer interactivo)
 
-7. Componentes Compartidos
-Button
-Input
-Select
-BottomSheet
-Modal
-Card
-StatBlock
-ExerciseRow
-TimerPill
-ProgressChart
-8. Naming Convention
-vistas: PascalCase
-componentes: PascalCase
-tokens: camelCase
-rutas: kebab-case
+## Pantalla de detalle de ejercicio al tocar un ejercicio, con la opción de editar uno
+
+## Pantalla de selección de rutina
+
+(Cuando se toca el botón de empezar entrenamiento de la pantalla inicial)
+
+- Que se pueda seleccionar una rutina(que no te mande a la vista de rutinas)

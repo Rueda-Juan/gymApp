@@ -81,7 +81,7 @@ The entire project has been architected and accelerated with the support of **AI
 - Service Layer abstraction
 - Feature-oriented modular structure
 
-This stack aligns well with current React Native + Expo production best practices. :contentReference[oaicite:1]{index=1}
+This stack aligns well with current React Native + Expo production best practices.
 
 ---
 
@@ -164,7 +164,7 @@ Make sure you have installed:
 git clone <repository-url>
 cd GymApp
 npm install
-````
+```
 
 ---
 
